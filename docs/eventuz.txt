@@ -1,0 +1,4875 @@
+ChatGPT
+
+
+
+
+
+Invite team members
+
+Pasted text.txt
+Document
+
+Thought for a couple of seconds
+Understood. I’ll use this as your operating framework for system development work: scope-first, MVP-focused, phased, economical, role-aware, and implementation-ready. 
+
+
+Key insight
+This is strongest when used as a decision-control layer before coding. It prevents the usual failure mode: jumping into broad implementation before the system, roles, workflows, data, and acceptance criteria are clear.
+
+Risks/trade-offs
+The main risk is over-planning. To avoid that, I’ll keep planning lightweight and move quickly toward prompt-ready build tasks once the MVP scope is stable.
+
+Next step
+Send me the system idea you want to build. I’ll respond with:
+
+System summary
+
+Key assumptions
+
+Missing critical details
+
+Recommended MVP scope
+
+User roles
+
+Core workflows
+
+Suggested modules
+
+Phased build plan
+
+Immediate next action
+
+
+1. The Main Goal
+The primary purpose of Eventuz is to transform event coordination through intelligent automation. It is designed to solve critical inefficiencies in the Philippine event industry (specifically the wedding sector) by replacing manual spreadsheet tracking with automated workflows. It eliminates 24/7 manual payment verification, reduces the risk of venue double-booking, and alleviates logistical stress for coordinators.
+
+2. Target Users & Roles
+
+Attendees: Access branded event pages to register, make instant payments via integrated gateways, select real-time inventory (seats), and receive QR e-tickets.
+
+Organizers (e.g., Wedding Coordinators): Create and publish events, configure ticket types, manage attendee lists, and monitor real-time analytics.
+
+Super Admins: System-level users managing overall users, global analytics dashboards, and general system settings.
+
+3. Core Features & Workflows
+
+Frictionless Registration & Secure Payments: Direct integration with digital wallets and banks(hitpay) for instant registration without manual verification.
+
+Intelligent Seat Allocation: Real-time synchronization that unlocks seats only after payment is confirmed, with built-in collision prevention.
+
+Automated Ticketing: Digital delivery of secure QR e-tickets for swift venue scanning.
+
+Event Management Tools: Early bird logic, staff management, and analytics dashboards.
+
+make sure to ask me if there is unclear, you need to clarify, and dont assume
+
+Thought for a couple of seconds
+System understanding summary
+Eventuz is an event coordination platform focused first on the Philippine wedding/event sector. Its core promise is to replace manual spreadsheets, manual payment checking, and risky seat/venue coordination with automated registration, payment confirmation, real-time seat allocation, and QR-based ticketing.
+
+The MVP should not try to become a full event marketplace yet. It should first prove one high-value workflow:
+
+Organizer creates an event → attendee registers → attendee pays via HitPay → payment is confirmed → seat/ticket is locked → QR ticket is issued → organizer can track attendees and scan/check them in.
+
+This aligns with your preferred development discipline: clarify scope first, separate must-haves from nice-to-haves, and avoid jumping into broad implementation. 
+
+
+Key insight
+The most important product risk is payment-seat synchronization.
+
+Eventuz is not just “an event registration app.” The real value is in the trust layer:
+
+“No attendee gets a valid seat/ticket unless payment is confirmed, and no two users can claim the same seat.”
+
+That means the MVP should prioritize transaction integrity over dashboards, visual polish, or advanced automation.
+
+Critical clarifying questions
+I will not assume these. Please answer what you can.
+
+1. Event type and MVP focus
+Are we building the MVP only for weddings, or should it support any paid event from day one?
+
+Recommended MVP answer: weddings first, but with a generic “event” structure that can support other event types later.
+
+2. Seat selection model
+For the MVP, do attendees choose:
+
+A. Exact seats
+Example: Table 5, Seat 3
+
+B. Table only
+Example: Table 5, any available seat
+
+C. Ticket quantity only
+Example: 2 VIP tickets, no assigned seat
+
+This is a major architectural decision because exact seat selection requires stronger locking logic.
+
+3. Payment behavior
+With HitPay, should the system issue tickets only after:
+
+A. Successful webhook confirmation from HitPay
+Recommended.
+
+B. User returns to the success page after payment
+Risky, because redirects can fail or be faked.
+
+C. Manual organizer approval
+This defeats the automation goal.
+
+4. Seat reservation timeout
+When an attendee starts checkout, should the seat be temporarily reserved?
+
+Example:
+
+User selects Seat A1 → system holds it for 10 minutes → if payment fails or expires, seat becomes available again.
+
+Do you want this behavior?
+
+Recommended MVP answer: yes, with a short reservation window.
+
+5. QR ticket scanning
+Who scans tickets at the venue?
+
+A. Organizer only
+B. Organizer staff accounts
+C. Any assigned event staff using a scanner page
+
+This affects permissions and staff management scope.
+
+6. Attendee accounts
+Should attendees need to create accounts?
+
+A. No account, just register and receive ticket by email/SMS
+Recommended for MVP.
+
+B. Account required before registration
+
+For weddings/events, requiring an account may reduce conversion.
+
+7. Ticket delivery channel
+How should attendees receive QR tickets?
+
+A. Email only
+B. SMS only
+C. Email + SMS
+D. Download from success page only
+
+Recommended MVP: email + downloadable success page first, SMS later unless required.
+
+8. Organizer analytics
+For MVP, what analytics matter most?
+
+Suggested must-have:
+
+Total registrations
+
+Paid attendees
+
+Pending/failed payments
+
+Available seats/tickets
+
+Revenue collected
+
+Check-in count
+
+Do you need anything beyond this in MVP?
+
+9. Super Admin role
+For MVP, should Super Admin be able to:
+
+A. View all users and events only
+B. Manage organizers and system settings
+C. See global revenue analytics
+D. Suspend/delete events or users
+
+Super Admin can grow quickly into a large module, so we should scope it tightly.
+
+10. Current build status
+Are we starting from:
+
+A. No app yet
+B. Existing Bolt app
+C. Existing database/schema already created
+D. Existing frontend but no backend logic
+
+This determines whether the next output should be a system blueprint or a Bolt implementation prompt.
+
+Recommended MVP scope
+Area	Must-have for MVP	Not yet
+Event creation	Create, edit, publish event	Multi-day complex scheduling
+Ticket types	Basic ticket types, price, quantity	Promo codes, bundles
+Registration	Public branded registration page	Attendee account dashboard
+Payments	HitPay checkout + webhook confirmation	Multiple payment providers
+Seat allocation	Real-time availability + locking	Complex drag-and-drop seating map
+Ticketing	QR e-ticket after confirmed payment	Apple Wallet/Google Wallet
+Check-in	QR scanner/check-in page	Offline scanning mode
+Organizer dashboard	Attendees, payments, seats, revenue	Deep analytics/forecasting
+Super Admin	Basic user/event oversight	Advanced platform settings
+Staff	Basic staff access for check-in	Full team permission system
+Suggested user roles
+1. Attendee
+Can:
+
+View public event page
+
+Register
+
+Select ticket/seat
+
+Pay
+
+Receive QR ticket
+
+Present QR code at venue
+
+Should not:
+
+Access dashboards
+
+Edit registrations after payment unless allowed
+
+Claim seats without payment confirmation
+
+2. Organizer
+Can:
+
+Create/manage events
+
+Configure ticket types/seating capacity
+
+View attendee list
+
+Track payments
+
+Scan/check in attendees
+
+Invite limited staff
+
+Should not:
+
+Access other organizers’ events
+
+Modify system-wide settings
+
+3. Event Staff
+Can:
+
+Scan QR tickets
+
+Check in attendees
+
+View limited attendee info
+
+Should not:
+
+Edit event setup
+
+View full revenue analytics
+
+Manage payments
+
+4. Super Admin
+Can:
+
+View all organizers
+
+View all events
+
+Monitor platform activity
+
+Manage user access
+
+Should not be overbuilt in MVP.
+
+Core workflows
+Workflow 1: Organizer creates event
+Organizer logs in.
+
+Creates event.
+
+Adds event details.
+
+Adds ticket types or seating capacity.
+
+Publishes event.
+
+System generates public registration link.
+
+Workflow 2: Attendee registers and pays
+Attendee opens public event page.
+
+Selects ticket/seat.
+
+Enters registration details.
+
+System temporarily reserves selection.
+
+Attendee proceeds to HitPay checkout.
+
+HitPay confirms payment through webhook.
+
+System marks registration as paid.
+
+System locks seat/ticket.
+
+QR ticket is generated and sent.
+
+Workflow 3: Failed or expired payment
+Attendee starts checkout.
+
+Seat/ticket is temporarily held.
+
+Payment fails, expires, or webhook does not confirm.
+
+Reservation is released.
+
+Seat/ticket becomes available again.
+
+This is essential for collision prevention.
+
+Workflow 4: QR check-in
+Staff opens scanner page.
+
+Scans attendee QR code.
+
+System validates ticket.
+
+If valid and unused, attendee is checked in.
+
+If already used, system shows warning.
+
+If invalid, system rejects ticket.
+
+Suggested modules
+MVP modules
+Authentication & Roles
+
+Organizer
+
+Staff
+
+Super Admin
+
+Event Management
+
+Event creation
+
+Event publishing
+
+Public event page
+
+Ticket & Seat Management
+
+Ticket types
+
+Capacity
+
+Seat/ticket availability
+
+Reservation timeout
+
+Registration
+
+Attendee form
+
+Registration status
+
+Attendee records
+
+Payment Integration
+
+HitPay checkout
+
+Webhook handling
+
+Payment status sync
+
+QR Ticketing
+
+QR generation
+
+Ticket delivery
+
+Ticket validation
+
+Check-in
+
+Scanner page
+
+Check-in logs
+
+Duplicate scan protection
+
+Organizer Dashboard
+
+Attendee list
+
+Payment status
+
+Seat/ticket status
+
+Basic analytics
+
+Super Admin
+
+Basic event/user oversight
+
+Suggested phase-by-phase plan
+Phase 0: Scope lock
+Goal: confirm exact MVP rules.
+
+Decisions needed:
+
+Seat model
+
+Attendee account requirement
+
+Payment confirmation source
+
+Ticket delivery method
+
+Staff permissions
+
+Super Admin scope
+
+Phase 1: Core data model
+Define:
+
+users
+
+events
+
+ticket_types
+
+seats or seat_inventory
+
+registrations
+
+payments
+
+tickets
+
+check_ins
+
+staff_assignments
+
+No UI build yet until these relationships are clear.
+
+Phase 2: Organizer event setup
+Build:
+
+Organizer dashboard
+
+Create event
+
+Configure ticket type/capacity
+
+Publish event
+
+Public event link
+
+Phase 3: Attendee registration
+Build:
+
+Public event page
+
+Registration form
+
+Ticket/seat selection
+
+Temporary reservation logic
+
+Phase 4: HitPay payment flow
+Build:
+
+Create checkout session
+
+Redirect to HitPay
+
+Webhook confirmation
+
+Payment status update
+
+Reservation release on failure/expiry
+
+This is the highest-risk phase.
+
+Phase 5: QR ticketing
+Build:
+
+Generate ticket after confirmed payment
+
+Create QR token
+
+Send/display ticket
+
+Prevent ticket generation before payment confirmation
+
+Phase 6: Check-in scanner
+Build:
+
+Staff scanner page
+
+QR validation
+
+Duplicate scan warning
+
+Check-in timestamp
+
+Phase 7: Dashboard and analytics
+Build:
+
+Revenue summary
+
+Paid/pending registrations
+
+Ticket/seat availability
+
+Check-in count
+
+Phase 8: Super Admin
+Build only minimal oversight:
+
+View organizers
+
+View events
+
+View platform totals
+
+Risks/trade-offs
+1. Exact seat selection adds complexity
+Exact seats require locking, expiration, collision prevention, and strong database constraints. If you want fastest MVP, start with ticket quantity or table-level allocation first.
+
+2. HitPay webhook reliability is critical
+Do not rely only on frontend success redirects. Payment status must come from server-side webhook confirmation.
+
+3. Super Admin can distract from MVP
+Super Admin dashboards are useful but should not delay the attendee payment/ticketing loop.
+
+4. QR tickets require anti-fraud logic
+Each ticket should have a unique secure token, not just a visible registration ID.
+
+5. SMS delivery may increase cost and integration complexity
+Email + download page is cheaper for MVP. SMS can be added once the core flow works.
+
+Recommended immediate next step
+Answer these 5 first because they affect the whole build:
+
+Are we starting with weddings only or all event types?
+
+Should attendees choose exact seats, table only, or ticket quantity only?
+
+Should tickets be issued only after HitPay webhook confirmation?
+
+Do attendees need accounts, or is it guest checkout?
+
+Are you starting from no app, an existing Bolt app, or an existing database/schema?
+
+Once you answer, I’ll produce the first usable planning artifact: Eventuz MVP Scope + Data Model Draft + Build Phase 1 Prompt.
+
+
+Here are the answers to your clarifying questions:
+
+1. Event type and MVP focus
+For the MVP, the focus is on a single-event flow. Once an attendee logs into the system, they should be redirected straight to that specific event's details page. There is no need for a global "Event List" or marketplace page.
+
+2. Seat selection model & Group Registrations
+A. Exact seats (e.g., Table 5, Seat 3).
+Important Workflow Detail: If a user buys multiple tickets (e.g., 5 tickets), the flow should be as follows: The user pays for the quantity of tickets first. Once the payment is successfully confirmed, the user will then be able to choose the exact seats for those tickets and assign a specific name to each individual seat.
+
+3. Payment behavior
+A. Tickets should only be issued after a successful webhook confirmation from HitPay.
+
+4. Seat reservation timeout
+Yes, implement a short temporary reservation window while the user is checking out.
+
+5. QR ticket scanning
+The Organizer can scan tickets. Additionally, the Organizer must be able to invite Staff via email, granting them access to help scan QR codes at the venue.
+
+6. Attendee accounts
+Attendees must create an account in the system first. Once their account is created, they can then proceed to register for the event.
+
+7. Ticket delivery channel
+QR tickets should be downloadable immediately on the success page after payment. They must also be sent via email (please include a feature for the Super Admin to configure SMTP settings).
+
+8. Organizer analytics
+Include all the essential metrics you suggested:
+
+Total registrations
+
+Paid attendees
+
+Pending/failed payments
+
+Available seats/tickets
+
+Revenue collected
+
+Check-in count
+
+9. Super Admin role
+I will leave this up to you—please recommend and include whatever scope you think is best and most practical for the MVP.
+
+10. Current build status
+A. We are starting from scratch (No app yet).
+
+Additional Core Feature: Early Bird Logic
+We need an "Early Bird" pricing feature where users who register in advance get a discounted price. If the user fails to pay within a specific time limit, their price will automatically revert to the normal price, but their selected seat will not be removed.
+
+Additionally, if a user buys multiple tickets (e.g., 5 tickets), they will pay for the total quantity first. After the payment is confirmed, they will be able to choose the exact seats and assign a specific name to each individual seat.
+
+
+Final Instruction:
+Please review these answers carefully. Before you generate the 9-point plan or the Phase 1 Prompt, confirm if you understand all these points. If there are any logical conflicts (for example, how early bird seat holds interact with the pay-first-choose-later model), or if you are unsure about any detail, please ask me first. Do not make assumptions.
+
+
+
+
+Thought for a couple of seconds
+I understand the direction
+Eventuz MVP is not a marketplace. It is a single-event registration, payment, seating, ticketing, and check-in system.
+
+The intended core flow is:
+
+Attendee creates an account.
+
+After login, attendee is redirected directly to the specific event details page.
+
+Attendee chooses ticket quantity.
+
+Attendee proceeds to payment through HitPay.
+
+Payment must be confirmed by HitPay webhook.
+
+Only after confirmed payment, attendee can choose exact seats.
+
+For multiple tickets, attendee assigns one name per seat.
+
+QR tickets become downloadable on the success page.
+
+QR tickets are also emailed using SMTP settings configured by Super Admin.
+
+Organizer and invited Staff can scan QR codes for check-in.
+
+Organizer dashboard shows registration, payment, seat, revenue, and check-in metrics.
+
+Super Admin manages platform-level settings, including SMTP configuration.
+
+This is clear overall, but there are a few important logical conflicts and product-rule gaps we need to resolve before creating the 9-point plan or Phase 1 prompt.
+
+Key insight
+The biggest conflict is this:
+
+You want temporary seat reservation during checkout, but the user does not choose exact seats until after payment.
+
+Those two rules cannot both apply to exact seats at checkout unless something is reserved before payment.
+
+So we need to decide what exactly is being reserved during checkout.
+
+Logical conflicts / clarifications needed
+1. Seat reservation conflict
+You said:
+
+Implement temporary seat reservation while user is checking out.
+
+But also: user pays first, then selects exact seats after payment confirmation.
+
+If seats are selected after payment, then the system cannot reserve exact seats during checkout.
+
+So which should the system reserve during checkout?
+
+Option A — Reserve ticket quantity only before payment
+Example:
+
+User buys 5 tickets.
+
+System reserves 5 ticket slots/capacity, not exact seats.
+
+User pays.
+
+After payment, user chooses 5 exact seats.
+
+This matches your pay-first-seat-later flow.
+
+Option B — User selects exact seats before payment
+Example:
+
+User selects Table 5 Seat 1–5.
+
+System holds those seats for 10 minutes.
+
+User pays.
+
+If payment succeeds, seats become locked.
+
+This matches the seat reservation timeout requirement better, but conflicts with your “choose seats after payment” instruction.
+
+My recommendation
+Use Option A for MVP:
+
+Before payment, reserve ticket quantity/capacity only. After payment, allow exact seat selection.
+
+This is cleaner, safer, and avoids unpaid users blocking specific seats.
+
+Please confirm: Should checkout reserve ticket quantity only, not exact seats?
+
+2. Early Bird logic conflict
+You said:
+
+If the user fails to pay within a specific time limit, their price will automatically revert to the normal price, but their selected seat will not be removed.
+
+But in the current flow, the user does not select seats before payment.
+
+So “selected seat will not be removed” conflicts with “pay first, choose seats later.”
+
+We need to clarify what Early Bird preserves when payment expires.
+
+Possible interpretations
+Option A — Early Bird applies before payment, but only to price
+Example:
+
+User starts registration during Early Bird.
+
+Early Bird price is held for 10 minutes.
+
+If not paid within 10 minutes, price changes to regular price.
+
+No seat is affected because seats are selected after payment.
+
+Option B — Early Bird applies after seat selection
+Example:
+
+User selects seats first.
+
+Early Bird price is held temporarily.
+
+If payment expires, price reverts to normal, but selected seats remain attached to the unpaid registration.
+
+This creates a risk: unpaid users may hold valuable seats indefinitely.
+
+My recommendation
+Use Option A for MVP:
+
+Early Bird temporarily holds the discounted price and ticket quantity, not exact seats. If payment is not confirmed before expiry, the registration remains but price recalculates to normal.
+
+Please confirm: Should Early Bird preserve only the registration/ticket quantity, not specific seats?
+
+3. What happens after payment if seats run out?
+Because users pay before choosing exact seats, this risk exists:
+
+User pays for 5 tickets, then only 3 seats remain available.
+
+To prevent this, the system must reserve paid capacity at payment initiation or confirmation.
+
+Recommended rule:
+
+When checkout starts, reserve the number of ticket slots for a short time. If payment succeeds, convert those reserved slots into paid seat-selection rights. The exact seats are chosen after payment.
+
+Question: Should the system prevent payment if there are fewer available ticket slots than the requested quantity?
+
+Recommended answer: yes.
+
+4. How long is the payment/early bird hold?
+We need one or two timeout values.
+
+Please define:
+
+Payment checkout timeout
+Example: 10 minutes, 15 minutes, 30 minutes.
+
+Early Bird price hold timeout
+Should this be the same as checkout timeout, or different?
+
+Recommended MVP:
+
+Checkout/payment hold: 15 minutes
+
+Early Bird price hold: same 15 minutes
+
+If payment is not confirmed within that window, the pending registration expires or reprices.
+
+Question: What timeout should we use?
+
+5. After payment, how long can user delay seat assignment?
+Since exact seats are selected after payment, a user may pay but not immediately assign seats.
+
+We need a rule.
+
+Options
+Option A — Seat assignment required immediately after payment
+Best for operational clarity.
+
+Option B — User can assign seats later
+More flexible, but adds unfinished registration states.
+
+Option C — Organizer can assign seats if attendee does not
+Useful for weddings, but adds admin workload.
+
+Recommended MVP:
+
+After payment, user is redirected to seat assignment immediately. If they leave, they can return later from their account, but tickets are not fully issued until all paid seats have assigned names and exact seats.
+
+Question: Should QR tickets be generated only after all paid seats have exact seats and names assigned?
+
+Recommended answer: yes.
+
+6. Ticket quantity vs seat count
+For exact seating, one paid ticket should equal one seat.
+
+Please confirm:
+
+If user buys 5 tickets, they must assign 5 unique seats and 5 attendee names before QR tickets are generated.
+
+Is that correct?
+
+7. Email behavior
+You want tickets downloadable on success page and sent by email.
+
+Need to clarify email recipient behavior for group purchases.
+
+If one user buys 5 tickets and assigns 5 names, should QR tickets be sent:
+
+Option A — Only to the buyer account email
+Simpler MVP.
+
+Option B — To each assigned attendee email
+Requires collecting email per seat/person.
+
+Option C — Buyer email plus optional attendee emails
+Flexible but more form complexity.
+
+Recommended MVP:
+
+Send all QR tickets to the buyer’s account email. Collect names per seat, not emails per seat.
+
+Question: Do individual seat assignees need their own email addresses, or only names?
+
+8. Super Admin SMTP settings
+This is clear, but it introduces a security consideration.
+
+Recommended MVP Super Admin scope:
+
+Manage organizers
+
+View all events
+
+View platform-level analytics
+
+Configure SMTP settings
+
+Configure global payment/notification settings
+
+View payment webhook logs
+
+Disable users/events if necessary
+
+Not recommended for MVP:
+
+Complex billing plans
+
+Multi-tenant subscription management
+
+Advanced audit dashboards
+
+Custom themes per organizer
+
+Question: Should Super Admin be able to edit event details, or only monitor and disable events?
+
+Recommended MVP: monitor and disable only.
+
+Risks / trade-offs
+Main risk
+The pay-first-seat-later flow is operationally safe for payments, but it requires careful handling of paid users who have not completed seat assignment.
+
+Product trade-off
+Selecting seats before payment feels more natural to users, but it creates unpaid seat-blocking risk.
+
+Paying before seat selection reduces seat-blocking abuse, but the user may ask:
+
+“Why am I paying before choosing my seat?”
+
+To solve this, the UI must clearly say:
+
+“Your ticket quantity is reserved. After payment, you will select your exact seats.”
+
+Clarifications I need before proceeding
+Please answer these:
+
+During checkout, should the system reserve ticket quantity only, not exact seats?
+
+Should Early Bird preserve only the discounted price and ticket quantity, not seats?
+
+What timeout should we use for unpaid checkout / Early Bird price hold?
+
+After payment, should QR tickets be generated only after exact seats and names are assigned?
+
+For group tickets, do we collect names only per seat, or name + email per seat?
+
+Should Super Admin be able to edit events, or only monitor/disable them?
+
+Once these are answered, the MVP scope can be locked cleanly before we move to the 9-point plan.
+
+
+Here are my answers to your clarifying questions:
+
+1. Seat reservation conflict
+Before payment, the system should only reserve the ticket quantity/capacity. Exact seat selection should only be allowed after payment is confirmed.
+
+2. Early Bird logic conflict
+Proceed with Option A for the MVP. Early Bird should preserve only the discounted price and ticket quantity, not specific seats.
+
+3. What happens after payment if seats run out?
+Yes, the system should prevent payment if there are fewer available ticket slots than the requested quantity.
+Important mapping rule: To manage this, we must align the created Ticket Types directly to the seat inventory. For example, if the Organizer creates 10 VIP tickets, there must only be exactly 10 VIP seats available for selection.
+
+4. How long is the payment/early bird hold?
+These timeout durations should be dynamic. The Organizer must be able to edit and configure the time limits (for seat reservations, payment holds, etc.) in their event setup.
+
+5. After payment, how long can user delay seat assignment?
+Proceed with Option B (User can assign seats later). Once payment is confirmed, the user can choose to select their available seats immediately, or they can do it later.
+Crucial Rule: QR tickets will only be generated and sent via email after the user has selected their specific seats and assigned names.
+
+6. Ticket quantity vs seat count
+Confirmed. One paid ticket equals exactly one seat.
+
+7. Email behavior
+Proceed with Option B. QR tickets should be sent to each assigned attendee's email. This means we will require collecting an email address for each specific seat/person during the assignment phase.
+
+8. Super Admin SMTP settings
+The Super Admin should only have the ability to monitor and disable events, not edit them.
+
+Final Instruction:
+Please review these answers. If anything is unclear, or if you need further clarification before writing the 9-point plan, please ask me first. Do not make assumptions.
+
+Thought for a couple of seconds
+I understand the MVP rules clearly
+Your latest answers resolve the main logical conflicts. The clean Eventuz MVP model is now:
+
+Users pay for ticket capacity first, then assign exact seats later. QR tickets are only created after seat assignment is complete.
+
+This is coherent and practical.
+
+Confirmed rules
+1. Single-event flow
+No event marketplace.
+After login, attendees go directly to the specific event details/registration page.
+
+2. Ticket purchase flow
+The attendee flow is:
+
+Create account / log in.
+
+View event details.
+
+Select ticket type and quantity.
+
+System checks available capacity.
+
+System temporarily reserves ticket quantity only.
+
+User pays via HitPay.
+
+HitPay webhook confirms payment.
+
+Paid ticket rights are created.
+
+User assigns exact seats later or immediately.
+
+User enters name + email for each seat/person.
+
+QR tickets are generated only after all seats are assigned.
+
+QR tickets are emailed to each assigned attendee.
+
+3. Seat selection rule
+Exact seats are not selected before payment.
+
+Before payment, the system only reserves capacity.
+
+After payment, the user can choose exact seats from the seat inventory linked to the purchased ticket type.
+
+4. Ticket type-to-seat mapping
+This is now a core business rule:
+
+Ticket Type quantity must equal available seat inventory for that ticket type.
+
+Example:
+
+Organizer creates 10 VIP tickets
+
+System must have exactly 10 VIP seats
+
+A paid VIP ticket holder can only select from VIP seats
+
+This means seats should be categorized or linked by ticket_type_id.
+
+5. Early Bird rule
+Early Bird applies only to:
+
+discounted price
+
+ticket quantity/capacity reservation
+
+It does not reserve exact seats.
+
+If payment is not completed within the configured time limit:
+
+Early Bird price expires
+
+price reverts to normal
+
+exact seats are unaffected because none were selected yet
+
+6. Dynamic timeout settings
+Organizer can configure timing rules in event setup, including:
+
+payment hold duration
+
+ticket/capacity reservation duration
+
+Early Bird price hold duration
+
+These should be event-level settings, not hardcoded.
+
+7. Post-payment seat assignment
+Paid users may assign seats immediately or later.
+
+Important state rule:
+
+Payment confirmed does not automatically mean QR ticket issued.
+
+The system needs a middle status:
+
+paid_unassigned
+
+partially_assigned
+
+assigned_ticket_issued
+
+This prevents confusion between paid orders and completed tickets.
+
+8. Group registration
+If user buys 5 tickets:
+
+they paid for 5 ticket rights
+
+they must assign 5 unique seats
+
+each seat must have:
+
+attendee name
+
+attendee email
+
+each assigned attendee receives their own QR ticket by email
+
+9. Super Admin scope
+Super Admin can:
+
+monitor users
+
+monitor organizers
+
+monitor events
+
+view platform analytics
+
+configure SMTP settings
+
+disable events
+
+disable users if needed
+
+Super Admin cannot:
+
+edit organizer event details
+
+manage seat maps directly
+
+alter registration details
+
+interfere with organizer-owned content except disabling
+
+That is a good MVP boundary.
+
+Key insight
+The MVP now needs to be designed around three separate inventory states, not just “available” and “sold”:
+
+Available capacity
+Ticket slots not reserved, paid, or assigned.
+
+Held capacity
+Ticket quantity temporarily held during checkout / Early Bird window.
+
+Paid unassigned capacity
+Paid ticket rights that reduce available inventory but do not yet have exact seats.
+
+Then exact seats have their own state:
+
+available
+
+assigned
+
+checked in
+
+This separation is critical because your model is pay-first, seat-later.
+
+Remaining clarification needed before the 9-point plan
+Only a few items are still unclear enough to affect the architecture.
+
+1. How will organizers create exact seats?
+For each ticket type, should the organizer create seats by:
+
+Option A — Auto-generate seats from quantity
+Example:
+
+VIP ticket type quantity: 10
+
+System auto-creates VIP Seat 1 to VIP Seat 10
+
+Option B — Organizer manually defines seat labels
+Example:
+
+Table 1 Seat 1
+
+Table 1 Seat 2
+
+Couple Sponsor Table Seat 1
+
+VIP Row A Seat 1
+
+Option C — Hybrid
+System auto-generates seats, but organizer can rename/edit labels.
+
+Recommended MVP: Option C. Auto-generate first, allow simple renaming.
+
+2. Are seats table-based or simple labeled seats?
+For weddings, should seat labels follow a table structure?
+
+Example:
+
+Table 1 - Seat 1
+
+Table 1 - Seat 2
+
+Table 2 - Seat 1
+
+Or should they be generic?
+
+Example:
+
+VIP-001
+
+VIP-002
+
+Regular-001
+
+Recommended MVP: Table-based optional structure, but keep the database flexible.
+
+3. Can one buyer assign tickets to themselves plus others?
+Example:
+
+Buyer purchases 5 tickets.
+
+Can the buyer assign:
+
+1 ticket to themselves
+
+4 tickets to other attendees
+
+I assume yes, but please confirm.
+
+4. What happens if the paid buyer never assigns seats?
+Since seat assignment can happen later, we need a rule for reminders.
+
+Should the system:
+
+Option A — Do nothing
+Organizer manually follows up.
+
+Option B — Send automated reminder emails
+Example: remind buyer every X days or before event date.
+
+Option C — Organizer dashboard shows “Paid but Unassigned” only
+Recommended MVP: Option C first, automated reminders later.
+
+5. Should assigned attendee emails require account creation?
+Example:
+
+Buyer assigns a seat to Maria with maria@email.com.
+
+Does Maria need an Eventuz account?
+
+Recommended MVP: No. Only the buyer needs an account. Assigned attendees receive QR tickets by email.
+
+Risks / trade-offs
+The pay-first-seat-later model is strong against unpaid seat blocking, but it creates a new operational risk: paid but unassigned orders.
+
+That risk is manageable if the organizer dashboard clearly shows:
+
+paid orders needing seat assignment
+
+number of unassigned paid tickets
+
+buyer contact details
+
+event date urgency
+
+Do not overbuild automated reminders yet unless necessary.
+
+Next step
+Please answer these 5 final architecture clarifications:
+
+Seat creation method: auto-generate, manual, or hybrid?
+
+Seat labels: table-based, generic, or both?
+
+Can the buyer assign one ticket to themselves and others to guests?
+
+For paid but unassigned tickets, should MVP use dashboard visibility only, or automated reminders?
+
+Do assigned attendees need accounts, or only the buyer account is required?
+
+After that, the 9-point Eventuz MVP plan can be written cleanly without assumptions.
+
+
+1. How will organizers create exact seats?
+Proceed with Option C (Hybrid). The system should auto-generate seats based on the ticket quantity first, but allow the Organizer to easily rename or edit the seat labels manually.
+
+2. Are seats table-based or simple labeled seats?
+Provide a table-based optional structure, but keep the database flexible so it can handle simple/generic seat labels if the Organizer prefers not to use tables.
+
+3. Can one buyer assign tickets to themselves plus others?
+Yes. A buyer can purchase multiple tickets, assign one seat to themselves, and assign the remaining seats to their guests.
+
+4. What happens if the paid buyer never assigns seats?
+Proceed with Option C. For the MVP, simply show a "Paid but Unassigned" status on the Organizer's dashboard. We will not build automated reminder emails for now.
+
+5. Should assigned attendee emails require account creation?
+No. Only the buyer needs to create an Eventuz account to complete the purchase. The assigned guests do not need accounts; they will simply receive their QR e-tickets via the email address provided by the buyer.
+
+if something is uncleared, make sure to ask me.
+make sure to stay on plan, the masterprompt i sent earlier
+
+Thought for a couple of seconds
+Confirmed: scope is now clear
+I understand the Eventuz MVP rules and there are no remaining blockers before creating the 9-point plan.
+
+We will stay aligned with your master development framework: scope-first, MVP-first, phased, practical, and no broad implementation until the system structure is locked. 
+
+
+Eventuz MVP: Confirmed Product Model
+Core MVP positioning
+Eventuz is a single-event registration and ticketing system for paid events, starting with a wedding/event coordination use case.
+
+It is not an event marketplace.
+
+The MVP focuses on:
+
+attendee account registration
+
+event details page
+
+ticket quantity purchase
+
+HitPay payment confirmation
+
+post-payment seat assignment
+
+QR ticket generation
+
+email delivery
+
+organizer/staff check-in
+
+organizer analytics
+
+Super Admin monitoring and SMTP setup
+
+Final confirmed rules
+1. Attendee access flow
+Attendees must create an account.
+
+After login, they are redirected directly to the specific event details page.
+
+No global event list is needed for MVP.
+
+2. Purchase-before-seat-selection flow
+The attendee does not choose exact seats before payment.
+
+Flow:
+
+Buyer selects ticket type and quantity.
+
+System checks available capacity.
+
+System reserves ticket quantity/capacity only.
+
+Buyer pays through HitPay.
+
+HitPay webhook confirms payment.
+
+Buyer can assign exact seats immediately or later.
+
+QR tickets are only generated after seat assignment is complete.
+
+3. Capacity reservation rule
+Before payment, the system reserves ticket quantity, not specific seats.
+
+If there are not enough available ticket slots, the user cannot proceed to payment.
+
+4. Ticket type and seat inventory mapping
+Ticket type quantity must directly match seat inventory.
+
+Example:
+
+Organizer creates 10 VIP tickets.
+
+System creates or maintains exactly 10 VIP seat records.
+
+VIP buyers can only choose from VIP seats.
+
+This rule prevents overselling.
+
+5. Seat creation model
+Use a hybrid seat setup:
+
+System auto-generates seats from ticket quantity.
+
+Organizer can rename or edit seat labels manually.
+
+Seating can be table-based or generic.
+
+Example table-based:
+
+Table 1 - Seat 1
+
+Table 1 - Seat 2
+
+Example generic:
+
+VIP-001
+
+VIP-002
+
+6. Early Bird pricing
+Early Bird applies to:
+
+discounted price
+
+reserved ticket quantity
+
+It does not reserve exact seats.
+
+If the payment window expires:
+
+Early Bird price is no longer valid.
+
+Price reverts to regular price.
+
+No selected seat is lost because exact seats were not selected yet.
+
+7. Dynamic timeout settings
+Organizers can configure event-level timeout settings, including:
+
+payment hold duration
+
+capacity reservation duration
+
+Early Bird price hold duration
+
+These should not be hardcoded.
+
+8. Group registration
+A buyer can purchase multiple tickets.
+
+Example: buyer purchases 5 tickets.
+
+After payment, buyer must assign:
+
+5 unique seats
+
+5 attendee names
+
+5 attendee email addresses
+
+The buyer may assign one ticket to themselves and the rest to guests.
+
+Guests do not need Eventuz accounts.
+
+9. QR ticket generation and email delivery
+QR tickets are generated only after:
+
+payment is confirmed
+
+exact seats are selected
+
+attendee names are assigned
+
+attendee emails are provided
+
+Each assigned attendee receives their own QR e-ticket by email.
+
+Tickets are also downloadable after successful assignment.
+
+Super Admin configures SMTP settings.
+
+Key insight
+The MVP should be modeled around paid seat rights, not immediate seat ownership.
+
+That means the system has two separate stages:
+
+Stage 1: Purchase right
+The buyer pays for a number of ticket rights.
+
+Status: paid_unassigned
+
+Stage 2: Seat assignment
+The buyer converts those paid rights into actual named QR tickets.
+
+Status: assigned_ticket_issued
+
+This separation is the heart of Eventuz’s logic.
+
+Recommended core statuses
+Registration / Order statuses
+Status	Meaning
+draft	Buyer started registration but has not checked out
+capacity_held	Ticket quantity is temporarily reserved
+payment_pending	HitPay checkout started
+payment_failed	Payment failed or expired
+paid_unassigned	Payment confirmed, but seats not fully assigned
+partially_assigned	Some paid tickets have assigned seats
+completed	All seats assigned and QR tickets issued
+cancelled	Registration/order cancelled
+Seat statuses
+Status	Meaning
+available	Seat can be selected
+assigned	Seat assigned to a paid ticket
+checked_in	Ticket holder has entered the venue
+Ticket statuses
+Status	Meaning
+not_generated	Seat assignment incomplete
+issued	QR ticket created and emailed
+checked_in	QR ticket has been scanned successfully
+voided	Ticket disabled/cancelled
+Risks / trade-offs
+1. Paid but unassigned users
+Because buyers can assign seats later, organizers need a clear dashboard status for:
+
+Paid but Unassigned
+
+For MVP, this is enough. Automated reminders should wait.
+
+2. Buyer experience risk
+Users may wonder why they pay before choosing seats.
+
+The UI must clearly explain:
+
+“Your ticket quantity will be reserved first. After successful payment, you can select exact seats and assign attendee details.”
+
+3. Seat inventory consistency
+Ticket quantity and seat inventory must stay synchronized.
+
+If Organizer edits ticket quantity, the system must handle seat generation carefully.
+
+Example rule:
+
+Increasing ticket quantity can add new seats.
+
+Decreasing quantity should only be allowed if the removed seats are still unassigned.
+
+4. Email delivery dependency
+SMTP configuration is required for ticket delivery.
+
+Super Admin must configure and test SMTP before events go live.
+
+5. Webhook reliability
+Tickets must never be issued from frontend success redirects alone.
+
+Only HitPay webhook confirmation should trigger paid status.
+
+Recommended next step
+We can now move to the 9-point Eventuz MVP development plan.
+
+The next output should be:
+
+System summary
+
+MVP scope
+
+Out-of-scope list
+
+User roles and permissions
+
+Core workflows
+
+Business rules
+
+Module breakdown
+
+Data model draft
+
+Phase-by-phase build plan
+
+After that, we should create the Phase 1 implementation prompt for the foundation: authentication, roles, event model, ticket types, and seat inventory.
+
+
+proceed
+
+Thought for a couple of seconds
+Eventuz MVP 9-Point Development Plan
+1. System summary
+Eventuz is a single-event registration, payment, seat assignment, QR ticketing, and check-in system for event organizers, starting with wedding/event coordination in the Philippines.
+
+The MVP solves these problems:
+
+manual payment verification
+
+spreadsheet-based attendee tracking
+
+seat overselling / inventory confusion
+
+delayed ticket issuance
+
+stressful venue check-in
+
+lack of real-time organizer visibility
+
+The MVP will focus on one event at a time, not a public event marketplace.
+
+Core system flow:
+
+Attendee creates account → views assigned event → selects ticket type and quantity → pays through HitPay → payment is confirmed by webhook → attendee assigns seats and attendee details → QR tickets are generated → tickets are emailed → organizer/staff scan tickets at venue.
+
+This follows your master framework: clarify scope first, build in phases, separate must-have from later features, and avoid broad implementation prompts. 
+
+
+2. MVP scope
+Must-have MVP features
+Area	MVP Requirement
+Attendee accounts	Buyer must create an account before purchasing
+Single-event access	After login, attendee goes directly to the event page
+Event setup	Organizer can create and configure one event
+Ticket types	Organizer can create ticket types with quantity, price, and early bird settings
+Seat inventory	Seat inventory must match ticket type quantity
+Seat generation	Seats are auto-generated and editable by organizer
+Seat labels	Supports table-based or generic labels
+Ticket purchase	Buyer selects ticket type and quantity before payment
+Capacity hold	System temporarily reserves ticket quantity, not exact seats
+Payment	HitPay checkout and webhook confirmation
+Early bird pricing	Early bird discount is held only within configured time limit
+Post-payment assignment	Buyer assigns exact seats after payment
+Group registration	Buyer can assign tickets to self and guests
+Guest details	Each assigned seat requires attendee name and email
+QR ticketing	QR ticket generated only after seat assignment
+Email delivery	Each assigned attendee receives their QR ticket by email
+SMTP settings	Super Admin configures SMTP settings
+Organizer dashboard	Shows registrations, payment status, seat status, revenue, and check-ins
+Staff access	Organizer can invite staff by email for QR scanning
+Check-in	Organizer/staff can scan QR tickets
+Super Admin	Can monitor and disable events/users, configure SMTP
+3. Out of scope for MVP
+These should not be built yet:
+
+Feature	Reason
+Public event marketplace	MVP is single-event flow
+Multiple event discovery page	Not needed yet
+Complex seating map designer	Use generated/editable seat labels first
+Drag-and-drop floor plan	Too heavy for MVP
+Automated reminder emails	Dashboard visibility is enough for now
+SMS ticket delivery	Adds cost and integration complexity
+Apple Wallet / Google Wallet	Nice-to-have later
+Multiple payment gateways	HitPay only for MVP
+Organizer subscription billing	Not needed for initial validation
+Advanced analytics	Basic metrics first
+Super Admin event editing	Super Admin should monitor/disable only
+Guest account creation	Only buyer needs an account
+Offline QR scanning	Can be added later
+Refund management	Defer unless required for launch
+Promo codes beyond early bird	Early bird is enough for MVP
+4. User roles and permissions
+Role matrix
+Capability	Attendee Buyer	Assigned Guest	Organizer	Staff	Super Admin
+Create account	Yes	No	Yes	Invited	Yes
+View event page	Yes	Ticket only	Yes	Limited	Yes
+Buy tickets	Yes	No	No	No	No
+Pay via HitPay	Yes	No	No	No	No
+Assign seats	Yes, for own order	No	Optional view only	No	No
+Receive QR ticket	Yes	Yes	No	No	No
+Scan QR ticket	No	No	Yes	Yes	No
+Create event	No	No	Yes	No	No
+Configure ticket types	No	No	Yes	No	No
+Configure seat labels	No	No	Yes	No	No
+Invite staff	No	No	Yes	No	No
+View event analytics	No	No	Yes	Limited/no	Platform-level
+Configure SMTP	No	No	No	No	Yes
+Disable event	No	No	No	No	Yes
+Edit organizer event details	No	No	Yes	No	No
+Role definitions
+Attendee Buyer
+The registered account holder who purchases one or more tickets.
+
+Can:
+
+create account
+
+log in
+
+access the event page
+
+buy tickets
+
+pay through HitPay
+
+assign paid seats
+
+enter attendee names and emails
+
+download QR tickets after assignment
+
+Cannot:
+
+access organizer dashboard
+
+scan tickets
+
+edit event configuration
+
+select exact seats before payment
+
+Assigned Guest
+A guest assigned to a paid seat by the buyer.
+
+Can:
+
+receive QR ticket by email
+
+present QR ticket at the event
+
+Cannot:
+
+log in unless they create their own separate buyer account later
+
+modify seat assignment
+
+access dashboard
+
+Organizer
+The event owner/coordinator.
+
+Can:
+
+create and configure event
+
+create ticket types
+
+configure early bird pricing
+
+configure timeout settings
+
+manage seat labels
+
+view attendees/orders/payments
+
+monitor paid but unassigned orders
+
+invite staff
+
+scan QR tickets
+
+view event analytics
+
+Cannot:
+
+configure SMTP
+
+access other organizers’ events
+
+edit global platform settings
+
+Staff
+Invited by organizer.
+
+Can:
+
+log in or access staff scanning flow
+
+scan QR codes
+
+check in attendees
+
+see validation result
+
+Cannot:
+
+edit event
+
+view full revenue analytics
+
+manage ticket types
+
+invite other staff
+
+Super Admin
+Platform-level admin.
+
+Can:
+
+view all organizers
+
+view all events
+
+monitor system usage
+
+configure SMTP
+
+disable events
+
+disable users
+
+view platform analytics
+
+Cannot:
+
+edit organizer event details
+
+assign seats
+
+alter attendee orders manually in MVP
+
+5. Core workflows
+Workflow A: Organizer creates event
+Organizer logs in.
+
+Organizer creates event.
+
+Organizer enters event details:
+
+name
+
+date/time
+
+venue
+
+description
+
+branding/basic image
+
+Organizer configures timeout settings:
+
+capacity hold duration
+
+payment hold duration
+
+early bird hold duration
+
+Organizer creates ticket types.
+
+System generates matching seat inventory.
+
+Organizer edits seat labels if needed.
+
+Organizer publishes event.
+
+System generates attendee access link.
+
+Workflow B: Buyer registers and starts purchase
+Buyer opens event link.
+
+Buyer creates account or logs in.
+
+Buyer is redirected to the event page.
+
+Buyer selects ticket type.
+
+Buyer selects quantity.
+
+System checks capacity.
+
+If enough capacity exists, system creates a temporary capacity hold.
+
+Buyer proceeds to HitPay checkout.
+
+Order status becomes payment_pending.
+
+Workflow C: Payment succeeds
+HitPay sends successful webhook.
+
+System verifies webhook.
+
+System marks payment as confirmed.
+
+Capacity hold becomes paid ticket rights.
+
+Order status becomes paid_unassigned.
+
+Buyer is redirected or shown next step:
+
+assign seats now
+
+assign seats later
+
+No QR tickets are generated yet.
+
+Workflow D: Payment fails or expires
+Buyer starts payment but does not complete in time.
+
+Payment hold expires.
+
+Capacity hold is released.
+
+If early bird price hold expires, price reverts to normal.
+
+Order status becomes payment_failed or expired.
+
+Buyer may restart checkout at the current valid price.
+
+Workflow E: Buyer assigns seats
+Buyer opens seat assignment page.
+
+System shows available seats for the purchased ticket type.
+
+Buyer selects exact seats equal to purchased quantity.
+
+Buyer enters name and email for each assigned person.
+
+Buyer may assign one seat to self and others to guests.
+
+System validates:
+
+seat belongs to correct ticket type
+
+seat is available
+
+number of assigned seats equals paid quantity
+
+each attendee has name and email
+
+System creates QR tickets.
+
+Order status becomes completed.
+
+Workflow F: Ticket delivery
+System generates one secure QR token per assigned seat.
+
+Each attendee receives their own QR ticket by email.
+
+Buyer can download tickets from success/assignment page.
+
+Ticket status becomes issued.
+
+Workflow G: Check-in
+Organizer or Staff opens scanner page.
+
+QR code is scanned.
+
+System validates ticket token.
+
+If valid and unused:
+
+ticket status becomes checked_in
+
+seat status can become checked_in
+
+check-in timestamp is recorded
+
+If already used:
+
+system shows duplicate scan warning
+
+If invalid or voided:
+
+system rejects ticket
+
+Workflow H: Organizer monitors dashboard
+Organizer dashboard shows:
+
+total registrations
+
+paid attendees
+
+pending/failed payments
+
+paid but unassigned orders
+
+available seats/tickets
+
+revenue collected
+
+issued tickets
+
+check-in count
+
+Workflow I: Super Admin monitors platform
+Super Admin can:
+
+view all events
+
+view all organizers
+
+view platform totals
+
+configure SMTP
+
+disable event
+
+disable user
+
+Super Admin cannot edit organizer event content in MVP.
+
+6. Business rules
+Payment and ticket rules
+Tickets must never be issued before successful HitPay webhook confirmation.
+
+Frontend success redirect is not enough to mark payment as paid.
+
+Payment confirmation must come from verified webhook.
+
+One paid ticket equals exactly one seat.
+
+QR ticket is generated only after:
+
+payment is confirmed
+
+exact seat is selected
+
+attendee name is provided
+
+attendee email is provided
+
+Each QR ticket must have a secure unique token.
+
+A QR ticket can only be checked in once.
+
+Capacity and seat rules
+Ticket type quantity must match seat inventory count.
+
+A buyer can only pay if enough capacity exists.
+
+Before payment, the system reserves capacity only.
+
+Before payment, exact seats are not selected.
+
+After payment, buyer selects exact seats.
+
+Buyer can assign seats immediately or later.
+
+Paid but unassigned orders must reduce available capacity.
+
+Assigned seats are no longer available to others.
+
+Decreasing ticket quantity should be blocked if affected seats are already assigned or paid against.
+
+Increasing ticket quantity should generate additional seat records.
+
+Early Bird rules
+Early Bird discount applies to price only.
+
+Early Bird does not reserve exact seats.
+
+Early Bird price is held only within organizer-configured time limit.
+
+If buyer fails to pay within the configured time limit, price reverts to regular price.
+
+Early Bird eligibility should be calculated at checkout/order creation.
+
+Final paid amount must match the valid price at payment confirmation.
+
+Seat assignment rules
+Buyer must assign exactly the number of seats purchased.
+
+Buyer may assign one seat to self and others to guests.
+
+Each assigned seat requires:
+
+attendee name
+
+attendee email
+
+Assigned guests do not need accounts.
+
+QR tickets are emailed to assigned attendee emails, not only the buyer.
+
+Partial assignment may be allowed, but ticket issuance only happens per fully assigned ticket.
+
+Order should show partially_assigned if not all paid seats are assigned.
+
+Recommended MVP simplification:
+
+Allow saving partial assignment, but only generate QR tickets for completed assigned seats.
+
+Alternative stricter version:
+
+Require all seats to be assigned before generating any QR tickets.
+
+I recommend the stricter version for MVP to reduce edge cases.
+
+Staff rules
+Organizer can invite staff by email.
+
+Staff can scan tickets for assigned event only.
+
+Staff cannot edit event settings.
+
+Staff cannot view full revenue dashboard.
+
+Staff scan activity should be logged.
+
+Super Admin rules
+Super Admin can configure SMTP.
+
+Super Admin can monitor events and users.
+
+Super Admin can disable events.
+
+Super Admin cannot edit event details.
+
+Disabled events should block new registrations.
+
+Existing ticket validity after event disablement should be a deliberate admin decision later; for MVP, disabling should block public access and new purchases.
+
+7. Module breakdown
+Module 1: Authentication and roles
+Purpose:
+
+handle buyer, organizer, staff, and super admin access
+
+Includes:
+
+account creation
+
+login/logout
+
+role-based access control
+
+post-login redirect logic
+
+staff invite acceptance
+
+Priority: Phase 1
+
+Module 2: Event management
+Purpose:
+
+allow organizer to create and publish the event
+
+Includes:
+
+event details
+
+event status
+
+event settings
+
+event visibility
+
+public event link
+
+single-event redirect behavior
+
+Priority: Phase 1
+
+Module 3: Ticket type management
+Purpose:
+
+define purchasable categories
+
+Includes:
+
+ticket type name
+
+regular price
+
+early bird price
+
+quantity
+
+sales status
+
+linked seat inventory
+
+capacity validation
+
+Priority: Phase 1
+
+Module 4: Seat inventory
+Purpose:
+
+manage exact seats after payment
+
+Includes:
+
+auto-generated seats
+
+editable labels
+
+optional table grouping
+
+ticket type linkage
+
+availability status
+
+Priority: Phase 1 / Phase 2
+
+Module 5: Registration and order management
+Purpose:
+
+track buyer purchase intent and order lifecycle
+
+Includes:
+
+order creation
+
+selected ticket type
+
+quantity
+
+capacity hold
+
+status tracking
+
+paid but unassigned state
+
+Priority: Phase 2
+
+Module 6: Payment integration
+Purpose:
+
+connect HitPay checkout and webhook confirmation
+
+Includes:
+
+checkout session creation
+
+payment pending status
+
+webhook verification
+
+payment confirmed status
+
+failed/expired handling
+
+Priority: Phase 3
+
+Module 7: Early Bird pricing
+Purpose:
+
+calculate and preserve discounted price during valid hold period
+
+Includes:
+
+early bird price
+
+early bird availability window
+
+price hold expiration
+
+fallback to regular price
+
+Priority: Phase 3
+
+Module 8: Seat assignment
+Purpose:
+
+allow paid buyers to assign exact seats and attendee details
+
+Includes:
+
+seat selection page
+
+attendee name/email forms
+
+validation
+
+assignment status
+
+completed assignment trigger
+
+Priority: Phase 4
+
+Module 9: QR ticketing
+Purpose:
+
+generate secure scannable tickets
+
+Includes:
+
+QR token generation
+
+ticket PDF/image/display page
+
+ticket download
+
+email trigger
+
+ticket status
+
+Priority: Phase 5
+
+Module 10: Email / SMTP
+Purpose:
+
+deliver QR tickets and system emails
+
+Includes:
+
+Super Admin SMTP settings
+
+test email
+
+ticket email template
+
+staff invite email
+
+Priority: Phase 5
+
+Module 11: Check-in scanner
+Purpose:
+
+validate QR tickets at venue
+
+Includes:
+
+scanner page
+
+token lookup
+
+duplicate scan protection
+
+check-in logs
+
+staff access
+
+Priority: Phase 6
+
+Module 12: Organizer dashboard
+Purpose:
+
+operational visibility
+
+Includes:
+
+total registrations
+
+paid attendees
+
+pending/failed payments
+
+paid but unassigned
+
+available seats
+
+revenue
+
+check-in count
+
+Priority: Phase 6
+
+Module 13: Super Admin dashboard
+Purpose:
+
+platform monitoring and control
+
+Includes:
+
+users
+
+organizers
+
+events
+
+SMTP settings
+
+disable users/events
+
+platform metrics
+
+Priority: Phase 7
+
+8. Data model draft
+This is a planning draft, not final SQL yet.
+
+users
+Stores all authenticated users.
+
+Core fields:
+
+id
+
+email
+
+password_hash or auth provider ID
+
+full_name
+
+role
+
+attendee
+
+organizer
+
+staff
+
+super_admin
+
+status
+
+active
+
+disabled
+
+created_at
+
+updated_at
+
+events
+Stores event configuration.
+
+Core fields:
+
+id
+
+organizer_id
+
+name
+
+description
+
+venue
+
+event_date
+
+event_time
+
+status
+
+draft
+
+published
+
+disabled
+
+completed
+
+capacity_hold_minutes
+
+payment_hold_minutes
+
+early_bird_hold_minutes
+
+public_slug
+
+created_at
+
+updated_at
+
+ticket_types
+Stores ticket categories.
+
+Core fields:
+
+id
+
+event_id
+
+name
+
+description
+
+regular_price
+
+early_bird_price
+
+early_bird_start_at
+
+early_bird_end_at
+
+quantity
+
+status
+
+active
+
+inactive
+
+sold_out
+
+created_at
+
+updated_at
+
+Business constraint:
+
+ticket_types.quantity should equal count of linked seats in seats.
+
+seats
+Stores exact seat inventory.
+
+Core fields:
+
+id
+
+event_id
+
+ticket_type_id
+
+table_label
+
+seat_label
+
+display_label
+
+status
+
+available
+
+assigned
+
+checked_in
+
+disabled
+
+created_at
+
+updated_at
+
+Examples:
+
+table_label: Table 1
+
+seat_label: Seat 3
+
+display_label: Table 1 - Seat 3
+
+Or generic:
+
+display_label: VIP-001
+
+orders
+Stores purchase/order lifecycle.
+
+Core fields:
+
+id
+
+buyer_user_id
+
+event_id
+
+ticket_type_id
+
+quantity
+
+unit_price_locked
+
+total_amount
+
+pricing_type
+
+early_bird
+
+regular
+
+status
+
+draft
+
+capacity_held
+
+payment_pending
+
+payment_failed
+
+expired
+
+paid_unassigned
+
+partially_assigned
+
+completed
+
+cancelled
+
+capacity_hold_expires_at
+
+payment_expires_at
+
+early_bird_price_expires_at
+
+created_at
+
+updated_at
+
+payments
+Stores payment records.
+
+Core fields:
+
+id
+
+order_id
+
+provider
+
+hitpay
+
+provider_payment_id
+
+provider_checkout_id
+
+amount
+
+currency
+
+status
+
+pending
+
+succeeded
+
+failed
+
+expired
+
+webhook_received_at
+
+raw_webhook_payload
+
+created_at
+
+updated_at
+
+seat_assignments
+Links paid orders to exact seats and attendee details.
+
+Core fields:
+
+id
+
+order_id
+
+seat_id
+
+attendee_name
+
+attendee_email
+
+assigned_by_user_id
+
+status
+
+assigned
+
+ticket_issued
+
+cancelled
+
+created_at
+
+updated_at
+
+Business constraints:
+
+one seat can only have one active assignment
+
+assignment count cannot exceed paid order quantity
+
+seat ticket type must match order ticket type
+
+tickets
+Stores issued QR tickets.
+
+Core fields:
+
+id
+
+order_id
+
+seat_assignment_id
+
+event_id
+
+ticket_type_id
+
+seat_id
+
+attendee_name
+
+attendee_email
+
+qr_token_hash
+
+ticket_code
+
+status
+
+issued
+
+checked_in
+
+voided
+
+issued_at
+
+emailed_at
+
+checked_in_at
+
+created_at
+
+updated_at
+
+Security note:
+
+Store token hash where possible. Do not expose predictable ticket IDs as QR validation tokens.
+
+check_ins
+Stores scan activity.
+
+Core fields:
+
+id
+
+ticket_id
+
+event_id
+
+scanned_by_user_id
+
+scan_result
+
+valid
+
+duplicate
+
+invalid
+
+voided
+
+scanned_at
+
+device_info
+
+staff_invitations
+Stores organizer staff invites.
+
+Core fields:
+
+id
+
+event_id
+
+organizer_id
+
+email
+
+status
+
+pending
+
+accepted
+
+expired
+
+revoked
+
+invite_token_hash
+
+expires_at
+
+accepted_user_id
+
+created_at
+
+updated_at
+
+event_staff
+Links staff users to events.
+
+Core fields:
+
+id
+
+event_id
+
+user_id
+
+role
+
+scanner
+
+status
+
+active
+
+revoked
+
+created_at
+
+updated_at
+
+smtp_settings
+Stores Super Admin SMTP configuration.
+
+Core fields:
+
+id
+
+host
+
+port
+
+username
+
+encrypted_password
+
+from_email
+
+from_name
+
+encryption_type
+
+tls
+
+ssl
+
+none
+
+is_active
+
+last_tested_at
+
+created_at
+
+updated_at
+
+Security note:
+
+SMTP passwords must be encrypted, not stored as plain text.
+
+audit_logs
+Recommended for critical operations.
+
+Core fields:
+
+id
+
+actor_user_id
+
+action
+
+entity_type
+
+entity_id
+
+metadata
+
+created_at
+
+Track:
+
+payment webhook processed
+
+ticket issued
+
+ticket checked in
+
+event disabled
+
+SMTP settings changed
+
+staff invited
+
+9. Phase-by-phase build plan
+Phase 1: Foundation, roles, event setup, ticket types, seat inventory
+Goal:
+
+Build the base system structure.
+
+Includes:
+
+authentication
+
+user roles
+
+organizer event creation
+
+event settings
+
+ticket type creation
+
+auto-generated seat inventory
+
+editable seat labels
+
+table-based or generic seat label support
+
+Deliverable:
+
+Organizer can create an event, define ticket types, and generate/edit matching seat inventory.
+
+Do not build payment yet.
+
+Phase 2: Attendee account and registration intent
+Goal:
+
+Build attendee-facing event access and purchase intent.
+
+Includes:
+
+attendee registration/login
+
+direct redirect to event details page
+
+ticket type display
+
+quantity selector
+
+capacity validation
+
+capacity hold creation
+
+order status lifecycle before payment
+
+Deliverable:
+
+Attendee can create account, view event, choose ticket quantity, and create a pending order with capacity held.
+
+Do not build HitPay yet unless Phase 2 is stable.
+
+Phase 3: HitPay payment and Early Bird logic
+Goal:
+
+Connect payments safely.
+
+Includes:
+
+early bird price calculation
+
+organizer-configured hold durations
+
+HitPay checkout creation
+
+payment pending status
+
+webhook verification
+
+successful payment confirmation
+
+failed/expired payment handling
+
+release expired capacity holds
+
+Deliverable:
+
+System only marks orders as paid after verified HitPay webhook.
+
+Highest-risk phase.
+
+Phase 4: Post-payment seat assignment
+Goal:
+
+Allow paid buyers to assign exact seats.
+
+Includes:
+
+paid unassigned dashboard state
+
+buyer seat assignment page
+
+seat selection by ticket type
+
+name/email per seat
+
+validation rules
+
+partial/full assignment statuses
+
+Deliverable:
+
+Paid buyer can assign exact seats and attendee details after payment.
+
+Phase 5: QR ticket generation and email delivery
+Goal:
+
+Issue actual tickets only after assignment.
+
+Includes:
+
+QR token generation
+
+ticket record creation
+
+downloadable QR ticket
+
+SMTP settings
+
+email ticket template
+
+send one QR ticket per attendee email
+
+Deliverable:
+
+Assigned attendees receive QR tickets by email and buyer can download tickets.
+
+Phase 6: QR scanner and organizer dashboard
+Goal:
+
+Support event-day operations.
+
+Includes:
+
+organizer scanner
+
+staff scanner
+
+QR validation
+
+duplicate scan detection
+
+check-in logging
+
+organizer analytics:
+
+total registrations
+
+paid attendees
+
+pending/failed payments
+
+paid but unassigned
+
+available seats/tickets
+
+revenue collected
+
+check-in count
+
+Deliverable:
+
+Organizer and staff can validate tickets and monitor event status.
+
+Phase 7: Staff invitations and Super Admin
+Goal:
+
+Complete admin controls.
+
+Includes:
+
+organizer invites staff by email
+
+staff accepts invitation
+
+staff gets scanner-only access
+
+Super Admin dashboard
+
+SMTP configuration
+
+disable event/user controls
+
+Deliverable:
+
+Staff scanning and Super Admin monitoring are functional.
+
+Phase 8: QA, edge cases, and hardening
+Goal:
+
+Validate business-critical flows.
+
+Test cases:
+
+cannot buy more than available capacity
+
+capacity hold expires correctly
+
+early bird price expires correctly
+
+payment webhook creates paid status
+
+frontend redirect alone does not issue ticket
+
+paid buyer can assign seats later
+
+same seat cannot be assigned twice
+
+QR ticket cannot be scanned twice
+
+disabled event blocks new registrations
+
+staff cannot access organizer settings
+
+SMTP failure does not corrupt ticket records
+
+Deliverable:
+
+MVP is stable enough for controlled pilot use.
+
+Phase 9: Deployment and handover
+Goal:
+
+Prepare launch.
+
+Includes:
+
+environment variables
+
+HitPay keys
+
+webhook URL setup
+
+SMTP setup
+
+admin account setup
+
+seed Super Admin
+
+organizer handover guide
+
+scanner usage guide
+
+backup and monitoring checklist
+
+Deliverable:
+
+Eventuz can be deployed and used for a real pilot event.
+
+Recommended implementation order
+Build in this exact order:
+
+Auth + roles
+
+Event creation
+
+Ticket types
+
+Seat inventory generation/editing
+
+Attendee event access
+
+Order + capacity hold
+
+HitPay + webhook
+
+Post-payment seat assignment
+
+QR ticket generation
+
+Email delivery
+
+Scanner
+
+Dashboards
+
+Super Admin
+
+Do not start with dashboards or UI polish.
+
+Phase 1 Prompt for AI Coding Tool / Bolt
+Context
+We are building Eventuz, a single-event registration, payment, seat assignment, QR ticketing, and check-in system for event organizers.
+
+We are starting from scratch.
+
+The MVP must follow a phased development approach. Do not build the entire system at once. For this phase, focus only on the foundation: authentication, roles, event setup, ticket types, and seat inventory.
+
+Core product rule:
+
+Organizers create ticket types, and each ticket type must have matching seat inventory. If an Organizer creates 10 VIP tickets, the system must generate exactly 10 VIP seats.
+
+Exact seat selection by attendees happens later, after payment. Do not build attendee purchase, payment, QR tickets, or check-in in this phase.
+
+Objective
+Build the foundational Eventuz MVP structure:
+
+User roles
+
+Organizer event creation
+
+Event settings
+
+Ticket type creation
+
+Automatic seat inventory generation
+
+Editable seat labels
+
+Scope
+Must include
+Authentication and roles
+Create role support for:
+
+attendee
+
+organizer
+
+staff
+
+super_admin
+
+For this phase, only Organizer and Super Admin screens need to be functional.
+
+Attendee and Staff roles may exist in the data model but do not need full workflows yet.
+
+Organizer event setup
+Organizer must be able to create and edit an event with:
+
+event name
+
+description
+
+venue
+
+event date
+
+event time
+
+status:
+
+draft
+
+published
+
+disabled
+
+public slug or event access identifier
+
+Event timeout settings
+Organizer must be able to configure event-level timing settings:
+
+capacity hold duration in minutes
+
+payment hold duration in minutes
+
+early bird price hold duration in minutes
+
+These values must be editable per event.
+
+Do not hardcode timeout values.
+
+Ticket type management
+Organizer must be able to create ticket types with:
+
+ticket type name
+
+description
+
+regular price
+
+early bird price
+
+early bird start date/time
+
+early bird end date/time
+
+quantity
+
+status:
+
+active
+
+inactive
+
+sold_out
+
+Seat inventory generation
+When a ticket type is created, the system must automatically generate seat records equal to the ticket type quantity.
+
+Example:
+
+Ticket type: VIP
+
+Quantity: 10
+
+Generate 10 seats linked to that ticket type
+
+Seats should be linked to:
+
+event
+
+ticket type
+
+Flexible seat labels
+Support both table-based and generic labels.
+
+Seat fields should support:
+
+table label, optional
+
+seat label
+
+display label
+
+Examples:
+
+Table-based:
+
+Table 1 - Seat 1
+
+Table 1 - Seat 2
+
+Generic:
+
+VIP-001
+
+VIP-002
+
+The Organizer should be able to rename/edit generated seat labels.
+
+Ticket quantity and seat inventory synchronization
+Implement these rules:
+
+Ticket type quantity must match the number of linked seat records.
+
+If ticket quantity increases, generate additional seats.
+
+If ticket quantity decreases, only allow deletion/removal of unassigned available seats.
+
+For Phase 1, since no attendee assignment exists yet, all generated seats can be considered available.
+
+Prepare the logic so future phases can prevent deleting assigned seats.
+
+Constraints
+Do not build:
+
+attendee registration flow
+
+attendee ticket purchase
+
+HitPay integration
+
+payment webhook
+
+QR ticket generation
+
+email sending
+
+SMTP setup
+
+staff invitation
+
+scanner page
+
+organizer analytics dashboard
+
+Super Admin full dashboard
+
+Do not create a public marketplace or event list.
+
+Do not allow attendees to select seats in this phase.
+
+Do not issue tickets.
+
+Do not overbuild seating maps, drag-and-drop layouts, or visual floor plans.
+
+Do not modify unrelated parts once created.
+
+Keep the implementation modular so future phases can add payment and seat assignment cleanly.
+
+Recommended data entities for Phase 1
+Create or prepare these entities/tables:
+
+users
+Fields:
+
+id
+
+email
+
+full_name
+
+role
+
+status
+
+created_at
+
+updated_at
+
+Roles:
+
+attendee
+
+organizer
+
+staff
+
+super_admin
+
+Statuses:
+
+active
+
+disabled
+
+events
+Fields:
+
+id
+
+organizer_id
+
+name
+
+description
+
+venue
+
+event_date
+
+event_time
+
+status
+
+capacity_hold_minutes
+
+payment_hold_minutes
+
+early_bird_hold_minutes
+
+public_slug
+
+created_at
+
+updated_at
+
+Statuses:
+
+draft
+
+published
+
+disabled
+
+ticket_types
+Fields:
+
+id
+
+event_id
+
+name
+
+description
+
+regular_price
+
+early_bird_price
+
+early_bird_start_at
+
+early_bird_end_at
+
+quantity
+
+status
+
+created_at
+
+updated_at
+
+Statuses:
+
+active
+
+inactive
+
+sold_out
+
+seats
+Fields:
+
+id
+
+event_id
+
+ticket_type_id
+
+table_label
+
+seat_label
+
+display_label
+
+status
+
+created_at
+
+updated_at
+
+Statuses:
+
+available
+
+assigned
+
+checked_in
+
+disabled
+
+For Phase 1, generated seats should default to available.
+
+UI requirements for Phase 1
+Create these screens only:
+
+Organizer dashboard shell
+Purpose:
+
+entry point for organizer
+
+show created events
+
+allow create/edit event
+
+Keep it simple.
+
+Event setup page
+Sections:
+
+Event details
+
+Timeout settings
+
+Ticket types
+
+Seat inventory
+
+Ticket type form
+Allow organizer to:
+
+create ticket type
+
+edit ticket type
+
+set quantity
+
+configure early bird pricing
+
+activate/deactivate ticket type
+
+Seat inventory editor
+Allow organizer to:
+
+view generated seats by ticket type
+
+edit table label
+
+edit seat label
+
+edit display label
+
+save changes
+
+No visual floor plan needed.
+
+Use a simple table/list editor.
+
+Deliverable
+A working Phase 1 foundation where:
+
+Organizer can create an event.
+
+Organizer can configure event timeout settings.
+
+Organizer can create ticket types.
+
+System auto-generates seats based on ticket type quantity.
+
+Organizer can edit generated seat labels.
+
+Ticket type quantity and seat inventory stay synchronized.
+
+Roles are prepared for future attendee, staff, and super admin flows.
+
+Acceptance criteria
+Phase 1 is complete when:
+
+Organizer can create a draft event.
+
+Organizer can publish an event.
+
+Organizer can configure:
+
+capacity hold duration
+
+payment hold duration
+
+early bird hold duration
+
+Organizer can create a ticket type with quantity.
+
+Creating a ticket type automatically creates matching seat records.
+
+A ticket type with quantity 10 creates exactly 10 seats.
+
+Increasing quantity from 10 to 15 creates exactly 5 additional seats.
+
+Decreasing quantity from 15 to 10 removes or disables exactly 5 available seats.
+
+Organizer can edit seat display labels.
+
+Seats remain linked to the correct event and ticket type.
+
+Attendee purchase/payment/QR features are not built yet.
+
+No marketplace/event list is created.
+
+Key implementation warning
+Do not treat seats as sold during Phase 1.
+
+For now, seats are only inventory records.
+
+The future flow will be:
+
+ticket quantity purchase → HitPay payment confirmation → paid unassigned order → exact seat assignment → QR ticket generation.
+
+Design Phase 1 so this future flow can be added without rebuilding the foundation.
+
+
+give me the complete prompt step by step, and give me tips and recommendation.
+
+Thought for a couple of seconds
+Eventuz Complete Step-by-Step Build Prompt Pack
+Use this as a controlled development sequence, not one giant prompt. Feed the prompts one at a time into Bolt or your AI coding tool. After each step, test before moving to the next one.
+
+This follows the development discipline from your master prompt: build in phases, avoid broad generation, keep scope controlled, and only implement the current feature. 
+
+
+Key insight
+Do not ask Bolt to “build Eventuz.”
+
+That is too broad and will create messy architecture.
+
+Instead, build Eventuz in this order:
+
+App foundation
+
+Auth and roles
+
+Organizer event setup
+
+Ticket types
+
+Seat inventory
+
+Attendee event access
+
+Orders and capacity hold
+
+HitPay payment
+
+Seat assignment
+
+QR ticketing
+
+Email / SMTP
+
+Staff scanner
+
+Dashboards
+
+Super Admin
+
+QA and hardening
+
+Each prompt below is designed to be copied and used step by step.
+
+Global instruction to include in every Bolt prompt
+Paste this at the top of every implementation prompt:
+
+Important implementation rules:
+- Do not rebuild the entire app.
+- Do not change unrelated files unless required.
+- Inspect the existing structure, database schema, routes, components, and data flow before making changes.
+- Preserve existing working functionality.
+- Implement only the feature requested in this prompt.
+- Keep the solution modular and easy to extend.
+- Do not add features that are not explicitly requested.
+- Do not create a marketplace or global event list.
+- Do not build payment, QR, scanner, or analytics unless this prompt specifically asks for it.
+- After implementation, explain what files were changed and how to test the feature.
+Step 1 — Project foundation prompt
+Context:
+We are building Eventuz, a single-event registration, payment, seat assignment, QR ticketing, and check-in system for event organizers.
+
+This is a new MVP app. The first goal is to create a clean foundation only.
+
+Objective:
+Create the initial app foundation with routing, layout structure, basic role preparation, and reusable UI patterns.
+
+Scope:
+Build the base structure for:
+- public landing placeholder
+- auth pages placeholder
+- organizer area placeholder
+- attendee area placeholder
+- staff area placeholder
+- super admin area placeholder
+- shared layout components
+- navigation guards placeholder logic
+
+Roles to prepare:
+- attendee
+- organizer
+- staff
+- super_admin
+
+Constraints:
+- Do not build event creation yet.
+- Do not build payments.
+- Do not build QR tickets.
+- Do not build dashboards.
+- Do not build marketplace or event list.
+- Keep pages simple placeholders for now.
+
+Deliverable:
+A clean project foundation with clear folders/routes for future Eventuz modules.
+
+Acceptance Criteria:
+- App runs without errors.
+- There are separate route/page areas for attendee, organizer, staff, and super admin.
+- Layout is simple, clean, and reusable.
+- No business-heavy features are implemented yet.
+Step 2 — Authentication and role setup prompt
+Context:
+Eventuz requires authenticated users with role-based access.
+
+Current phase:
+Authentication and role foundation.
+
+Objective:
+Implement authentication and role-based access control.
+
+Scope:
+Add support for these roles:
+- attendee
+- organizer
+- staff
+- super_admin
+
+User fields:
+- id
+- email
+- full_name
+- role
+- status
+- created_at
+- updated_at
+
+Statuses:
+- active
+- disabled
+
+Required behavior:
+- Users can sign up and log in.
+- User role is stored in the user profile.
+- Disabled users cannot access protected areas.
+- Organizer routes are only accessible to organizers.
+- Staff routes are only accessible to staff.
+- Super Admin routes are only accessible to super admins.
+- Attendee routes are only accessible to attendees.
+
+Post-login redirect rules:
+- attendee redirects to the single event page placeholder.
+- organizer redirects to organizer dashboard.
+- staff redirects to scanner placeholder.
+- super_admin redirects to super admin dashboard placeholder.
+
+Constraints:
+- Do not build event creation yet.
+- Do not build ticket purchase.
+- Do not build payment.
+- Do not build QR.
+- Do not build scanner logic yet.
+- Do not create marketplace/event list.
+
+Deliverable:
+Working auth with role-aware redirects and route protection.
+
+Acceptance Criteria:
+- User can sign up and log in.
+- User role controls accessible routes.
+- Disabled users are blocked.
+- Each role redirects to the correct placeholder area.
+Step 3 — Organizer event setup prompt
+Context:
+Eventuz MVP uses a single-event flow. Organizers create and configure events. Attendees will later be redirected directly to a specific event page after login.
+
+Current phase:
+Organizer event setup.
+
+Objective:
+Allow organizers to create and edit an event.
+
+Scope:
+Create the events data model/table with these fields:
+- id
+- organizer_id
+- name
+- description
+- venue
+- event_date
+- event_time
+- status
+- capacity_hold_minutes
+- payment_hold_minutes
+- early_bird_hold_minutes
+- public_slug
+- created_at
+- updated_at
+
+Event statuses:
+- draft
+- published
+- disabled
+
+Organizer event setup UI:
+- event name
+- description
+- venue
+- event date
+- event time
+- status
+- capacity hold duration in minutes
+- payment hold duration in minutes
+- early bird price hold duration in minutes
+- public slug or generated event access identifier
+
+Required behavior:
+- Organizer can create an event.
+- Organizer can edit their own event.
+- Organizer can publish an event.
+- Organizer can only manage their own events.
+- Timeout settings must be dynamic and editable per event.
+- Do not hardcode timeout values.
+
+Constraints:
+- Do not build ticket types yet unless absolutely needed for layout placeholder.
+- Do not build attendee registration.
+- Do not build payment.
+- Do not build QR.
+- Do not build analytics.
+- Do not build global marketplace/event list.
+
+Deliverable:
+Organizer can create and configure a basic event.
+
+Acceptance Criteria:
+- Organizer can create a draft event.
+- Organizer can edit event details.
+- Organizer can publish the event.
+- Timeout fields save correctly.
+- Organizer cannot edit events owned by another organizer.
+Step 4 — Ticket type management prompt
+Context:
+Eventuz sells ticket types. Each ticket type has quantity, pricing, and early bird configuration.
+
+Current phase:
+Ticket type management.
+
+Objective:
+Allow organizers to create and manage ticket types for their event.
+
+Scope:
+Create the ticket_types data model/table with:
+- id
+- event_id
+- name
+- description
+- regular_price
+- early_bird_price
+- early_bird_start_at
+- early_bird_end_at
+- quantity
+- status
+- created_at
+- updated_at
+
+Ticket type statuses:
+- active
+- inactive
+- sold_out
+
+Organizer UI:
+Add a Ticket Types section inside the Event Setup page.
+
+Organizer can:
+- create ticket type
+- edit ticket type
+- set regular price
+- set early bird price
+- set early bird start and end date/time
+- set quantity
+- activate/deactivate ticket type
+
+Business rules:
+- Ticket type belongs to one event.
+- Organizer can only manage ticket types for their own event.
+- Quantity must be a positive number.
+- Regular price must be valid.
+- Early bird price must be lower than regular price if provided.
+- Early bird end must be after early bird start.
+
+Constraints:
+- Do not build payments.
+- Do not calculate checkout pricing yet.
+- Do not build seat assignment yet.
+- Do not build QR tickets.
+- Do not build analytics.
+
+Deliverable:
+Organizer can manage event ticket types.
+
+Acceptance Criteria:
+- Organizer can create ticket types.
+- Organizer can edit ticket types.
+- Organizer can activate/deactivate ticket types.
+- Validation prevents invalid prices and dates.
+- Ticket types are scoped to the correct event.
+Step 5 — Seat inventory generation prompt
+Context:
+In Eventuz, ticket type quantity must directly match available seat inventory. If an Organizer creates 10 VIP tickets, the system must create exactly 10 VIP seats.
+
+Current phase:
+Seat inventory generation and editing.
+
+Objective:
+Automatically generate seats from ticket type quantity and allow organizers to edit seat labels.
+
+Scope:
+Create the seats data model/table with:
+- id
+- event_id
+- ticket_type_id
+- table_label
+- seat_label
+- display_label
+- status
+- created_at
+- updated_at
+
+Seat statuses:
+- available
+- assigned
+- checked_in
+- disabled
+
+Required behavior:
+- When a ticket type is created, generate seat records equal to ticket_type.quantity.
+- Seats must be linked to event_id and ticket_type_id.
+- Generated seats default to status available.
+- Support table-based labels and generic labels.
+
+Examples:
+Table-based:
+- Table 1 - Seat 1
+- Table 1 - Seat 2
+
+Generic:
+- VIP-001
+- VIP-002
+
+Organizer UI:
+Add Seat Inventory section to Event Setup page.
+
+Organizer can:
+- view seats grouped by ticket type
+- edit table_label
+- edit seat_label
+- edit display_label
+- save label changes
+
+Quantity synchronization rules:
+- ticket type quantity must equal count of linked seat records.
+- if quantity increases, generate only the additional seats needed.
+- if quantity decreases, remove or disable only available unassigned seats.
+- prepare logic so future assigned seats cannot be deleted.
+
+Phase 1 assumption:
+There are no assigned seats yet, so all seats are available.
+
+Constraints:
+- Do not build attendee seat selection.
+- Do not build payment.
+- Do not build QR.
+- Do not build scanner.
+- Do not build visual floor plan or drag-and-drop map.
+
+Deliverable:
+Ticket types and seat inventory stay synchronized.
+
+Acceptance Criteria:
+- Creating ticket type with quantity 10 creates exactly 10 seats.
+- Increasing quantity from 10 to 15 creates exactly 5 more seats.
+- Decreasing quantity from 15 to 10 removes or disables exactly 5 available seats.
+- Organizer can edit seat labels.
+- Seats remain linked to the correct ticket type and event.
+Step 6 — Attendee event access prompt
+Context:
+Eventuz MVP is a single-event flow. Attendees must create an account, then access the specific event details page. There is no global marketplace or event list.
+
+Current phase:
+Attendee event access.
+
+Objective:
+Build the attendee-facing event details page and post-login redirect.
+
+Scope:
+Attendee behavior:
+- attendee creates account or logs in.
+- after login, attendee is redirected to the specific event details page.
+- attendee can view published event details.
+- attendee can view active ticket types.
+- attendee can see ticket prices and available capacity.
+- attendee cannot select exact seats yet.
+
+Event details page should show:
+- event name
+- description
+- venue
+- event date/time
+- available ticket types
+- regular price
+- early bird price if currently valid
+- remaining capacity per ticket type
+- quantity selector placeholder or basic selector
+
+Capacity display:
+- remaining capacity should be based on ticket type quantity minus held/paid/assigned capacity in future phases.
+- For now, use total available seats as baseline.
+
+Constraints:
+- Do not build payment yet.
+- Do not build order creation yet unless needed as placeholder.
+- Do not build exact seat selection.
+- Do not build QR tickets.
+- Do not build marketplace/event list.
+- Only show the specific event page.
+
+Deliverable:
+Attendee can log in and view the single event registration page.
+
+Acceptance Criteria:
+- Attendee is redirected to event page after login.
+- Only published active events are visible to attendees.
+- Ticket types display correctly.
+- Exact seat selection is not available.
+Step 7 — Order and capacity hold prompt
+Context:
+In Eventuz, attendees choose ticket type and quantity before payment. The system reserves ticket quantity/capacity only, not exact seats. Exact seats are selected after payment confirmation.
+
+Current phase:
+Order creation and capacity hold.
+
+Objective:
+Allow attendees to select ticket type and quantity, then create a pending order with temporary capacity hold.
+
+Scope:
+Create the orders data model/table with:
+- id
+- buyer_user_id
+- event_id
+- ticket_type_id
+- quantity
+- unit_price_locked
+- total_amount
+- pricing_type
+- status
+- capacity_hold_expires_at
+- payment_expires_at
+- early_bird_price_expires_at
+- created_at
+- updated_at
+
+Pricing types:
+- early_bird
+- regular
+
+Order statuses:
+- draft
+- capacity_held
+- payment_pending
+- payment_failed
+- expired
+- paid_unassigned
+- partially_assigned
+- completed
+- cancelled
+
+Required behavior:
+- Attendee selects ticket type and quantity.
+- System checks if enough capacity exists.
+- If not enough capacity exists, block order creation.
+- If enough capacity exists, create capacity hold.
+- Capacity hold reserves ticket quantity only, not exact seats.
+- Capacity hold expiration should use event.capacity_hold_minutes.
+- Payment expiration should use event.payment_hold_minutes.
+- Early bird hold expiration should use event.early_bird_hold_minutes.
+- Price should be locked at order creation only within valid hold window.
+
+Capacity calculation:
+Available capacity = ticket type quantity minus:
+- active capacity holds
+- payment pending orders
+- paid unassigned orders
+- assigned/completed orders
+
+Constraints:
+- Do not integrate HitPay yet.
+- Do not mark orders as paid.
+- Do not build QR tickets.
+- Do not build exact seat selection.
+- Do not send emails.
+
+Deliverable:
+Attendee can create a pending order that temporarily reserves ticket quantity.
+
+Acceptance Criteria:
+- User cannot order more tickets than available capacity.
+- Capacity hold has expiration timestamp.
+- Early bird price is applied only when valid.
+- Exact seats are not selected.
+- Order status is correctly created as capacity_held or payment_pending placeholder.
+Step 8 — Expired hold cleanup prompt
+Context:
+Eventuz uses temporary capacity holds and early bird price holds. Expired holds must not block capacity forever.
+
+Current phase:
+Expired hold cleanup.
+
+Objective:
+Implement logic to release expired capacity holds and expire invalid early bird price holds.
+
+Scope:
+Add cleanup behavior for orders where:
+- capacity_hold_expires_at is in the past
+- payment_expires_at is in the past
+- payment was not confirmed
+
+Required behavior:
+- Expired unpaid orders should move to expired status.
+- Expired unpaid orders should no longer reduce available capacity.
+- If early bird hold expires before payment confirmation, user must restart checkout or pay regular price.
+- Capacity calculation must ignore expired unpaid holds.
+
+Implementation:
+- Add safe cleanup function/service.
+- Run cleanup when loading attendee event page and before creating new order.
+- If the platform supports scheduled jobs, prepare a scheduled cleanup function, but do not rely only on scheduled jobs.
+
+Constraints:
+- Do not build payment integration yet.
+- Do not build QR tickets.
+- Do not delete historical orders unless necessary.
+- Prefer status changes over hard deletion.
+
+Deliverable:
+Expired holds no longer block ticket capacity.
+
+Acceptance Criteria:
+- Expired unpaid orders become expired.
+- Expired orders do not reduce available capacity.
+- New buyers can purchase released capacity.
+- Early bird expired orders do not keep discounted price forever.
+Step 9 — HitPay checkout creation prompt
+Context:
+Eventuz uses HitPay for payment. Tickets must not be issued from frontend redirect alone. Payment success must be confirmed by webhook in a later step.
+
+Current phase:
+HitPay checkout session creation.
+
+Objective:
+Create HitPay checkout flow for pending orders.
+
+Scope:
+When attendee has a valid capacity-held order:
+- create HitPay checkout session
+- send amount, currency, buyer email, and order reference
+- redirect attendee to HitPay checkout
+- update order status to payment_pending
+- create payment record with pending status
+
+Create payments data model/table:
+- id
+- order_id
+- provider
+- provider_payment_id
+- provider_checkout_id
+- amount
+- currency
+- status
+- webhook_received_at
+- raw_webhook_payload
+- created_at
+- updated_at
+
+Payment provider:
+- hitpay
+
+Payment statuses:
+- pending
+- succeeded
+- failed
+- expired
+
+Required behavior:
+- Only valid non-expired orders can proceed to checkout.
+- Amount sent to HitPay must match order.total_amount.
+- Store HitPay checkout/payment reference.
+- Redirect to HitPay checkout URL.
+- Do not mark order as paid yet.
+
+Constraints:
+- Do not generate QR tickets.
+- Do not allow seat assignment yet.
+- Do not trust frontend success redirect.
+- Do not build webhook confirmation in this prompt unless necessary.
+
+Deliverable:
+Attendee can be redirected to HitPay checkout for a valid order.
+
+Acceptance Criteria:
+- HitPay checkout is created for valid order.
+- Order status becomes payment_pending.
+- Payment record is created as pending.
+- No tickets are generated.
+- Order is not marked paid until webhook is implemented.
+Step 10 — HitPay webhook confirmation prompt
+Context:
+Eventuz must only mark payment as successful after verified HitPay webhook confirmation. Frontend success redirect is not enough.
+
+Current phase:
+HitPay webhook processing.
+
+Objective:
+Implement HitPay webhook endpoint to verify and process payment results.
+
+Scope:
+Webhook behavior:
+- receive HitPay webhook event
+- verify webhook signature or authenticity using HitPay requirements
+- find the matching payment/order
+- confirm amount matches expected order total
+- confirm currency matches
+- mark payment as succeeded only if verification passes
+- mark order as paid_unassigned after successful payment
+- preserve raw webhook payload for audit/debugging
+- reject invalid webhook attempts safely
+
+Order transition:
+payment_pending → paid_unassigned
+
+Payment transition:
+pending → succeeded
+
+Failure handling:
+- failed webhook/payment should mark payment failed
+- expired unpaid order should not become paid
+- duplicate webhook should be idempotent and safe
+
+Constraints:
+- Do not generate QR tickets yet.
+- Do not assign seats yet.
+- Do not send ticket emails yet.
+- Do not rely on frontend redirect.
+- Do not create seats here.
+
+Deliverable:
+Verified HitPay webhook marks orders as paid_unassigned.
+
+Acceptance Criteria:
+- Successful verified webhook updates payment to succeeded.
+- Successful verified webhook updates order to paid_unassigned.
+- Duplicate webhook does not create duplicate records.
+- Wrong amount/currency does not mark order paid.
+- Invalid webhook is rejected or ignored safely.
+- No QR tickets are generated yet.
+Step 11 — Post-payment seat assignment prompt
+Context:
+In Eventuz, buyers pay first, then assign exact seats later. QR tickets are only generated after exact seats and attendee details are assigned.
+
+Current phase:
+Post-payment seat assignment.
+
+Objective:
+Allow paid buyers to assign exact seats and attendee details for paid orders.
+
+Scope:
+Create seat_assignments data model/table:
+- id
+- order_id
+- seat_id
+- attendee_name
+- attendee_email
+- assigned_by_user_id
+- status
+- created_at
+- updated_at
+
+Seat assignment statuses:
+- assigned
+- ticket_issued
+- cancelled
+
+Required behavior:
+- Only paid_unassigned or partially_assigned orders can access assignment page.
+- Buyer can only assign seats for their own order.
+- Buyer must assign seats from the same ticket_type_id as the order.
+- Buyer cannot assign more seats than paid quantity.
+- Each assigned seat requires attendee name and attendee email.
+- One seat can only have one active assignment.
+- Buyer can assign one seat to self and others to guests.
+- Assigned guests do not need accounts.
+- Order becomes completed only when all paid tickets have assigned seats and attendee details.
+
+Recommended MVP rule:
+Require all seats to be assigned before proceeding to ticket generation.
+
+UI:
+- Show paid order summary.
+- Show available seats for the purchased ticket type.
+- Let buyer select exact seats equal to quantity purchased.
+- For each selected seat, collect:
+  - attendee name
+  - attendee email
+
+Constraints:
+- Do not generate QR tickets in this step unless explicitly part of next phase.
+- Do not send emails yet.
+- Do not allow unpaid users to assign seats.
+- Do not allow selecting seats from other ticket types.
+- Do not require guest accounts.
+
+Deliverable:
+Paid buyer can assign exact seats and attendee details.
+
+Acceptance Criteria:
+- Unpaid orders cannot assign seats.
+- Paid buyer can assign exact seats.
+- Seat count must match paid quantity.
+- Each seat has name and email.
+- Same seat cannot be assigned twice.
+- Order status updates correctly.
+Step 12 — QR ticket generation prompt
+Context:
+QR tickets in Eventuz are generated only after payment is confirmed and seats are fully assigned.
+
+Current phase:
+QR ticket generation.
+
+Objective:
+Generate one secure QR ticket per assigned seat.
+
+Scope:
+Create tickets data model/table:
+- id
+- order_id
+- seat_assignment_id
+- event_id
+- ticket_type_id
+- seat_id
+- attendee_name
+- attendee_email
+- qr_token_hash
+- ticket_code
+- status
+- issued_at
+- emailed_at
+- checked_in_at
+- created_at
+- updated_at
+
+Ticket statuses:
+- issued
+- checked_in
+- voided
+
+Required behavior:
+- Generate tickets only for completed valid seat assignments.
+- Generate one ticket per assigned seat.
+- QR token must be secure and not predictable.
+- Store token hash where possible.
+- Ticket code can be human-readable but must not be the only validation secret.
+- Mark seat_assignment status as ticket_issued.
+- Mark ticket status as issued.
+- Provide downloadable ticket view or ticket page.
+
+Ticket display should include:
+- event name
+- attendee name
+- ticket type
+- seat label
+- QR code
+- ticket code
+
+Constraints:
+- Do not create tickets before payment.
+- Do not create tickets before seat assignment.
+- Do not send emails yet unless SMTP is already implemented.
+- Do not build scanner validation yet.
+
+Deliverable:
+System generates downloadable QR tickets after full seat assignment.
+
+Acceptance Criteria:
+- One assigned seat creates one ticket.
+- Ticket includes QR code.
+- QR token is unique and secure.
+- Tickets are not generated for unpaid orders.
+- Tickets are not generated for unassigned seats.
+Step 13 — SMTP settings prompt
+Context:
+Eventuz must email QR tickets to each assigned attendee. SMTP settings are configured by the Super Admin.
+
+Current phase:
+SMTP configuration.
+
+Objective:
+Allow Super Admin to configure SMTP settings securely.
+
+Scope:
+Create smtp_settings data model/table:
+- id
+- host
+- port
+- username
+- encrypted_password
+- from_email
+- from_name
+- encryption_type
+- is_active
+- last_tested_at
+- created_at
+- updated_at
+
+Encryption types:
+- tls
+- ssl
+- none
+
+Required behavior:
+- Only Super Admin can access SMTP settings.
+- Super Admin can create/update SMTP configuration.
+- SMTP password must not be stored as plain text.
+- Add test email function.
+- Show whether last test succeeded or failed.
+- Use active SMTP settings for ticket email delivery in future prompt.
+
+Constraints:
+- Do not expose SMTP password after saving.
+- Do not allow organizers to configure SMTP.
+- Do not send ticket emails yet unless ticket email prompt is active.
+- Do not build unrelated Super Admin features.
+
+Deliverable:
+Super Admin can configure and test SMTP settings.
+
+Acceptance Criteria:
+- Super Admin can save SMTP settings.
+- Password is protected/encrypted or handled securely.
+- Test email can be sent.
+- Non-super-admin users cannot access SMTP settings.
+Step 14 — Ticket email delivery prompt
+Context:
+Eventuz must email QR tickets to each assigned attendee after tickets are generated.
+
+Current phase:
+Ticket email delivery.
+
+Objective:
+Send one QR ticket email to each assigned attendee email.
+
+Scope:
+When tickets are issued:
+- send each ticket to ticket.attendee_email
+- include event details
+- include attendee name
+- include seat label
+- include QR code or secure ticket link
+- update ticket.emailed_at after successful send
+
+Required behavior:
+- Use active SMTP settings configured by Super Admin.
+- Send one email per ticket/attendee.
+- If buyer purchased 5 tickets, send 5 emails to the 5 assigned attendee emails.
+- If email fails, ticket should remain issued but email failure should be visible.
+- Buyer should still be able to download tickets from the app.
+
+Recommended:
+Add email log or simple ticket email status if needed.
+
+Constraints:
+- Do not require guest accounts.
+- Do not send all tickets only to buyer unless buyer email is listed as attendee email.
+- Do not regenerate duplicate tickets when resending email.
+- Do not build automated reminders.
+
+Deliverable:
+Issued QR tickets are emailed to assigned attendee emails.
+
+Acceptance Criteria:
+- Each assigned attendee receives their own ticket email.
+- ticket.emailed_at updates after success.
+- Email failure does not delete or corrupt ticket.
+- Buyer can still download tickets.
+Step 15 — Staff invitation prompt
+Context:
+Organizers must be able to invite Staff by email. Staff can help scan QR tickets at the venue.
+
+Current phase:
+Staff invitation and scanner access preparation.
+
+Objective:
+Allow organizers to invite staff users for a specific event.
+
+Scope:
+Create staff_invitations table:
+- id
+- event_id
+- organizer_id
+- email
+- status
+- invite_token_hash
+- expires_at
+- accepted_user_id
+- created_at
+- updated_at
+
+Statuses:
+- pending
+- accepted
+- expired
+- revoked
+
+Create event_staff table:
+- id
+- event_id
+- user_id
+- role
+- status
+- created_at
+- updated_at
+
+Staff role:
+- scanner
+
+Required behavior:
+- Organizer can invite staff by email for their own event.
+- Invite email contains secure acceptance link.
+- Staff can accept invite.
+- If staff user account does not exist, they can create one.
+- Accepted staff gets scanner-only access for that event.
+- Organizer can revoke staff access.
+
+Constraints:
+- Staff cannot edit event settings.
+- Staff cannot view revenue dashboard.
+- Staff cannot manage tickets.
+- Staff cannot invite other staff.
+- Do not build scanner validation yet unless next prompt requests it.
+
+Deliverable:
+Organizer can invite and manage scanner staff.
+
+Acceptance Criteria:
+- Organizer can send staff invite.
+- Staff can accept invite.
+- Staff is linked to event.
+- Revoked staff cannot access scanner.
+Step 16 — QR scanner prompt
+Context:
+Eventuz supports QR ticket scanning by Organizer and invited Staff.
+
+Current phase:
+QR scanner and check-in validation.
+
+Objective:
+Build QR scanner validation and check-in flow.
+
+Scope:
+Create check_ins table:
+- id
+- ticket_id
+- event_id
+- scanned_by_user_id
+- scan_result
+- scanned_at
+- device_info
+
+Scan results:
+- valid
+- duplicate
+- invalid
+- voided
+
+Required behavior:
+- Organizer can scan tickets for their own event.
+- Staff can scan tickets only for assigned event.
+- QR scan validates secure ticket token.
+- If ticket is valid and issued:
+  - mark ticket as checked_in
+  - set checked_in_at
+  - create check_in record with valid result
+- If ticket already checked in:
+  - show duplicate warning
+  - create check_in record with duplicate result
+- If ticket is invalid:
+  - show invalid warning
+  - create check_in record if possible
+- If ticket is voided:
+  - show voided warning
+
+Scanner UI:
+- camera scanner if available
+- manual ticket code/token entry fallback
+- clear result screen:
+  - valid
+  - duplicate
+  - invalid
+  - voided
+
+Constraints:
+- Do not allow attendees to scan.
+- Do not allow staff to access organizer settings.
+- Do not expose raw QR token unnecessarily.
+- Do not check in the same ticket twice as valid.
+
+Deliverable:
+Organizer and Staff can scan QR tickets and check attendees in.
+
+Acceptance Criteria:
+- Valid ticket scans once successfully.
+- Duplicate scan shows duplicate warning.
+- Invalid token is rejected.
+- Staff can scan only assigned event tickets.
+- Check-in logs are recorded.
+Step 17 — Organizer dashboard prompt
+Context:
+Organizers need operational visibility into registrations, payments, seating, tickets, and check-ins.
+
+Current phase:
+Organizer dashboard.
+
+Objective:
+Build the Organizer dashboard metrics for the event.
+
+Scope:
+Dashboard metrics:
+- total registrations/orders
+- paid attendees
+- pending payments
+- failed payments
+- paid but unassigned orders
+- available seats/tickets
+- revenue collected
+- issued tickets
+- check-in count
+
+Required views:
+- summary cards
+- orders table
+- paid but unassigned list
+- attendee/ticket list
+- check-in summary
+
+Required behavior:
+- Organizer only sees their own event data.
+- Paid but unassigned should be clearly visible.
+- Revenue should count succeeded payments only.
+- Available seats should reflect ticket type capacity minus active holds/paid/assigned capacity.
+- Check-in count should count checked-in tickets only.
+
+Constraints:
+- Do not add advanced analytics.
+- Do not build charts unless simple and useful.
+- Do not allow organizer to edit payment records.
+- Do not allow organizer to manually mark payment as paid.
+
+Deliverable:
+Organizer can monitor event operations.
+
+Acceptance Criteria:
+- Dashboard metrics are accurate.
+- Paid but unassigned orders are visible.
+- Organizer cannot see other organizers’ events.
+- Revenue only includes confirmed payments.
+Step 18 — Super Admin dashboard prompt
+Context:
+Super Admin monitors the platform and can disable users/events. Super Admin cannot edit organizer event details.
+
+Current phase:
+Super Admin dashboard.
+
+Objective:
+Build practical MVP Super Admin monitoring and controls.
+
+Scope:
+Super Admin can view:
+- all users
+- all organizers
+- all events
+- platform totals
+- disabled users/events
+- SMTP status
+
+Super Admin can:
+- disable user
+- re-enable user
+- disable event
+- re-enable event
+- access SMTP settings
+
+Super Admin cannot:
+- edit event name/details
+- edit ticket types
+- assign seats
+- alter orders
+- manually mark payments as paid
+
+Required behavior:
+- Disabled event blocks new attendee registrations/purchases.
+- Disabled user cannot log in or access protected pages.
+- Existing tickets behavior can remain unchanged for MVP unless event disabled status blocks scanner access.
+
+Constraints:
+- Do not build complex subscription billing.
+- Do not build advanced admin analytics.
+- Do not let Super Admin modify organizer-owned event content.
+
+Deliverable:
+Super Admin can monitor and disable platform resources.
+
+Acceptance Criteria:
+- Super Admin sees users/events.
+- Super Admin can disable/enable users.
+- Super Admin can disable/enable events.
+- Super Admin cannot edit event details.
+- Disabled events block new purchases.
+Step 19 — Audit logs prompt
+Context:
+Eventuz handles payment, ticketing, and check-in. Critical actions should be traceable.
+
+Current phase:
+Audit logging.
+
+Objective:
+Add audit logs for critical system actions.
+
+Scope:
+Create audit_logs table:
+- id
+- actor_user_id
+- action
+- entity_type
+- entity_id
+- metadata
+- created_at
+
+Log these actions:
+- event created
+- event published
+- ticket type created/updated
+- seat inventory changed
+- order created
+- capacity hold expired
+- HitPay webhook received
+- payment marked succeeded
+- seat assigned
+- QR ticket issued
+- ticket email sent
+- ticket checked in
+- duplicate scan attempted
+- staff invited
+- staff revoked
+- SMTP settings changed
+- event disabled
+- user disabled
+
+Constraints:
+- Do not expose sensitive secrets in logs.
+- Do not log full SMTP passwords.
+- Do not log raw QR token values.
+- Do not break existing flows.
+
+Deliverable:
+Critical Eventuz actions are logged.
+
+Acceptance Criteria:
+- Important business events create audit log entries.
+- Logs include actor when available.
+- Sensitive data is not stored in logs.
+Step 20 — QA and hardening prompt
+Context:
+Eventuz MVP core flows are now implemented. We need to harden business logic and catch edge cases.
+
+Current phase:
+QA and validation.
+
+Objective:
+Review and harden the app against core MVP failure cases.
+
+Scope:
+Test and fix issues in these areas:
+- role access
+- event ownership
+- ticket type and seat inventory sync
+- capacity calculation
+- expired holds
+- early bird pricing
+- HitPay webhook idempotency
+- post-payment seat assignment
+- QR ticket generation
+- email delivery
+- scanner duplicate detection
+- dashboard metric accuracy
+- Super Admin disable behavior
+
+Validation checklist:
+1. Attendee cannot access organizer pages.
+2. Staff cannot access organizer settings.
+3. Organizer cannot access other organizer events.
+4. Super Admin cannot edit event details.
+5. Cannot buy more tickets than available capacity.
+6. Expired holds release capacity.
+7. Early bird price expires correctly.
+8. Payment redirect alone does not mark paid.
+9. Invalid webhook does not mark paid.
+10. Duplicate webhook does not duplicate tickets/orders.
+11. Paid but unassigned orders display correctly.
+12. Unpaid orders cannot assign seats.
+13. Same seat cannot be assigned twice.
+14. QR ticket is generated only after assignment.
+15. Ticket cannot be checked in twice as valid.
+16. Disabled event blocks new purchases.
+17. SMTP failure does not delete tickets.
+
+Constraints:
+- Do not redesign the app.
+- Do not add new features unless required to fix acceptance criteria.
+- Do not refactor unrelated modules.
+
+Deliverable:
+A hardened MVP with documented fixes and remaining known issues.
+
+Acceptance Criteria:
+- All listed validation cases pass or are clearly documented.
+- No unrelated redesign is introduced.
+- Core MVP flow is stable.
+Recommended operating process
+How to use these prompts
+Use this workflow for every step:
+
+Paste the global instruction.
+
+Paste the current step prompt.
+
+Let Bolt implement.
+
+Test manually.
+
+Ask Bolt to fix only the failing part.
+
+Move to the next step only when acceptance criteria pass.
+
+Do not stack multiple prompts together.
+
+Best recommendation
+Build only up to Step 5 first before touching attendee or payment flows.
+
+Your first milestone should be:
+
+Organizer can create an event, create ticket types, and generate/edit matching seat inventory.
+
+That is the foundation of the whole system.
+
+If ticket quantity and seat inventory are wrong, every later feature becomes fragile.
+
+Tips for working with Bolt
+1. Always force inspection first
+Use this before any implementation:
+
+Before making changes, inspect the current project structure, routes, database/schema, components, and existing logic. Then summarize what you found and only after that implement the requested feature.
+This reduces random changes.
+
+2. Never ask for “full system”
+Avoid:
+
+Build the full Eventuz app.
+Use:
+
+Implement only Phase 1: organizer event setup, ticket types, and seat inventory generation.
+3. Keep each feature testable
+Bad prompt:
+
+Add payments, QR tickets, emails, and dashboard.
+Better:
+
+Only implement HitPay webhook confirmation. Do not build QR tickets or email delivery yet.
+4. Protect the database logic
+Your highest-risk rules are:
+
+ticket type quantity must match seat count
+
+paid capacity must reduce availability
+
+seats are selected only after payment
+
+tickets are generated only after seat assignment
+
+payment success comes only from webhook
+
+Repeat these often in prompts.
+
+5. Use rollback instead of repair marathons
+If Bolt makes a bad broad change, do not keep patching endlessly.
+
+Use:
+
+Rollback the last change. Restore the previous working state. Then implement only the requested feature with minimal changes.
+6. Ask for changed files every time
+After implementation, ask:
+
+List every file changed, explain why it changed, and provide a test checklist for this feature.
+This helps you catch scope creep.
+
+7. Test status transitions aggressively
+Eventuz depends on statuses.
+
+Critical order transitions:
+
+capacity_held → payment_pending → paid_unassigned → completed
+Critical ticket transition:
+
+issued → checked_in
+Critical seat transition:
+
+available → assigned → checked_in
+If statuses are messy, the whole app becomes hard to debug.
+
+Risks / trade-offs
+Main risk
+The system has complex state transitions. If you let Bolt build too many phases at once, it may mix payment, seat assignment, and ticket issuance incorrectly.
+
+Trade-off
+The pay-first-seat-later model is safer against unpaid seat blocking, but it requires clear UI messaging and strong dashboard visibility for “Paid but Unassigned.”
+
+Biggest technical warning
+Do not let frontend logic decide payment success.
+
+Only the backend/webhook should move an order to:
+
+paid_unassigned
+Immediate next step
+Start with Step 1, then Step 2, then Step 3–5.
+
+Your first real milestone is:
+
+Organizer foundation complete: event setup, ticket types, and synchronized seat inventory.
+
+Once that milestone works, move to attendee orders and payments.
+
+
