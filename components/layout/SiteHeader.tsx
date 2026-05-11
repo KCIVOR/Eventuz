@@ -1,35 +1,41 @@
 import Link from "next/link";
 
-const nav = [
+const primaryNav = [
   { href: "/", label: "Home" },
   { href: "/login", label: "Log in" },
   { href: "/register", label: "Register" },
-  { href: "/organizer", label: "Organizer" },
-  { href: "/attendee", label: "Attendee" },
-  { href: "/staff", label: "Staff" },
-  { href: "/super-admin", label: "Super Admin" },
 ];
 
 export function SiteHeader() {
   return (
-    <header className="border-b border-zinc-200/80 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
+    <header className="no-print border-b border-[var(--sidebar-border)] bg-card/90 backdrop-blur-md supports-[backdrop-filter]:bg-card/85">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:h-16 sm:px-6">
         <Link
           href="/"
-          className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50"
+          className="font-serif text-lg font-semibold tracking-tight text-primary transition-colors hover:text-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 sm:text-xl"
         >
           Eventuz
         </Link>
-        <nav className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-xs text-zinc-600 dark:text-zinc-400 sm:text-sm">
-          {nav.map((item) => (
+        <nav
+          aria-label="Public"
+          className="flex flex-wrap items-center justify-end gap-x-1 sm:gap-x-2"
+        >
+          {primaryNav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-md py-1 transition-colors hover:text-zinc-900 dark:hover:text-zinc-100"
+              className="rounded-lg px-2.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 sm:px-3 sm:text-sm"
             >
               {item.label}
             </Link>
           ))}
+          <span className="hidden h-4 w-px bg-border sm:mx-1 sm:block" aria-hidden />
+          <Link
+            href="/organizer"
+            className="rounded-lg px-2.5 py-2 text-xs font-medium text-primary/90 transition-colors hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 sm:px-3 sm:text-sm"
+          >
+            For organizers
+          </Link>
         </nav>
       </div>
     </header>

@@ -1,13 +1,28 @@
 import { AuthShell } from "@/components/layout/AuthShell";
 import { RegisterForm } from "@/components/auth/RegisterForm";
 
-export default function RegisterPage() {
+function safeNextForLoginLink(raw: string | undefined): string | null {
+  if (!raw || typeof raw !== "string") return null;
+  if (!raw.startsWith("/") || raw.startsWith("//")) return null;
+  if (raw.startsWith("/login") || raw.startsWith("/register")) return null;
+  return raw;
+}
+
+type Props = {
+  searchParams: Promise<{ next?: string }>;
+};
+
+export default async function RegisterPage({ searchParams }: Props) {
+  const q = await searchParams;
+  const next = safeNextForLoginLink(q.next);
+  const backHref = next ? `/login?next=${encodeURIComponent(next)}` : "/login";
+
   return (
-    <AuthShell title="Create account">
+    <AuthShell title="Create account" backHref={backHref} backLabel="Back to log in">
       <RegisterForm />
-      <p className="mt-4 text-center text-xs text-zinc-500">
-        New accounts default to <strong>attendee</strong>. Promote organizers and super admins in
-        Supabase SQL (see migration file comments).
+      <p className="mt-4 text-center text-xs leading-relaxed text-muted-foreground">
+        New accounts default to <strong className="text-foreground">attendee</strong>. Promote
+        organizers and super admins in Supabase SQL (see migration file comments).
       </p>
     </AuthShell>
   );

@@ -1,6 +1,16 @@
-import { PublicShell } from "@/components/layout/PublicShell";
-import Link from "next/link";
 import { createEvent } from "@/app/organizer/events/actions";
+import {
+  organizerBtnPrimary,
+  organizerCallout,
+  organizerField,
+  organizerLabel,
+  organizerPanel,
+  organizerSectionTitle,
+} from "@/components/organizer/eventSetupStyles";
+import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
+import { EVENT_STATUSES } from "@/lib/organizer/eventForm";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
 type Props = {
   searchParams: Promise<{ error?: string }>;
@@ -8,69 +18,145 @@ type Props = {
 
 export default async function NewEventPage({ searchParams }: Props) {
   const q = await searchParams;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    const { data: existing } = await supabase
+      .from("events")
+      .select("id")
+      .eq("organizer_id", user.id)
+      .maybeSingle();
+    if (existing?.id) {
+      redirect(`/organizer/events/${existing.id}/dashboard`);
+    }
+  }
+
   return (
-    <PublicShell>
-      <div className="mx-auto w-full max-w-xl flex-1 flex-col">
-        <p className="mb-6 text-sm text-zinc-600 dark:text-zinc-400">
-          <Link href="/organizer" className="text-zinc-900 underline dark:text-zinc-100">
-            ← Back to events
-          </Link>
-        </p>
-        <h1 className="mb-8 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">New event</h1>
+    <RoleAreaShell
+      role="organizer"
+      layout="flush"
+      mainWidth="wide"
+      title="Create your event"
+      description="One celebration per organizer account — add details, holds, and publish when guests should register."
+      breadcrumbs={[
+        { label: "Home", href: "/organizer" },
+        { label: "Create event" },
+      ]}
+    >
+      <div className="mx-auto w-full max-w-2xl flex-1 flex-col">
         {q.error ? (
-          <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
+          <p className="mb-6 rounded-xl border border-destructive/25 bg-destructive-muted px-4 py-3 text-sm text-destructive">
             {q.error}
           </p>
         ) : null}
-        <form action={createEvent} className="flex flex-col gap-5">
-          <Field label="Name" name="name" required />
-          <Field label="Public URL slug" name="public_slug" placeholder="auto from name if empty" />
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Description</label>
-            <textarea
-              name="description"
-              rows={3}
-              className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800"
-            />
-          </div>
-          <Field label="Venue" name="venue" />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Event date" name="event_date" type="date" required />
-            <Field label="Event time" name="event_time" type="time" required />
-          </div>
-          <Field label="Image URL (optional)" name="image_url" type="url" placeholder="https://…" />
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Status</label>
-            <select
-              name="status"
-              className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800"
-              defaultValue="draft"
-            >
-              <option value="draft">draft</option>
-              <option value="published">published</option>
-              <option value="disabled">disabled</option>
-              <option value="completed">completed</option>
-            </select>
-          </div>
-          <fieldset className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
-            <legend className="px-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-              Hold durations (minutes)
-            </legend>
-            <div className="mt-2 grid gap-4 sm:grid-cols-3">
-              <Field label="Capacity hold" name="capacity_hold_minutes" type="number" defaultValue="15" />
-              <Field label="Payment hold" name="payment_hold_minutes" type="number" defaultValue="15" />
-              <Field label="Early bird hold" name="early_bird_hold_minutes" type="number" defaultValue="15" />
+
+        <div className={organizerPanel + " p-6 sm:p-8"}>
+          <form action={createEvent} className="flex flex-col gap-8">
+            <section className="space-y-4">
+              <h2 className={organizerSectionTitle}>Basics</h2>
+              <Field label="Event name" name="name" required placeholder="e.g. Santos & Cruz wedding" />
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="description" className={organizerLabel}>
+                  Description
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  rows={4}
+                  className={organizerField}
+                  placeholder="What guests should know (optional)."
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="status" className={organizerLabel}>
+                  Status
+                </label>
+                <select id="status" name="status" className={organizerField} defaultValue="draft">
+                  {EVENT_STATUSES.map((s) => (
+                    <option key={s} value={s}>
+                      {s === "draft"
+                        ? "Draft — not visible to attendees"
+                        : s === "published"
+                          ? "Published — visible when registration is enabled"
+                          : "Disabled — hidden from registration"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </section>
+
+            <section className="space-y-4 border-t border-border pt-8">
+              <h2 className={organizerSectionTitle}>Schedule & location</h2>
+              <Field label="Venue" name="venue" placeholder="City or venue name" />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Event date" name="event_date" type="date" required />
+                <Field label="Event time" name="event_time" type="time" required />
+              </div>
+            </section>
+
+            <section className="space-y-4 border-t border-border pt-8">
+              <h2 className={organizerSectionTitle}>Public link</h2>
+              <p className="text-sm text-muted-foreground">
+                Used in your event URL. Leave blank to derive from the name; we&apos;ll ensure it&apos;s
+                unique.
+              </p>
+              <Field
+                label="Public slug"
+                name="public_slug"
+                placeholder="e.g. santos-cruz-2026"
+                autoComplete="off"
+              />
+            </section>
+
+            <section className="space-y-4 border-t border-border pt-8">
+              <h2 className={organizerSectionTitle}>Hold durations (minutes)</h2>
+              <p className="text-sm text-muted-foreground">
+                Optional on create: leave empty to use the defaults defined on your database (not
+                hardcoded in the app). Values must be whole minutes, 1–525600.
+              </p>
+              <fieldset className="grid gap-4 rounded-xl border border-border bg-muted/30 p-4 sm:grid-cols-3">
+                <legend className={organizerLabel + " px-1"}>Per-event timing</legend>
+                <Field
+                  label="Capacity hold"
+                  name="capacity_hold_minutes"
+                  type="number"
+                  min={1}
+                  placeholder="DB default"
+                />
+                <Field
+                  label="Payment hold"
+                  name="payment_hold_minutes"
+                  type="number"
+                  min={1}
+                  placeholder="DB default"
+                />
+                <Field
+                  label="Early bird price hold"
+                  name="early_bird_hold_minutes"
+                  type="number"
+                  min={1}
+                  placeholder="DB default"
+                />
+              </fieldset>
+            </section>
+
+            <div className={organizerCallout}>
+              <strong className="font-semibold text-foreground">Publishing</strong>
+              <p className="mt-1 text-muted-foreground">
+                You can save as draft and return anytime. Set status to <em>published</em> when the
+                event should be available to the registration flow.
+              </p>
             </div>
-          </fieldset>
-          <button
-            type="submit"
-            className="rounded-lg bg-zinc-900 py-2.5 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
-          >
-            Create event
-          </button>
-        </form>
+
+            <button type="submit" className={organizerBtnPrimary + " w-full sm:w-auto"}>
+              Create event
+            </button>
+          </form>
+        </div>
       </div>
-    </PublicShell>
+    </RoleAreaShell>
   );
 }
 
@@ -80,19 +166,22 @@ function Field({
   type = "text",
   required,
   placeholder,
-  defaultValue,
+  min,
+  autoComplete,
 }: {
   label: string;
   name: string;
   type?: string;
   required?: boolean;
   placeholder?: string;
-  defaultValue?: string;
+  min?: number;
+  autoComplete?: string;
 }) {
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={name} className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={name} className={organizerLabel}>
         {label}
+        {required ? <span className="text-destructive"> *</span> : null}
       </label>
       <input
         id={name}
@@ -100,8 +189,9 @@ function Field({
         type={type}
         required={required}
         placeholder={placeholder}
-        defaultValue={defaultValue}
-        className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800"
+        min={min}
+        autoComplete={autoComplete}
+        className={organizerField}
       />
     </div>
   );

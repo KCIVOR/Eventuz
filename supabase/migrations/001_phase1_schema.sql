@@ -7,6 +7,7 @@
 --    update public.profiles set role = 'organizer' where id = '<auth.users.id>';
 --    update public.profiles set role = 'super_admin' where id = '<auth.users.id>';
 -- 3) Optional: disable "Confirm email" for local dev (Authentication → Providers → Email).
+-- 4) Run `002_profiles_email_status.sql` for profile email + active/disabled status (auth/RBAC).
 
 -- ---------------------------------------------------------------------------
 -- Profiles (1:1 with auth.users)
@@ -35,7 +36,7 @@ create table if not exists public.events (
   event_time time not null,
   image_url text,
   status text not null default 'draft'
-    check (status in ('draft', 'published', 'disabled', 'completed')),
+    check (status in ('draft', 'published', 'disabled')),
   public_slug text not null unique,
   capacity_hold_minutes int not null default 15,
   payment_hold_minutes int not null default 15,
@@ -59,7 +60,7 @@ create table if not exists public.ticket_types (
   early_bird_price numeric(12, 2) not null check (early_bird_price >= 0),
   early_bird_start_at timestamptz,
   early_bird_end_at timestamptz,
-  quantity int not null check (quantity >= 0),
+  quantity int not null check (quantity >= 1),
   status text not null default 'active'
     check (status in ('active', 'inactive', 'sold_out')),
   created_at timestamptz not null default now(),

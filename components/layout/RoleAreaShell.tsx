@@ -1,39 +1,76 @@
 import type { ReactNode } from "react";
 import type { EventuzRole } from "@/lib/auth/roles";
-import { SiteFooter } from "./SiteFooter";
-import { SiteHeader } from "./SiteHeader";
-
-const roleLabels: Record<EventuzRole, string> = {
-  attendee: "Attendee",
-  organizer: "Organizer",
-  staff: "Staff",
-  super_admin: "Super Admin",
-};
+import type { BreadcrumbItem } from "./Breadcrumbs";
+import { DashboardFrame } from "./DashboardFrame";
+import { PageHeader } from "./PageHeader";
+import { navSectionsForRole, roleHomeHref, type NavContext } from "./navigation";
 
 type Props = {
   role: EventuzRole;
   title: string;
+  description?: string;
   children: ReactNode;
+  /** Shown in the top bar when `showPageHeader` is false (avoids duplicating the main H1). */
+  compactTitle?: string;
+  /** `flush` removes the inner content panel wrapper for full-width dashboards. */
+  layout?: "panel" | "flush";
+  /** `wide` uses `max-w-7xl` in the main column. */
+  mainWidth?: "default" | "wide";
+  /** Supplies event-scoped organizer/staff links when applicable. */
+  navContext?: NavContext;
+  breadcrumbs?: BreadcrumbItem[];
+  actions?: ReactNode;
+  /** When false, only `compactTitle` (or `title`) appears in the sticky top bar — use for custom in-page heroes. */
+  showPageHeader?: boolean;
 };
 
-export function RoleAreaShell({ role, title, children }: Props) {
-  return (
-    <div className="flex min-h-full flex-col">
-      <SiteHeader />
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-10 sm:px-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-            {roleLabels[role]}
-          </span>
-          <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-            {title}
-          </h1>
-        </div>
-        <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50/80 p-8 text-sm text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-400">
+export function RoleAreaShell({
+  role,
+  title,
+  description,
+  compactTitle,
+  children,
+  layout = "panel",
+  mainWidth = "default",
+  navContext,
+  breadcrumbs,
+  actions,
+  showPageHeader = true,
+}: Props) {
+  const sections = navSectionsForRole(role, navContext ?? {});
+  const homeHref = roleHomeHref(role);
+  const maxW = mainWidth === "wide" ? "max-w-7xl" : "max-w-5xl";
+
+  const topBarTitle = showPageHeader ? compactTitle : (compactTitle ?? title);
+
+  const inner = (
+    <>
+      {showPageHeader ? (
+        <PageHeader
+          title={title}
+          description={description}
+          breadcrumbs={breadcrumbs}
+          actions={actions}
+        />
+      ) : null}
+      {layout === "flush" ? (
+        <div className="space-y-8">{children}</div>
+      ) : (
+        <div className="rounded-2xl border border-border/70 bg-card/50 p-6 shadow-[0_1px_3px_rgba(28,25,23,0.04)] sm:p-8">
           {children}
         </div>
-      </main>
-      <SiteFooter />
-    </div>
+      )}
+    </>
+  );
+
+  return (
+    <DashboardFrame
+      role={role}
+      homeHref={homeHref}
+      navSections={sections}
+      compactTitle={topBarTitle}
+    >
+      <div className={`mx-auto w-full ${maxW} px-4 py-8 sm:px-6 sm:py-10`}>{inner}</div>
+    </DashboardFrame>
   );
 }

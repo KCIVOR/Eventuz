@@ -1,10 +1,15 @@
 "use client";
 
-import { homeForRole } from "@/lib/auth/redirects";
+import { authDebug } from "@/lib/auth/debug";
+import { safeNextPathForRole } from "@/lib/auth/redirects";
 import type { EventuzRole } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+
+const inputClass =
+  "rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground shadow-none transition-colors placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20";
+const labelClass = "text-xs font-semibold uppercase tracking-wide text-muted-foreground";
 
 export function LoginForm() {
   const router = useRouter();
@@ -38,18 +43,39 @@ export function LoginForm() {
       router.replace("/");
       return;
     }
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, status")
       .eq("id", uid)
       .single();
+    authDebug("login.profile", {
+      userId: uid,
+      ok: !profileError && !!profile?.role,
+      role: profile?.role ?? null,
+      status: profile?.status ?? null,
+      error: profileError
+        ? {
+            message: profileError.message,
+            code: profileError.code,
+            details: profileError.details,
+            hint: profileError.hint,
+          }
+        : null,
+    });
     if (!profile?.role) {
       setMsgIsError(true);
       setMessage("Profile missing. Complete Supabase migration and try again.");
+      await supabase.auth.signOut();
+      return;
+    }
+    if (profile.status === "disabled") {
+      setMsgIsError(true);
+      setMessage("This account has been disabled.");
+      await supabase.auth.signOut();
       return;
     }
     const role = profile.role as EventuzRole;
-    const dest = next && next.startsWith("/") ? next : homeForRole(role);
+    const dest = safeNextPathForRole(next, role);
     router.replace(dest);
     router.refresh();
   }
@@ -58,15 +84,17 @@ export function LoginForm() {
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       {message ? (
         <p
-          className={`text-center text-sm ${
-            msgIsError ? "text-red-600 dark:text-red-400" : "text-emerald-700 dark:text-emerald-400"
+          className={`rounded-lg px-3 py-2 text-center text-sm ${
+            msgIsError
+              ? "border border-destructive/20 bg-destructive-muted text-destructive"
+              : "border border-success/20 bg-success-muted text-success"
           }`}
         >
           {message}
         </p>
       ) : null}
-      <div className="flex flex-col gap-1">
-        <label htmlFor="email" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="email" className={labelClass}>
           Email
         </label>
         <input
@@ -77,11 +105,11 @@ export function LoginForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800"
+          className={inputClass}
         />
       </div>
-      <div className="flex flex-col gap-1">
-        <label htmlFor="password" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="password" className={labelClass}>
           Password
         </label>
         <input
@@ -92,13 +120,13 @@ export function LoginForm() {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800"
+          className={inputClass}
         />
       </div>
       <button
         type="submit"
         disabled={loading}
-        className="mt-2 rounded-lg bg-zinc-900 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
+        className="mt-2 rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-50"
       >
         {loading ? "Signing in…" : "Sign in"}
       </button>

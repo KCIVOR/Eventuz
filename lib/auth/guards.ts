@@ -10,8 +10,12 @@ const ROLE_ROUTE_PREFIX: { pathPrefix: string; role: EventuzRole }[] = [
 ];
 
 export function getRequiredRoleForPathname(pathname: string): EventuzRole | null {
+  const path = pathname.split("?")[0] ?? pathname;
+  if (path === "/staff/invite" || path.startsWith("/staff/invite/")) {
+    return null;
+  }
   const hit = ROLE_ROUTE_PREFIX.find(
-    (r) => pathname === r.pathPrefix || pathname.startsWith(`${r.pathPrefix}/`)
+    (r) => path === r.pathPrefix || path.startsWith(`${r.pathPrefix}/`)
   );
   return hit?.role ?? null;
 }

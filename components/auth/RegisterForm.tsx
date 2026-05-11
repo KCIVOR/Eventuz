@@ -1,9 +1,25 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 
-export function RegisterForm() {
+const inputClass =
+  "rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground shadow-none transition-colors placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20";
+const labelClass = "text-xs font-semibold uppercase tracking-wide text-muted-foreground";
+
+function RegisterFormInner() {
+  const searchParams = useSearchParams();
+  const nextParam = searchParams.get("next") ?? "";
+  const safeNext =
+    nextParam.startsWith("/") &&
+    !nextParam.startsWith("//") &&
+    !nextParam.startsWith("/login") &&
+    !nextParam.startsWith("/register")
+      ? nextParam
+      : "/attendee/event";
+
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,11 +33,12 @@ export function RegisterForm() {
     setMessage("");
     setIsError(false);
     const supabase = createClient();
+    const nextQuery = encodeURIComponent(safeNext);
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/attendee`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${nextQuery}`,
         data: { full_name: fullName },
       },
     });
@@ -37,69 +54,92 @@ export function RegisterForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      {message ? (
-        <p
-          className={`text-center text-sm ${
-            isError ? "text-red-600 dark:text-red-400" : "text-emerald-700 dark:text-emerald-400"
-          }`}
+    <>
+      <form onSubmit={onSubmit} className="flex flex-col gap-4">
+        {message ? (
+          <p
+            className={`rounded-lg px-3 py-2 text-center text-sm ${
+              isError
+                ? "border border-destructive/20 bg-destructive-muted text-destructive"
+                : "border border-success/20 bg-success-muted text-success"
+            }`}
+          >
+            {message}
+          </p>
+        ) : null}
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="full_name" className={labelClass}>
+            Full name
+          </label>
+          <input
+            id="full_name"
+            name="full_name"
+            type="text"
+            autoComplete="name"
+            required
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="email" className={labelClass}>
+            Email
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="password" className={labelClass}>
+            Password
+          </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={6}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className="mt-2 rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-50"
         >
-          {message}
-        </p>
-      ) : null}
-      <div className="flex flex-col gap-1">
-        <label htmlFor="full_name" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
-          Full name
-        </label>
-        <input
-          id="full_name"
-          name="full_name"
-          type="text"
-          autoComplete="name"
-          required
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800"
-        />
-      </div>
-      <div className="flex flex-col gap-1">
-        <label htmlFor="email" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
-          Email
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800"
-        />
-      </div>
-      <div className="flex flex-col gap-1">
-        <label htmlFor="password" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
-          Password
-        </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          required
-          minLength={6}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800"
-        />
-      </div>
-      <button
-        type="submit"
-        disabled={loading}
-        className="mt-2 rounded-lg bg-zinc-900 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-      >
-        {loading ? "Creating account…" : "Create account"}
-      </button>
-    </form>
+          {loading ? "Creating account…" : "Create account"}
+        </button>
+      </form>
+      <p className="mt-4 text-center text-xs text-muted-foreground">
+        Already have an account?{" "}
+        <Link
+          href={safeNext !== "/attendee/event" ? `/login?next=${encodeURIComponent(safeNext)}` : "/login"}
+          className="font-semibold text-primary underline-offset-4 hover:underline"
+        >
+          Sign in
+        </Link>
+      </p>
+    </>
+  );
+}
+
+export function RegisterForm() {
+  return (
+    <Suspense
+      fallback={<p className="text-center text-sm text-muted-foreground">Loading…</p>}
+    >
+      <RegisterFormInner />
+    </Suspense>
   );
 }

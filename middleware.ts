@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { authDebug } from "@/lib/auth/debug";
 import {
   getRequiredRoleForPathname,
   roleMatchesProfile,
@@ -27,12 +28,35 @@ export async function middleware(request: NextRequest) {
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, status")
     .eq("id", user.id)
     .single();
 
   if (error || !profile?.role) {
+    authDebug("middleware.guard", {
+      pathname,
+      userId: user.id,
+      ok: false,
+      role: profile?.role ?? null,
+      err: error
+        ? {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint,
+          }
+        : null,
+    });
     return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  if (profile.status === "disabled") {
+    const out = new URL("/auth/sign-out", request.url);
+    out.searchParams.set(
+      "error",
+      "This account has been disabled. Contact the organizer if you believe this is a mistake."
+    );
+    return NextResponse.redirect(out);
   }
 
   if (!roleMatchesProfile(profile.role as EventuzRole, requiredRole)) {

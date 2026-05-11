@@ -1,26 +1,64 @@
 @import "tailwindcss";
 
+/* Eventuz tokens — see docs/eventuz-design-guide.md */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #faf8f5;
+  /* Slight champagne lift for dashboard/public main surfaces */
+  --surface-app: #faf7f2;
+  --sidebar-bg: #f5f0e8;
+  --sidebar-border: #e4dcd0;
+  --foreground: #1c1917;
+  --card: #ffffff;
+  --muted: #f5f5f4;
+  --muted-foreground: #57534e;
+  --border: #e7e5e4;
+  --primary: #722f37;
+  --primary-hover: #8b3a42;
+  --primary-foreground: #faf8f5;
+  --accent-gold: #a68a56;
+  --success: #166534;
+  --success-muted: #ecfdf5;
+  --destructive: #b91c1c;
+  --destructive-muted: #fef2f2;
+  --warning: #a16207;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent-gold: var(--accent-gold);
+  --color-success: var(--success);
+  --color-success-muted: var(--success-muted);
+  --color-destructive: var(--destructive);
+  --color-destructive-muted: var(--destructive-muted);
+  --color-warning: var(--warning);
+  --color-surface-app: var(--surface-app);
+  --color-sidebar-bg: var(--sidebar-bg);
+  --color-sidebar-border: var(--sidebar-border);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-display), ui-serif, Georgia, "Times New Roman", serif;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
 }

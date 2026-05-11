@@ -1,10 +1,5 @@
-import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
-import { PlaceholderNotice } from "@/components/ui/PlaceholderNotice";
+import { redirect } from "next/navigation";
 
-export default function AttendeeHomePage() {
-  return (
-    <RoleAreaShell role="attendee" title="Attendee area">
-      <PlaceholderNotice label="Event view, purchase, seat assignment" />
-    </RoleAreaShell>
-  );
+export default function AttendeeIndexPage() {
+  redirect("/attendee/event");
 }

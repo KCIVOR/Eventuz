@@ -1,11 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { authDebug } from "@/lib/auth/debug";
+import type { EventuzRole } from "@/lib/auth/roles";
+import { safeNextPathForRole } from "@/lib/auth/redirects";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const next = url.searchParams.get("next") ?? "/";
+  const nextRaw = url.searchParams.get("next");
 
   if (!code) {
     return NextResponse.redirect(new URL("/login?error=missing_code", url.origin));
@@ -37,5 +40,60 @@ export async function GET(request: Request) {
     );
   }
 
-  return NextResponse.redirect(new URL(next, url.origin));
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.redirect(new URL("/login?error=no_user", url.origin));
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role, status")
+    .eq("id", user.id)
+    .single();
+
+  authDebug("callback.profile", {
+    userId: user.id,
+    ok: !profileError && !!profile?.role,
+    role: profile?.role ?? null,
+    status: profile?.status ?? null,
+    error: profileError
+      ? {
+          message: profileError.message,
+          code: profileError.code,
+          details: profileError.details,
+          hint: profileError.hint,
+        }
+      : null,
+  });
+
+  if (profileError || !profile?.role) {
+    await supabase.auth.signOut();
+    return NextResponse.redirect(
+      new URL(
+        `/login?error=${encodeURIComponent("Profile missing. Run database migrations.")}`,
+        url.origin
+      )
+    );
+  }
+
+  if (profile.status === "disabled") {
+    await supabase.auth.signOut();
+    return NextResponse.redirect(
+      new URL(
+        `/login?error=${encodeURIComponent("This account has been disabled.")}`,
+        url.origin
+      )
+    );
+  }
+
+  const role = profile.role as EventuzRole;
+  const nextForRole = safeNextPathForRole(
+    nextRaw && nextRaw !== "/" ? nextRaw : null,
+    role
+  );
+
+  return NextResponse.redirect(new URL(nextForRole, url.origin));
 }
