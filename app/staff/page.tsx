@@ -43,6 +43,7 @@ export default async function StaffHomePage({ searchParams }: Props) {
       description="Scan QR tickets at the venue for events you’re assigned to."
       layout="flush"
       mainWidth="wide"
+      withoutFrame
     >
       {q.accepted === "1" ? (
         <p className="mb-4 rounded-xl border border-success/25 bg-success-muted px-4 py-3 text-center text-sm text-success">

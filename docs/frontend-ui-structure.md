@@ -66,10 +66,10 @@ Print behavior: ticket pass page uses **`no-print`** on nav and buttons; print C
 |------|------|------|
 | Auth | `components/auth/LoginForm.tsx`, `RegisterForm.tsx` | Email/password; login uses client Supabase + redirect by role |
 | Attendee | `CapacityHoldForm.tsx`, `SeatAssignmentForm.tsx`, `QrTicketsBlock.tsx`, `TicketPrintButton.tsx` | Holds, HitPay/simulation, seat picker, QR list, print trigger |
-| Organizer | `components/organizer/eventSetupStyles.ts` | Shared class strings for panels, buttons, fields, callouts |
+| Organizer | `app/globals.css` (`@utility`) | Standard utilities: `panel-card`, `input-eventuz`, `btn-eventuz-primary`, etc. |
 | Check-in | `components/check-in/EventCheckInScanner.tsx` | Camera QR + manual code + result panel |
 | Super Admin | `PlatformMetricGrid.tsx`, `SmtpSettingsForm.tsx`, `AdminStatusChip.tsx` | Metrics grid, SMTP form, table chips |
-| Generic | `components/ui/PlaceholderNotice.tsx` | Dashed “placeholder” callout on marketing/staff home |
+| Generic UI | `components/ui/` | Centralized primitives: `Button`, `StatusBadge`, `ScrollableTableWrapper`, `Skeleton`, `ListPagination` |
 
 ---
 

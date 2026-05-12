@@ -2,12 +2,7 @@
 
 import type { SeatOverviewRow, TicketTypeOption } from "@/lib/organizer/loadSeatingOverview";
 import { filterSeatOverviewRows, type SeatOverviewOccupancyFilter } from "@/lib/organizer/seatOverviewFilters";
-import {
-  organizerField,
-  organizerLabel,
-  organizerPanel,
-  organizerSectionTitle,
-} from "@/components/organizer/eventSetupStyles";
+
 import { ClientPaginationBar } from "@/components/ui/ClientPaginationBar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { slicePage } from "@/lib/ui/pagination";
@@ -110,7 +105,7 @@ export function OrganizerTableLayoutView({ rows, ticketTypes }: Props) {
     <div className="space-y-8">
       <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 shadow-[0_2px_12px_rgba(28,25,23,0.05)] sm:flex-row sm:flex-wrap sm:items-end">
         <div className="min-w-[min(100%,14rem)] flex-1 space-y-1.5">
-          <label htmlFor="tables-layout-filter-search" className={organizerLabel}>
+          <label htmlFor="tables-layout-filter-search" className="label-eventuz">
             Search
           </label>
           <input
@@ -119,20 +114,20 @@ export function OrganizerTableLayoutView({ rows, ticketTypes }: Props) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Seat, table, guest, email, ticket code…"
-            className={organizerField}
+            className="input-eventuz"
             autoComplete="off"
             suppressHydrationWarning
           />
         </div>
         <div className="min-w-[min(100%,12rem)] space-y-1.5">
-          <label htmlFor="tables-layout-filter-type" className={organizerLabel}>
+          <label htmlFor="tables-layout-filter-type" className="label-eventuz">
             Ticket type
           </label>
           <select
             id="tables-layout-filter-type"
             value={ticketTypeId}
             onChange={(e) => setTicketTypeId(e.target.value)}
-            className={organizerField}
+            className="input-eventuz"
             suppressHydrationWarning
           >
             <option value="">All types</option>
@@ -144,14 +139,14 @@ export function OrganizerTableLayoutView({ rows, ticketTypes }: Props) {
           </select>
         </div>
         <div className="min-w-[min(100%,12rem)] space-y-1.5">
-          <label htmlFor="tables-layout-filter-occ" className={organizerLabel}>
+          <label htmlFor="tables-layout-filter-occ" className="label-eventuz">
             Occupancy
           </label>
           <select
             id="tables-layout-filter-occ"
             value={occupancy}
             onChange={(e) => setOccupancy(e.target.value as SeatOverviewOccupancyFilter)}
-            className={organizerField}
+            className="input-eventuz"
             suppressHydrationWarning
           >
             <option value="all">All seats</option>
@@ -188,10 +183,10 @@ export function OrganizerTableLayoutView({ rows, ticketTypes }: Props) {
                 <section
                   key={tableKey}
                   aria-labelledby={`table-layout-${ti}`}
-                  className={organizerPanel + " flex flex-col gap-4 p-5"}
+                  className="panel-card flex flex-col gap-4 p-5"
                 >
                   <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border pb-3">
-                    <h2 id={`table-layout-${ti}`} className={organizerSectionTitle}>
+                    <h2 id={`table-layout-${ti}`} className="section-title">
                       {displayTableTitle(tableKey)}
                     </h2>
                     <p className="text-xs tabular-nums text-muted-foreground">

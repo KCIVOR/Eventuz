@@ -1,12 +1,5 @@
 import { createEvent } from "@/app/organizer/events/actions";
-import {
-  organizerBtnPrimary,
-  organizerCallout,
-  organizerField,
-  organizerLabel,
-  organizerPanel,
-  organizerSectionTitle,
-} from "@/components/organizer/eventSetupStyles";
+import { Button } from "@/components/ui/Button";
 import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
 import { EVENT_STATUSES } from "@/lib/organizer/eventForm";
 import { createClient } from "@/lib/supabase/server";
@@ -38,6 +31,7 @@ export default async function NewEventPage({ searchParams }: Props) {
       role="organizer"
       layout="flush"
       mainWidth="wide"
+      withoutFrame
       title="Create your event"
       description="One celebration per organizer account — add details, holds, and publish when guests should register."
       breadcrumbs={[
@@ -52,28 +46,28 @@ export default async function NewEventPage({ searchParams }: Props) {
           </p>
         ) : null}
 
-        <div className={organizerPanel + " p-6 sm:p-8"}>
+        <div className="panel-card p-6 sm:p-8">
           <form action={createEvent} className="flex flex-col gap-8">
             <section className="space-y-4">
-              <h2 className={organizerSectionTitle}>Basics</h2>
+              <h2 className="section-title">Basics</h2>
               <Field label="Event name" name="name" required placeholder="e.g. Santos & Cruz wedding" />
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="description" className={organizerLabel}>
+                <label htmlFor="description" className="label-eventuz">
                   Description
                 </label>
                 <textarea
                   id="description"
                   name="description"
                   rows={4}
-                  className={organizerField}
+                  className="input-eventuz"
                   placeholder="What guests should know (optional)."
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="status" className={organizerLabel}>
+                <label htmlFor="status" className="label-eventuz">
                   Status
                 </label>
-                <select id="status" name="status" className={organizerField} defaultValue="draft">
+                <select id="status" name="status" className="input-eventuz" defaultValue="draft">
                   {EVENT_STATUSES.map((s) => (
                     <option key={s} value={s}>
                       {s === "draft"
@@ -88,7 +82,7 @@ export default async function NewEventPage({ searchParams }: Props) {
             </section>
 
             <section className="space-y-4 border-t border-border pt-8">
-              <h2 className={organizerSectionTitle}>Schedule & location</h2>
+              <h2 className="section-title">Schedule & location</h2>
               <Field label="Venue" name="venue" placeholder="City or venue name" />
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Event date" name="event_date" type="date" required />
@@ -97,7 +91,7 @@ export default async function NewEventPage({ searchParams }: Props) {
             </section>
 
             <section className="space-y-4 border-t border-border pt-8">
-              <h2 className={organizerSectionTitle}>Public link</h2>
+              <h2 className="section-title">Public link</h2>
               <p className="text-sm text-muted-foreground">
                 Used in your event URL. Leave blank to derive from the name; we&apos;ll ensure it&apos;s
                 unique.
@@ -111,13 +105,13 @@ export default async function NewEventPage({ searchParams }: Props) {
             </section>
 
             <section className="space-y-4 border-t border-border pt-8">
-              <h2 className={organizerSectionTitle}>Hold durations (minutes)</h2>
+              <h2 className="section-title">Hold durations (minutes)</h2>
               <p className="text-sm text-muted-foreground">
                 Optional on create: leave empty to use the defaults defined on your database (not
                 hardcoded in the app). Values must be whole minutes, 1–525600.
               </p>
               <fieldset className="grid gap-4 rounded-xl border border-border bg-muted/30 p-4 sm:grid-cols-3">
-                <legend className={organizerLabel + " px-1"}>Per-event timing</legend>
+                <legend className="label-eventuz px-1">Per-event timing</legend>
                 <Field
                   label="Capacity hold"
                   name="capacity_hold_minutes"
@@ -142,7 +136,7 @@ export default async function NewEventPage({ searchParams }: Props) {
               </fieldset>
             </section>
 
-            <div className={organizerCallout}>
+            <div className="callout-eventuz">
               <strong className="font-semibold text-foreground">Publishing</strong>
               <p className="mt-1 text-muted-foreground">
                 You can save as draft and return anytime. Set status to <em>published</em> when the
@@ -150,9 +144,9 @@ export default async function NewEventPage({ searchParams }: Props) {
               </p>
             </div>
 
-            <button type="submit" className={organizerBtnPrimary + " w-full sm:w-auto"}>
+            <Button type="submit" className="w-full sm:w-auto">
               Create event
-            </button>
+            </Button>
           </form>
         </div>
       </div>
@@ -179,7 +173,7 @@ function Field({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={name} className={organizerLabel}>
+      <label htmlFor={name} className="label-eventuz">
         {label}
         {required ? <span className="text-destructive"> *</span> : null}
       </label>
@@ -191,7 +185,7 @@ function Field({
         placeholder={placeholder}
         min={min}
         autoComplete={autoComplete}
-        className={organizerField}
+        className="input-eventuz"
       />
     </div>
   );

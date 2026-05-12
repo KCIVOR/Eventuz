@@ -115,9 +115,9 @@ Use **one** primary accent for CTAs; avoid competing bright colors.
 ## Implementation checklist (for engineers)
 
 1. Define CSS variables in `:root` (and `[data-theme="dark"]` if/when dark mode ships).  
-2. Load **Cormorant Garamond** + **Inter** via `next/font/google` in the root layout.  
-3. Map Tailwind `theme` extensions to the same tokens if using Tailwind utility classes.  
-4. Document button variants: `primary` (wine), `secondary` (outline neutral), `ghost`, `destructive`.  
+2. Define Tailwind 4 `@utility` classes in `app/globals.css` (e.g. `panel-card`, `input-eventuz`, `section-title`) for shared layouts.
+3. Load **Cormorant Garamond** + **Inter** via `next/font/google` in the root layout.  
+4. Use centralized components in `components/ui/`: `Button` (primary/secondary/outline/ghost), `StatusBadge`, `ScrollableTableWrapper`.
 5. Ensure **:focus-visible** uses primary color with clear ring (accessibility).
 
 ---

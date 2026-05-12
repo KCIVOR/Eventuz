@@ -57,6 +57,7 @@ export default async function StaffEventScannerPage({ params }: Props) {
       title={ev?.name ?? "Scanner"}
       layout="flush"
       navContext={{ eventId }}
+      withoutFrame
       breadcrumbs={[
         { label: "Assigned events", href: "/staff" },
         { label: "Scanner" },

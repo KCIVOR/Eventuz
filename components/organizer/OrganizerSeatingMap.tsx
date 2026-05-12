@@ -9,12 +9,7 @@ import {
   SEAT_OVERVIEW_PAGE_SIZE,
   slicePage,
 } from "@/lib/ui/pagination";
-import {
-  organizerField,
-  organizerLabel,
-  organizerPanel,
-  organizerSectionTitle,
-} from "@/components/organizer/eventSetupStyles";
+import { ScrollableTableWrapper } from "@/components/ui/ScrollableTableWrapper";
 import { ClientPaginationBar } from "@/components/ui/ClientPaginationBar";
 import { useEffect, useMemo, useState } from "react";
 
@@ -129,7 +124,7 @@ export function OrganizerSeatingMap({ rows, ticketTypes }: Props) {
     <div className="space-y-8">
       <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 shadow-[0_2px_12px_rgba(28,25,23,0.05)] sm:flex-row sm:flex-wrap sm:items-end">
         <div className="min-w-[min(100%,14rem)] flex-1 space-y-1.5">
-          <label htmlFor="seat-filter-search" className={organizerLabel}>
+          <label htmlFor="seat-filter-search" className="label-eventuz">
             Search
           </label>
           <input
@@ -138,20 +133,20 @@ export function OrganizerSeatingMap({ rows, ticketTypes }: Props) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Seat, table, guest, email, ticket code…"
-            className={organizerField}
+            className="input-eventuz"
             autoComplete="off"
             suppressHydrationWarning
           />
         </div>
         <div className="min-w-[min(100%,12rem)] space-y-1.5">
-          <label htmlFor="seat-filter-type" className={organizerLabel}>
+          <label htmlFor="seat-filter-type" className="label-eventuz">
             Ticket type
           </label>
           <select
             id="seat-filter-type"
             value={ticketTypeId}
             onChange={(e) => setTicketTypeId(e.target.value)}
-            className={organizerField}
+            className="input-eventuz"
             suppressHydrationWarning
           >
             <option value="">All types</option>
@@ -163,14 +158,14 @@ export function OrganizerSeatingMap({ rows, ticketTypes }: Props) {
           </select>
         </div>
         <div className="min-w-[min(100%,12rem)] space-y-1.5">
-          <label htmlFor="seat-filter-occ" className={organizerLabel}>
+          <label htmlFor="seat-filter-occ" className="label-eventuz">
             Occupancy
           </label>
           <select
             id="seat-filter-occ"
             value={occupancy}
             onChange={(e) => setOccupancy(e.target.value as OccupancyFilter)}
-            className={organizerField}
+            className="input-eventuz"
             suppressHydrationWarning
           >
             <option value="all">All seats</option>
@@ -188,12 +183,12 @@ export function OrganizerSeatingMap({ rows, ticketTypes }: Props) {
       </p>
 
       {rows.length === 0 ? (
-        <div className={organizerPanel + " p-10 text-center text-sm text-muted-foreground"}>
+        <div className="panel-card p-10 text-center text-sm text-muted-foreground">
           No seats yet. Add ticket types and save under{" "}
           <strong className="text-foreground">Event setup</strong> to generate seat rows.
         </div>
       ) : filtered.length === 0 ? (
-        <div className={organizerPanel + " p-10 text-center text-sm text-muted-foreground"}>
+        <div className="panel-card p-10 text-center text-sm text-muted-foreground">
           No seats match your filters. Clear search or broaden occupancy.
         </div>
       ) : (
@@ -204,10 +199,10 @@ export function OrganizerSeatingMap({ rows, ticketTypes }: Props) {
               aria-labelledby={`seat-table-${tableKey}-${ti}`}
               className="space-y-4"
             >
-              <h2 id={`seat-table-${tableKey}-${ti}`} className={organizerSectionTitle}>
+              <h2 id={`seat-table-${tableKey}-${ti}`} className="section-title">
                 {displayTableTitle(tableKey)}
               </h2>
-              <div className="overflow-x-auto rounded-xl border border-border">
+              <ScrollableTableWrapper>
                 <table className="w-full min-w-[720px] text-left text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/40 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -258,7 +253,7 @@ export function OrganizerSeatingMap({ rows, ticketTypes }: Props) {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </ScrollableTableWrapper>
             </section>
           ))}
           <ClientPaginationBar

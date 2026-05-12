@@ -53,6 +53,38 @@ body {
   color: var(--foreground);
 }
 
+@utility panel-card {
+  @apply rounded-2xl border border-border bg-card shadow-[0_2px_12px_rgba(28,25,23,0.06)] transition-shadow duration-200 hover:shadow-[0_4px_20px_rgba(28,25,23,0.08)];
+}
+
+@utility input-eventuz {
+  @apply w-full rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground shadow-[inset_0_1px_1px_rgba(28,25,23,0.04)] transition-[border-color,box-shadow] duration-200 placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20;
+}
+
+@utility label-eventuz {
+  @apply text-xs font-semibold uppercase tracking-wide text-muted-foreground;
+}
+
+@utility section-title {
+  @apply font-serif text-lg font-semibold tracking-tight text-foreground;
+}
+
+@utility btn-eventuz-primary {
+  @apply inline-flex cursor-pointer items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_1px_2px_rgba(28,25,23,0.06)] transition-colors duration-200 hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30;
+}
+
+@utility btn-eventuz-secondary {
+  @apply inline-flex cursor-pointer items-center justify-center rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition-colors duration-200 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20;
+}
+
+@utility callout-eventuz {
+  @apply rounded-xl border border-primary/15 bg-primary/[0.04] px-4 py-3 text-sm text-foreground;
+}
+
+@utility inset-panel {
+  @apply rounded-xl border border-border/80 bg-muted/15 p-4 sm:p-5 transition-colors duration-200 hover:bg-muted/25;
+}
+
 @media print {
   body {
     background: #ffffff !important;
@@ -60,5 +92,11 @@ body {
 
   .no-print {
     display: none !important;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
   }
 }

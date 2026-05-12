@@ -36,13 +36,13 @@ export type InventoryTicketType = {
 
 export async function loadOrganizerSeatingOverview(eventId: string): Promise<
   | {
-      ok: true;
-      eventName: string;
-      rows: SeatOverviewRow[];
-      ticketTypes: TicketTypeOption[];
-      inventoryTicketTypes: InventoryTicketType[];
-      inventorySeatsByTypeId: Record<string, SeatInventoryEditorSeat[]>;
-    }
+    ok: true;
+    eventName: string;
+    rows: SeatOverviewRow[];
+    ticketTypes: TicketTypeOption[];
+    inventoryTicketTypes: InventoryTicketType[];
+    inventorySeatsByTypeId: Record<string, SeatInventoryEditorSeat[]>;
+  }
   | { ok: false; reason: "auth" | "forbidden" }
 > {
   const supabase = await createClient();
@@ -78,29 +78,45 @@ export async function loadOrganizerSeatingOverview(eventId: string): Promise<
     quantity: Number(t.quantity ?? 0),
   }));
 
-  const { data: seatsRaw, error: seatsErr } = await supabase
-    .from("seats")
-    .select(
-      `id, display_label, seat_label, table_label, status, ticket_type_id,
-       ticket_types ( id, name ),
-       seat_assignments ( attendee_name, attendee_email, status ),
-       tickets ( ticket_code, status, checked_in_at )`
-    )
-    .eq("event_id", eventId)
-    .order("display_label", { ascending: true });
+  let allSeats: any[] = [];
+  let from = 0;
+  let to = 999;
+  let finished = false;
 
-  if (seatsErr) {
-    return {
-      ok: true,
-      eventName: (event.name as string) || "Event",
-      rows: [],
-      ticketTypes: typeOptions,
-      inventoryTicketTypes,
-      inventorySeatsByTypeId: Object.fromEntries(
-        inventoryTicketTypes.map((t) => [t.id, [] as SeatInventoryEditorSeat[]])
-      ),
-    };
+  while (!finished) {
+    const { data: chunk, error: chunkErr } = await supabase
+      .from("seats")
+      .select(
+        `id, display_label, seat_label, table_label, status, ticket_type_id,
+         ticket_types ( id, name ),
+         seat_assignments ( attendee_name, attendee_email, status ),
+         tickets ( ticket_code, status, checked_in_at )`
+      )
+      .eq("event_id", eventId)
+      .order("display_label", { ascending: true })
+      .range(from, to);
+
+    if (chunkErr) {
+      console.error("[loadSeatingOverview] Error fetching seats chunk:", chunkErr);
+      break;
+    }
+
+    if (chunk && chunk.length > 0) {
+      allSeats = [...allSeats, ...chunk];
+      if (chunk.length < 1000) {
+        finished = true;
+      } else {
+        from += 1000;
+        to += 1000;
+      }
+    } else {
+      finished = true;
+    }
   }
+
+  const seatsRaw = allSeats;
+
+
 
   function asArray<T>(x: T | T[] | null | undefined): T[] {
     if (x == null) return [];
@@ -111,9 +127,9 @@ export async function loadOrganizerSeatingOverview(eventId: string): Promise<
     const tt = nestedOne(s.ticket_types as { id?: string; name?: string } | null);
     const assigns = asArray(
       s.seat_assignments as
-        | { attendee_name: string; attendee_email: string; status: string }
-        | { attendee_name: string; attendee_email: string; status: string }[]
-        | null
+      | { attendee_name: string; attendee_email: string; status: string }
+      | { attendee_name: string; attendee_email: string; status: string }[]
+      | null
     );
     const activeAssign =
       assigns.find((a) => a.status === "ticket_issued") ??
@@ -123,9 +139,9 @@ export async function loadOrganizerSeatingOverview(eventId: string): Promise<
 
     const tks = asArray(
       s.tickets as
-        | { ticket_code: string; status: string; checked_in_at: string | null }
-        | { ticket_code: string; status: string; checked_in_at: string | null }[]
-        | null
+      | { ticket_code: string; status: string; checked_in_at: string | null }
+      | { ticket_code: string; status: string; checked_in_at: string | null }[]
+      | null
     );
     const ticket =
       tks.find((t) => t.status === "checked_in") ??
@@ -154,7 +170,10 @@ export async function loadOrganizerSeatingOverview(eventId: string): Promise<
     inventoryTicketTypes.map((t) => [t.id, [] as SeatInventoryEditorSeat[]])
   );
   for (const s of seatsRaw ?? []) {
-    const tid = (s.ticket_type_id as string) ?? "";
+    // Robustly extract the ticket type ID from either the column or the joined object
+    const rawTid = s.ticket_type_id;
+    const joinedTid = (s.ticket_types as any)?.id;
+    const tid = (typeof rawTid === "string" ? rawTid : joinedTid) || "";
     const list = inventorySeatsByTypeId[tid];
     if (!list) continue;
     list.push({

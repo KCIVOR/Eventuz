@@ -64,10 +64,14 @@ function resolveHitStatus(payload: PaymentRequestPayload): string {
   return String(pick?.status ?? "").trim().toLowerCase();
 }
 
+import { loadHitPaySettings } from "@/lib/super-admin/loadHitPaySettings";
+
 export async function processHitPayWebhookRequest(req: Request): Promise<HitPayWebhookResult> {
-  const salt = process.env.HITPAY_SALT?.trim();
+  const dbSettings = await loadHitPaySettings();
+  const salt = dbSettings?.salt || process.env.HITPAY_SALT?.trim();
+
   if (!salt) {
-    return { ok: false, status: 503, detail: "HITPAY_SALT not configured" };
+    return { ok: false, status: 503, detail: "HitPay salt not configured" };
   }
 
   const rawBody = await req.text();

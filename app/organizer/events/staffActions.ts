@@ -13,7 +13,7 @@ function normEmail(raw: string): string {
 }
 
 function redirectWithError(eventId: string, message: string): never {
-  redirect(`/organizer/events/${eventId}?error=${encodeURIComponent(message)}`);
+  redirect(`/organizer/events/${eventId}/staff?error=${encodeURIComponent(message)}`);
 }
 
 export async function inviteEventStaff(eventId: string, formData: FormData) {
@@ -21,7 +21,7 @@ export async function inviteEventStaff(eventId: string, formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect(`/login?next=${encodeURIComponent(`/organizer/events/${eventId}`)}`);
+  if (!user) redirect(`/login?next=${encodeURIComponent(`/organizer/events/${eventId}/staff`)}`);
 
   const { data: ev, error: evErr } = await supabase
     .from("events")
@@ -87,7 +87,7 @@ export async function inviteEventStaff(eventId: string, formData: FormData) {
     acceptUrl,
   });
 
-  revalidatePath(`/organizer/events/${eventId}`);
+  revalidatePath(`/organizer/events/${eventId}/staff`);
   if (!sent.ok) {
     redirectWithError(
       eventId,
@@ -95,7 +95,7 @@ export async function inviteEventStaff(eventId: string, formData: FormData) {
     );
   }
 
-  redirect(`/organizer/events/${eventId}?ok=1`);
+  redirect(`/organizer/events/${eventId}/staff?ok=1`);
 }
 
 export async function revokeStaffInvitation(formData: FormData) {
@@ -107,7 +107,7 @@ export async function revokeStaffInvitation(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect(`/login?next=${encodeURIComponent(`/organizer/events/${eventId}`)}`);
+  if (!user) redirect(`/login?next=${encodeURIComponent(`/organizer/events/${eventId}/staff`)}`);
 
   const { error } = await supabase
     .from("staff_invitations")
@@ -125,8 +125,8 @@ export async function revokeStaffInvitation(formData: FormData) {
     metadata: { event_id: eventId },
   });
 
-  revalidatePath(`/organizer/events/${eventId}`);
-  redirect(`/organizer/events/${eventId}?ok=1`);
+  revalidatePath(`/organizer/events/${eventId}/staff`);
+  redirect(`/organizer/events/${eventId}/staff?ok=1`);
 }
 
 export async function revokeEventStaffMember(formData: FormData) {
@@ -138,7 +138,7 @@ export async function revokeEventStaffMember(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect(`/login?next=${encodeURIComponent(`/organizer/events/${eventId}`)}`);
+  if (!user) redirect(`/login?next=${encodeURIComponent(`/organizer/events/${eventId}/staff`)}`);
 
   const { error } = await supabase
     .from("event_staff")
@@ -155,6 +155,6 @@ export async function revokeEventStaffMember(formData: FormData) {
     metadata: { event_id: eventId },
   });
 
-  revalidatePath(`/organizer/events/${eventId}`);
-  redirect(`/organizer/events/${eventId}?ok=1`);
+  revalidatePath(`/organizer/events/${eventId}/staff`);
+  redirect(`/organizer/events/${eventId}/staff?ok=1`);
 }

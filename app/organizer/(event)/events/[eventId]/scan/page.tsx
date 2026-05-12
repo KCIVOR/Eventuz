@@ -27,6 +27,7 @@ export default async function OrganizerEventScanPage({ params }: Props) {
       navContext={{ eventId }}
       layout="flush"
       mainWidth="wide"
+      withoutFrame
       title="Check-in scanner"
       description={`${event.name as string} · ${event.event_date as string} · ${String(event.event_time ?? "")}${event.venue ? ` · ${event.venue as string}` : ""}`}
       breadcrumbs={[

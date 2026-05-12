@@ -1,6 +1,6 @@
 "use server";
 
-import { encryptSmtpPassword, decryptSmtpPassword } from "@/lib/smtp/crypto";
+import { encryptSmtpPassword, decryptSmtpPassword } from "@/lib/utils/crypto";
 import { sendTestMessage } from "@/lib/smtp/sendTestMessage";
 import { writeAuditLogSafe } from "@/lib/audit/writeAuditLog";
 import { createClient } from "@/lib/supabase/server";

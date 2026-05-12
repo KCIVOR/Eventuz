@@ -1,4 +1,4 @@
-import { decryptSmtpPassword } from "@/lib/smtp/crypto";
+import { decryptSmtpPassword } from "@/lib/utils/crypto";
 import {
   createSmtpTransport,
   formatSmtpFrom,

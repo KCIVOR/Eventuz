@@ -11,6 +11,8 @@ import { loadOrganizerSeatingOverview } from "@/lib/organizer/loadSeatingOvervie
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 type Props = {
   params: Promise<{ eventId: string }>;
   searchParams: Promise<{ tab?: string; ok?: string; error?: string }>;
@@ -35,6 +37,7 @@ export default async function OrganizerSeatingPage({ params, searchParams }: Pro
       navContext={{ eventId }}
       layout="flush"
       mainWidth="wide"
+      withoutFrame
       title="Seating"
       description={`${loaded.eventName} · Overview, inventory labels, and table layout.`}
       breadcrumbs={[

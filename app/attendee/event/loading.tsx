@@ -1,10 +1,20 @@
+import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
 import { AttendeeRouteSkeleton } from "@/components/ui/ContentSkeleton";
 
-/** Streaming fallback for attendee event routes — skeleton approximates final layout to limit shift */
+/** Streaming fallback for attendee event routes — shell is preserved to prevent blank page flashes */
 export default function AttendeeEventLoading() {
   return (
-    <div className="min-h-[50vh]" role="status" aria-live="polite">
-      <AttendeeRouteSkeleton />
-    </div>
+    <RoleAreaShell
+      role="attendee"
+      title="Your invitation"
+      showPageHeader={false}
+      compactTitle="Eventuz"
+      layout="flush"
+      mainWidth="wide"
+    >
+      <div className="min-h-[50vh] pt-10" role="status" aria-live="polite">
+        <AttendeeRouteSkeleton />
+      </div>
+    </RoleAreaShell>
   );
 }

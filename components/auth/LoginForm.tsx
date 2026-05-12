@@ -6,10 +6,7 @@ import type { EventuzRole } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-
-const inputClass =
-  "rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground shadow-none transition-colors placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20";
-const labelClass = "text-xs font-semibold uppercase tracking-wide text-muted-foreground";
+import { Input } from "@/components/ui/Input";
 
 export function LoginForm() {
   const router = useRouter();
@@ -93,36 +90,26 @@ export function LoginForm() {
           {message}
         </p>
       ) : null}
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="email" className={labelClass}>
-          Email
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className={inputClass}
-        />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="password" className={labelClass}>
-          Password
-        </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={inputClass}
-        />
-      </div>
+      <Input
+        id="email"
+        name="email"
+        type="email"
+        autoComplete="email"
+        required
+        label="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <Input
+        id="password"
+        name="password"
+        type="password"
+        autoComplete="current-password"
+        required
+        label="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
       <button
         type="submit"
         disabled={loading}

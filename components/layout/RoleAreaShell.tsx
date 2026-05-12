@@ -22,6 +22,8 @@ type Props = {
   actions?: ReactNode;
   /** When false, only `compactTitle` (or `title`) appears in the sticky top bar — use for custom in-page heroes. */
   showPageHeader?: boolean;
+  /** When true, the surrounding DashboardFrame (sidebar/nav) is omitted — used when a parent layout already provides the frame. */
+  withoutFrame?: boolean;
 };
 
 export function RoleAreaShell({
@@ -36,6 +38,7 @@ export function RoleAreaShell({
   breadcrumbs,
   actions,
   showPageHeader = true,
+  withoutFrame = false,
 }: Props) {
   const sections = navSectionsForRole(role, navContext ?? {});
   const homeHref = roleHomeHref(role);
@@ -63,6 +66,12 @@ export function RoleAreaShell({
     </>
   );
 
+  const content = <div className={`mx-auto w-full ${maxW} px-4 py-8 sm:px-6 sm:py-10`}>{inner}</div>;
+
+  if (withoutFrame) {
+    return content;
+  }
+
   return (
     <DashboardFrame
       role={role}
@@ -70,7 +79,7 @@ export function RoleAreaShell({
       navSections={sections}
       compactTitle={topBarTitle}
     >
-      <div className={`mx-auto w-full ${maxW} px-4 py-8 sm:px-6 sm:py-10`}>{inner}</div>
+      {content}
     </DashboardFrame>
   );
 }

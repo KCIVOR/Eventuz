@@ -1,13 +1,7 @@
 "use client";
 
 import { updateSeat } from "@/app/organizer/events/actions";
-import {
-  organizerBtnSecondary,
-  organizerCallout,
-  organizerField,
-  organizerPanel,
-  organizerSectionTitle,
-} from "@/components/organizer/eventSetupStyles";
+import { ScrollableTableWrapper } from "@/components/ui/ScrollableTableWrapper";
 import { ClientPaginationBar } from "@/components/ui/ClientPaginationBar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type {
@@ -61,7 +55,7 @@ export function OrganizerSeatInventoryPanel({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className={organizerSectionTitle}>Seat inventory</h2>
+        <h2 className="section-title">Seat inventory</h2>
         <p className="mt-1 max-w-prose text-sm leading-relaxed text-muted-foreground">
           Seats are created from each ticket type&apos;s quantity. Edit labels for table-style
           seating (e.g. display <span className="tabular-nums">Table 1 — Seat 2</span>) or keep
@@ -69,7 +63,7 @@ export function OrganizerSeatInventoryPanel({
         </p>
       </div>
 
-      <div className={organizerCallout}>
+      <div className="callout-eventuz">
         <strong className="font-semibold text-foreground">Sync</strong>
         <p className="mt-1 text-muted-foreground">
           Seat count stays aligned when you save a ticket type under{" "}
@@ -92,7 +86,7 @@ export function OrganizerSeatInventoryPanel({
             const paginated = slicePage(list, pageFor(tt.id), SEAT_OVERVIEW_PAGE_SIZE);
 
             return (
-              <div key={tt.id} className={organizerPanel + " p-4 sm:p-6"}>
+              <div className="panel-card p-4 sm:p-6" key={tt.id}>
                 <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2 border-b border-border pb-2">
                   <p className="font-semibold text-foreground">{tt.name}</p>
                   <p className="text-xs tabular-nums text-muted-foreground">
@@ -108,12 +102,10 @@ export function OrganizerSeatInventoryPanel({
                     to generate them.
                   </p>
                 ) : (
-                  <div className="overflow-hidden rounded-xl border border-border">
-                    <div className="overflow-x-auto">
+                  <>
+                    <ScrollableTableWrapper>
                       <div className="min-w-[720px]">
-                        <div
-                          className="grid grid-cols-[minmax(8rem,1fr)_5.5rem_5.5rem_6.5rem_auto] items-center gap-2 border-b border-border bg-muted/40 px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-                        >
+                        <div className="grid grid-cols-[minmax(8rem,1fr)_5.5rem_5.5rem_6.5rem_auto] items-center gap-2 border-b border-border bg-muted/40 px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                           <div>Display</div>
                           <div>Table</div>
                           <div>Seat</div>
@@ -131,7 +123,7 @@ export function OrganizerSeatInventoryPanel({
                             <input
                               name="display_label"
                               defaultValue={seat.display_label}
-                              className={organizerField + " py-2 text-xs"}
+                              className="input-eventuz py-2 text-xs"
                               required
                               aria-label="Display label"
                               suppressHydrationWarning
@@ -140,14 +132,14 @@ export function OrganizerSeatInventoryPanel({
                               name="table_label"
                               defaultValue={seat.table_label ?? ""}
                               placeholder="—"
-                              className={organizerField + " py-2 text-xs"}
+                              className="input-eventuz py-2 text-xs"
                               aria-label="Table label"
                               suppressHydrationWarning
                             />
                             <input
                               name="seat_label"
                               defaultValue={seat.seat_label}
-                              className={organizerField + " py-2 text-xs"}
+                              className="input-eventuz py-2 text-xs"
                               aria-label="Seat label"
                               suppressHydrationWarning
                             />
@@ -159,14 +151,14 @@ export function OrganizerSeatInventoryPanel({
                             <button
                               type="submit"
                               suppressHydrationWarning
-                              className={organizerBtnSecondary + " justify-self-end py-2 text-xs"}
+                              className="btn-eventuz-secondary justify-self-end py-2 text-xs"
                             >
                               Save row
                             </button>
                           </form>
                         ))}
                       </div>
-                    </div>
+                    </ScrollableTableWrapper>
                     <ClientPaginationBar
                       page={paginated.page}
                       pageCount={paginated.pageCount}
@@ -177,7 +169,7 @@ export function OrganizerSeatInventoryPanel({
                       itemLabel="seat"
                       listLabel={`${tt.name} — inventory`}
                     />
-                  </div>
+                  </>
                 )}
               </div>
             );

@@ -1,7 +1,4 @@
-import {
-  organizerBtnPrimary,
-  organizerLink,
-} from "@/components/organizer/eventSetupStyles";
+import { Button } from "@/components/ui/Button";
 import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { createClient } from "@/lib/supabase/server";
@@ -34,14 +31,17 @@ export default async function OrganizerHomePage({ searchParams }: Props) {
   return (
     <RoleAreaShell
       role="organizer"
+      title="Your events"
+      description="Manage your active events or create a new one to start selling tickets."
       layout="flush"
       mainWidth="wide"
-      title="Your wedding event"
-      description="Create one event for your celebration — seating, tickets, and check-in stay on this workspace."
+      withoutFrame
       actions={
-        <Link href="/organizer/events/new" className={organizerBtnPrimary}>
-          Create event
-        </Link>
+        <Button asChild>
+          <Link href="/organizer/events/new">
+            Create event
+          </Link>
+        </Button>
       }
     >
       <div className="flex flex-1 flex-col gap-8">
@@ -55,13 +55,15 @@ export default async function OrganizerHomePage({ searchParams }: Props) {
           title="No event yet"
           description="Eventuz supports one event per organizer account — ideal for a single wedding or celebration. Create your workspace to manage seating, tickets, and check-in."
         >
-          <Link href="/organizer/events/new" className={organizerBtnPrimary + " inline-flex"}>
-            Create your event
-          </Link>
+          <Button asChild>
+            <Link href="/organizer/events/new">
+              Create your event
+            </Link>
+          </Button>
         </EmptyState>
         <p className="text-center text-xs text-muted-foreground">
           Already started?{" "}
-          <Link href="/login" className={organizerLink}>
+          <Link href="/login" className="font-medium text-primary underline decoration-accent-gold/50 underline-offset-4 transition-colors duration-200 hover:text-primary-hover cursor-pointer">
             Sign in
           </Link>{" "}
           with the account you used to register.

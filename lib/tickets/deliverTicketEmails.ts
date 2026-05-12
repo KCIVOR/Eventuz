@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { writeAuditLogSafe } from "@/lib/audit/writeAuditLog";
-import { decryptSmtpPassword } from "@/lib/smtp/crypto";
+import { decryptSmtpPassword } from "@/lib/utils/crypto";
 import { createSmtpTransport, formatSmtpFrom, type SmtpDecryptedConfig } from "@/lib/smtp/sendTestMessage";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { getAppOrigin } from "@/lib/url/site";

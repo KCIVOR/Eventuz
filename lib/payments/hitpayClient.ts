@@ -5,8 +5,10 @@ export type HitPayCreateResponse = {
   url: string;
 };
 
-function hitPayBaseUrl(): string {
-  const sandbox = process.env.HITPAY_SANDBOX === "true" || process.env.HITPAY_SANDBOX === "1";
+import { loadHitPaySettings } from "@/lib/super-admin/loadHitPaySettings";
+
+function hitPayBaseUrl(isSandbox?: boolean): string {
+  const sandbox = isSandbox ?? (process.env.HITPAY_SANDBOX === "true" || process.env.HITPAY_SANDBOX === "1");
   return sandbox ? "https://api.sandbox.hit-pay.com" : "https://api.hit-pay.com";
 }
 
@@ -26,9 +28,13 @@ export type CreateHitPayCheckoutParams = {
 export async function createHitPayCheckout(
   params: CreateHitPayCheckoutParams
 ): Promise<HitPayCreateResponse> {
-  const apiKey = process.env.HITPAY_API_KEY;
+  const dbSettings = await loadHitPaySettings();
+  
+  const apiKey = dbSettings?.apiKey || process.env.HITPAY_API_KEY;
+  const isSandbox = dbSettings ? dbSettings.isSandbox : undefined;
+
   if (!apiKey?.trim()) {
-    throw new Error("HitPay is not configured (missing HITPAY_API_KEY).");
+    throw new Error("HitPay is not configured (missing API key).");
   }
 
   const body: Record<string, unknown> = {
@@ -47,7 +53,7 @@ export async function createHitPayCheckout(
     body.webhook = params.webhookUrl.trim();
   }
 
-  const res = await fetch(`${hitPayBaseUrl()}/v1/payment-requests`, {
+  const res = await fetch(`${hitPayBaseUrl(isSandbox)}/v1/payment-requests`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

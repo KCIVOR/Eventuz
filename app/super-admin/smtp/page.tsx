@@ -12,6 +12,7 @@ export default async function SuperAdminSmtpPage() {
       description="Outbound mail for tickets and staff invitations."
       layout="flush"
       mainWidth="wide"
+      withoutFrame
       breadcrumbs={[
         { label: "Platform", href: "/super-admin#platform-overview" },
         { label: "SMTP settings" },

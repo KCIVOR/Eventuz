@@ -1,6 +1,5 @@
 "use client";
 
-import { organizerPanel } from "@/components/organizer/eventSetupStyles";
 import { useId, useState, type ReactNode } from "react";
 
 type Props = {
@@ -27,12 +26,7 @@ export function CollapsibleTicketTypeCard({
   const buttonId = `${baseId}-trigger-${ticketTypeId}`;
 
   return (
-    <li
-      className={
-        organizerPanel +
-        " overflow-hidden transition-shadow duration-200 hover:shadow-[0_4px_20px_rgba(28,25,23,0.08)]"
-      }
-    >
+    <li className="panel-card overflow-hidden">
       <button
         id={buttonId}
         type="button"
