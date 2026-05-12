@@ -181,7 +181,7 @@ export default async function SuperAdminHomePage({ searchParams }: Props) {
           </div>
           <SuperAdminAuditLog 
             auditRows={auditRows.slice(0, 5)} 
-            pageData={{ ...auditPage, items: auditRows.slice(0, 5), total: auditRows.length }} 
+            pageData={{ ...auditPage, slice: auditRows.slice(0, 5), total: auditRows.length }} 
             pathname={PATH} 
             searchParams={q} 
           />
