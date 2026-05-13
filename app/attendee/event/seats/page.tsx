@@ -150,9 +150,16 @@ export default async function AttendeeSeatAssignmentPage({ searchParams }: Props
       ]}
     >
       <SeatAssignmentForm
+        key={[
+          ctx.order.id,
+          ...ctx.initialAssignments
+            .map((a) => `${a.seat_id}:${a.attendee_name}:${a.attendee_email}`)
+            .sort(),
+        ].join("|")}
         eventName={ctx.eventName}
         order={ctx.order}
         ticketTypeName={ctx.ticketTypeName}
+        seatLayoutMode={ctx.seatLayoutMode}
         seats={ctx.seats}
         initialAssignments={ctx.initialAssignments}
         seatInventoryTotal={ctx.seatInventoryTotal}

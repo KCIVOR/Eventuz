@@ -31,6 +31,7 @@ export type SeatAssignmentPageOk = {
   eventId: string;
   order: AssignableOrder;
   ticketTypeName: string;
+  seatLayoutMode: "rowed" | "tables";
   seats: SeatPickerRow[];
   initialAssignments: ExistingAssignment[];
   /** Count of seat rows for this ticket type (any status). 0 usually means no seating plan exists yet */
@@ -186,11 +187,12 @@ export async function loadSeatAssignmentPage(
 
   const { data: tt } = await supabase
     .from("ticket_types")
-    .select("name")
+    .select("name, seat_layout_mode")
     .eq("id", ticketTypeId)
     .maybeSingle();
 
   const ticketTypeName = (tt?.name as string) || "Ticket";
+  const seatLayoutMode = tt?.seat_layout_mode === "tables" ? "tables" : "rowed";
 
   const { data: availRows } = await supabase
     .from("seats")
@@ -261,6 +263,7 @@ export async function loadSeatAssignmentPage(
       status: st,
     },
     ticketTypeName,
+    seatLayoutMode,
     seats,
     seatInventoryTotal: seatInventoryTotal ?? 0,
     initialAssignments: (existing ?? []).map((r) => ({

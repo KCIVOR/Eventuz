@@ -11,6 +11,12 @@ import {
   initialSeatsForNewTicketType,
   reconcileSeatsToQuantity,
 } from "@/lib/organizer/seatSync";
+import {
+  expectedSeatCount,
+  generateSeatLayout,
+  type SeatLayoutConfig,
+  type SeatLayoutMode,
+} from "@/lib/organizer/seatLayout";
 import { writeAuditLogSafe } from "@/lib/audit/writeAuditLog";
 import { slugify, randomSuffix } from "@/lib/utils/slug";
 import { revalidatePath } from "next/cache";
@@ -413,5 +419,132 @@ export async function updateSeat(formData: FormData) {
   if (error) redirectSeatInventoryError(eventId, error.message);
   revalidatePath(`/organizer/events/${eventId}`);
   revalidatePath(`/organizer/events/${eventId}/seating`);
+  redirect(`/organizer/events/${eventId}/seating?tab=inventory&ok=1`);
+}
+
+function positiveInt(v: FormDataEntryValue | null): number | null {
+  const n = Number(v);
+  if (!Number.isInteger(n) || n < 1) return null;
+  return n;
+}
+
+function parseSeatLayoutConfig(formData: FormData): SeatLayoutConfig | { error: string } {
+  const mode = String(formData.get("layout_mode") ?? "rowed") as SeatLayoutMode;
+  if (mode === "rowed") {
+    const rows = positiveInt(formData.get("layout_rows"));
+    const columns = positiveInt(formData.get("layout_columns"));
+    if (!rows || !columns) {
+      return { error: "Rows and columns must be whole numbers greater than 0." };
+    }
+    return { mode, rows, columns };
+  }
+  if (mode === "tables") {
+    const tableCount = positiveInt(formData.get("layout_table_count"));
+    const seatsPerTable = positiveInt(formData.get("layout_seats_per_table"));
+    if (!tableCount || !seatsPerTable) {
+      return { error: "Tables and seats per table must be whole numbers greater than 0." };
+    }
+    return { mode, tableCount, seatsPerTable };
+  }
+  return { error: "Choose a valid layout type." };
+}
+
+export async function saveSeatLayout(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login?next=/organizer");
+
+  const eventId = String(formData.get("event_id") ?? "");
+  const ticketTypeId = String(formData.get("ticket_type_id") ?? "");
+  if (!eventId || !ticketTypeId) redirect("/organizer");
+
+  const parsed = parseSeatLayoutConfig(formData);
+  if ("error" in parsed) redirectSeatInventoryError(eventId, parsed.error);
+
+  const { data: tt, error: ttErr } = await supabase
+    .from("ticket_types")
+    .select("id, event_id, quantity, name")
+    .eq("id", ticketTypeId)
+    .eq("event_id", eventId)
+    .maybeSingle();
+
+  if (ttErr || !tt) notFound();
+
+  const { data: ev, error: evErr } = await supabase
+    .from("events")
+    .select("organizer_id")
+    .eq("id", eventId)
+    .maybeSingle();
+
+  if (evErr || !ev || ev.organizer_id !== user.id) notFound();
+
+  const quantity = Number(tt.quantity);
+  const layoutCount = expectedSeatCount(parsed);
+  if (layoutCount !== quantity) {
+    redirectSeatInventoryError(
+      eventId,
+      `Layout has ${layoutCount} seat(s), but ${tt.name} requires exactly ${quantity}. Adjust the settings before saving.`
+    );
+  }
+
+  const { data: seats, error: seatsErr } = await supabase
+    .from("seats")
+    .select("id")
+    .eq("event_id", eventId)
+    .eq("ticket_type_id", ticketTypeId)
+    .order("created_at", { ascending: true });
+
+  if (seatsErr || !seats) {
+    redirectSeatInventoryError(eventId, seatsErr?.message ?? "Could not load seats.");
+  }
+  if (seats.length !== quantity) {
+    redirectSeatInventoryError(
+      eventId,
+      `Seat rows are out of sync (${seats.length}/${quantity}). Save the ticket type first, then try again.`
+    );
+  }
+
+  const generated = generateSeatLayout(parsed);
+  for (let i = 0; i < seats.length; i++) {
+    const next = generated[i];
+    const { error } = await supabase
+      .from("seats")
+      .update({
+        table_label: next.tableLabel,
+        seat_label: next.seatLabel,
+        display_label: next.displayLabel,
+      })
+      .eq("id", seats[i].id as string);
+    if (error) redirectSeatInventoryError(eventId, error.message);
+  }
+
+  const { error: updErr } = await supabase
+    .from("ticket_types")
+    .update({
+      seat_layout_mode: parsed.mode,
+      seat_layout_rows: parsed.mode === "rowed" ? parsed.rows : null,
+      seat_layout_columns: parsed.mode === "rowed" ? parsed.columns : null,
+      seat_layout_table_count: parsed.mode === "tables" ? parsed.tableCount : null,
+      seat_layout_seats_per_table: parsed.mode === "tables" ? parsed.seatsPerTable : null,
+    })
+    .eq("id", ticketTypeId);
+
+  if (updErr) redirectSeatInventoryError(eventId, updErr.message);
+
+  await writeAuditLogSafe(supabase, {
+    action: "seat.layout_saved",
+    entityType: "ticket_type",
+    entityId: ticketTypeId,
+    metadata: {
+      event_id: eventId,
+      mode: parsed.mode,
+      seat_count: layoutCount,
+    },
+  });
+
+  revalidatePath(`/organizer/events/${eventId}/seating`);
+  revalidatePath("/attendee/event/seats");
   redirect(`/organizer/events/${eventId}/seating?tab=inventory&ok=1`);
 }

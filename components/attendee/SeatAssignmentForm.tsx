@@ -8,12 +8,13 @@ import type {
 } from "@/lib/attendee/loadSeatAssignmentPage";
 import { formatPhp } from "@/lib/utils/money";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition, type FormEvent } from "react";
+import { useMemo, useState, useTransition, type FormEvent } from "react";
 
 type Props = {
   eventName: string;
   order: AssignableOrder;
   ticketTypeName: string;
+  seatLayoutMode: "rowed" | "tables";
   seats: SeatPickerRow[];
   initialAssignments: ExistingAssignment[];
   /** Rows in `seats` for this ticket type (any status). 0 = no seating plan defined */
@@ -47,6 +48,7 @@ export function SeatAssignmentForm({
   eventName,
   order,
   ticketTypeName,
+  seatLayoutMode,
   seats,
   initialAssignments,
   seatInventoryTotal,
@@ -54,15 +56,6 @@ export function SeatAssignmentForm({
   const qty = order.quantity;
   const initialIds = useMemo(
     () => initialAssignments.map((a) => a.seat_id),
-    [initialAssignments]
-  );
-
-  const assignmentsKey = useMemo(
-    () =>
-      [...initialAssignments]
-        .map((a) => `${a.seat_id}:${a.attendee_name}:${a.attendee_email}`)
-        .sort()
-        .join("|"),
     [initialAssignments]
   );
 
@@ -74,12 +67,6 @@ export function SeatAssignmentForm({
   const [success, setSuccess] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
-
-  useEffect(() => {
-    const ids = initialAssignments.map((a) => a.seat_id);
-    setSelectedSeatIds(ids);
-    setDetailsBySeat(normalizeDetailsMap(ids, {}, initialAssignments));
-  }, [assignmentsKey]);
 
   const labelById = useMemo(() => {
     const m = new Map<string, string>();
@@ -183,8 +170,52 @@ export function SeatAssignmentForm({
   const canSubmit = typeof validation !== "string";
   const phpTotal = formatPhp(order.total_amount);
 
+  const seatsByGroup = useMemo(() => {
+    const map = new Map<string, SeatPickerRow[]>();
+    for (const s of seats) {
+      const key = (s.table_label ?? "").trim() || "Ungrouped";
+      const list = map.get(key) ?? [];
+      list.push(s);
+      map.set(key, list);
+    }
+    return [...map.entries()]
+      .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }))
+      .map(([label, groupSeats]) => ({
+        label,
+        seats: [...groupSeats].sort((a, b) =>
+          a.display_label.localeCompare(b.display_label, undefined, { numeric: true })
+        ),
+      }));
+  }, [seats]);
+
+  function seatButton(s: SeatPickerRow) {
+    const selected = selectedSeatIds.includes(s.id);
+    const atCapacity = selectedSeatIds.length >= qty && !selected;
+    return (
+      <button
+        key={s.id}
+        type="button"
+        onClick={() => toggleSeat(s.id)}
+        disabled={pending || atCapacity}
+        aria-pressed={selected}
+        className={[
+          "flex aspect-square min-h-10 min-w-10 cursor-pointer items-center justify-center rounded-md border px-2 text-xs font-semibold transition-colors duration-200 motion-reduce:transition-none",
+          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+          selected
+            ? "border-primary bg-primary text-primary-foreground"
+            : "border-border bg-background text-foreground hover:border-primary/50 hover:bg-muted/40",
+          atCapacity ? "cursor-not-allowed opacity-45 hover:border-border hover:bg-background" : "",
+          pending ? "opacity-60" : "",
+        ].join(" ")}
+        title={s.display_label}
+      >
+        {seatLayoutMode === "tables" ? s.seat_label || s.display_label : s.display_label}
+      </button>
+    );
+  }
+
   return (
-    <div className="mx-auto max-w-lg space-y-8 px-1 sm:px-0">
+    <div className="mx-auto max-w-5xl space-y-8 px-1 sm:px-0">
       <header className="space-y-3 rounded-2xl border border-border bg-card px-6 py-7 text-center shadow-[0_2px_12px_rgba(28,25,23,0.06)] transition-shadow duration-200 motion-reduce:transition-none sm:px-8">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-gold">Seat assignment</p>
         <h1 className="font-serif text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
@@ -236,7 +267,7 @@ export function SeatAssignmentForm({
               </>
             ) : null}
           </p>
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Seat selection">
+          <div className="space-y-4" role="group" aria-label="Seat selection">
             {seatInventoryTotal === 0 ? (
               <p className="text-sm leading-relaxed text-muted-foreground" role="status">
                 There isn&apos;t a seating layout for this ticket type yet. If the hosts didn&apos;t plan assigned
@@ -250,30 +281,52 @@ export function SeatAssignmentForm({
                 persists.
               </p>
             ) : (
-              seats.map((s) => {
-                const selected = selectedSeatIds.includes(s.id);
-                const atCapacity = selectedSeatIds.length >= qty && !selected;
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => toggleSeat(s.id)}
-                    disabled={pending || atCapacity}
-                    aria-pressed={selected}
-                    className={[
-                      "min-h-10 min-w-10 cursor-pointer rounded-lg border px-3 py-2 text-sm font-medium transition-colors duration-200 motion-reduce:transition-none",
-                      "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
-                      selected
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-background text-foreground hover:border-primary/50 hover:bg-muted/40",
-                      atCapacity ? "cursor-not-allowed opacity-45 hover:border-border hover:bg-background" : "",
-                      pending ? "opacity-60" : "",
-                    ].join(" ")}
-                  >
-                    {s.display_label}
-                  </button>
-                );
-              })
+              <div
+                className={
+                  seatLayoutMode === "tables"
+                    ? "grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+                    : "space-y-3"
+                }
+              >
+                {seatsByGroup.map((group) =>
+                  seatLayoutMode === "tables" ? (
+                    <section
+                      key={group.label}
+                      className="rounded-xl border border-border bg-background p-4"
+                      aria-label={group.label}
+                    >
+                      <div className="mb-4 flex items-center justify-center">
+                        <div className="flex h-20 w-20 items-center justify-center rounded-full border border-accent-gold/45 bg-card text-center text-sm font-semibold text-foreground">
+                          {group.label}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-4 gap-2">
+                        {group.seats.map((s) => seatButton(s))}
+                      </div>
+                    </section>
+                  ) : (
+                    <section
+                      key={group.label}
+                      className="rounded-xl border border-border bg-background p-3"
+                      aria-label={group.label}
+                    >
+                      <div className="grid grid-cols-[5rem_1fr] items-center gap-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          {group.label}
+                        </p>
+                        <div
+                          className="grid gap-2"
+                          style={{
+                            gridTemplateColumns: `repeat(${group.seats.length}, minmax(2.5rem, 1fr))`,
+                          }}
+                        >
+                          {group.seats.map((s) => seatButton(s))}
+                        </div>
+                      </div>
+                    </section>
+                  )
+                )}
+              </div>
             )}
           </div>
         </fieldset>

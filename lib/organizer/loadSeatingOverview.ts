@@ -32,6 +32,29 @@ export type InventoryTicketType = {
   id: string;
   name: string;
   quantity: number;
+  seatLayoutMode: "rowed" | "tables";
+  seatLayoutRows: number | null;
+  seatLayoutColumns: number | null;
+  seatLayoutTableCount: number | null;
+  seatLayoutSeatsPerTable: number | null;
+};
+
+type SeatingOverviewRawSeat = {
+  id: string;
+  display_label: string | null;
+  seat_label: string | null;
+  table_label: string | null;
+  status: string | null;
+  ticket_type_id: string | null;
+  ticket_types: { id?: string; name?: string } | { id?: string; name?: string }[] | null;
+  seat_assignments:
+    | { attendee_name: string; attendee_email: string; status: string }
+    | { attendee_name: string; attendee_email: string; status: string }[]
+    | null;
+  tickets:
+    | { ticket_code: string; status: string; checked_in_at: string | null }
+    | { ticket_code: string; status: string; checked_in_at: string | null }[]
+    | null;
 };
 
 export async function loadOrganizerSeatingOverview(eventId: string): Promise<
@@ -63,7 +86,9 @@ export async function loadOrganizerSeatingOverview(eventId: string): Promise<
 
   const { data: ticketTypes } = await supabase
     .from("ticket_types")
-    .select("id, name, quantity")
+    .select(
+      "id, name, quantity, seat_layout_mode, seat_layout_rows, seat_layout_columns, seat_layout_table_count, seat_layout_seats_per_table"
+    )
     .eq("event_id", eventId)
     .order("created_at", { ascending: true });
 
@@ -76,9 +101,16 @@ export async function loadOrganizerSeatingOverview(eventId: string): Promise<
     id: t.id as string,
     name: (t.name as string) || "Ticket",
     quantity: Number(t.quantity ?? 0),
+    seatLayoutMode: t.seat_layout_mode === "tables" ? "tables" : "rowed",
+    seatLayoutRows: t.seat_layout_rows == null ? null : Number(t.seat_layout_rows),
+    seatLayoutColumns: t.seat_layout_columns == null ? null : Number(t.seat_layout_columns),
+    seatLayoutTableCount:
+      t.seat_layout_table_count == null ? null : Number(t.seat_layout_table_count),
+    seatLayoutSeatsPerTable:
+      t.seat_layout_seats_per_table == null ? null : Number(t.seat_layout_seats_per_table),
   }));
 
-  let allSeats: any[] = [];
+  let allSeats: SeatingOverviewRawSeat[] = [];
   let from = 0;
   let to = 999;
   let finished = false;
@@ -102,7 +134,7 @@ export async function loadOrganizerSeatingOverview(eventId: string): Promise<
     }
 
     if (chunk && chunk.length > 0) {
-      allSeats = [...allSeats, ...chunk];
+      allSeats = [...allSeats, ...(chunk as SeatingOverviewRawSeat[])];
       if (chunk.length < 1000) {
         finished = true;
       } else {
@@ -172,8 +204,9 @@ export async function loadOrganizerSeatingOverview(eventId: string): Promise<
   for (const s of seatsRaw ?? []) {
     // Robustly extract the ticket type ID from either the column or the joined object
     const rawTid = s.ticket_type_id;
-    const joinedTid = (s.ticket_types as any)?.id;
-    const tid = (typeof rawTid === "string" ? rawTid : joinedTid) || "";
+    const joined = nestedOne(s.ticket_types);
+    const joinedTid = joined?.id;
+    const tid = rawTid || joinedTid || "";
     const list = inventorySeatsByTypeId[tid];
     if (!list) continue;
     list.push({
