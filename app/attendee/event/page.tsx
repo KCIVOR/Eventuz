@@ -1,4 +1,5 @@
 import { CapacityHoldForm } from "@/components/attendee/CapacityHoldForm";
+import { PaymentStatusPoller } from "@/components/attendee/PaymentStatusPoller";
 import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
 import { loadAttendeeEventContext } from "@/lib/attendee/eventContext";
 import { isHitPayDevSimulationAllowed } from "@/lib/payments/hitpayDevSimulation";
@@ -135,9 +136,13 @@ export default async function AttendeeEventPage({ searchParams }: Props) {
           >
             <p className="font-semibold">Back from payment</p>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-              Confirmation can take a moment while payment notifies our servers. Refresh if your status hasn&apos;t
-              updated.
+              Confirmation can take a moment while payment notifies our servers.
             </p>
+            {Boolean(activeOrder?.id) && (
+              <div className="mt-3 border-t border-border/40 pt-3">
+                <PaymentStatusPoller orderId={activeOrder!.id as string} />
+              </div>
+            )}
           </div>
         ) : null}
 

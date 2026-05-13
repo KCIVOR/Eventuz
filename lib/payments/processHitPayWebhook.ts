@@ -250,16 +250,15 @@ export async function processHitPayWebhookRequest(req: Request): Promise<HitPayW
 
   let payment = payRow;
   if (payment) {
-    console.log(`[HitPay Webhook] Found payment record by provider_checkout_id: ${payment.id}`);
+    console.log(`[HitPay Webhook] Found payment record by provider_checkout_id: ${payment.id} (Status: ${payment.status})`);
   }
 
   if (!payment && ref && isUuid(ref)) {
-    console.log(`[HitPay Webhook] No direct match for ${checkoutId}. Trying fallback for order: ${ref}`);
+    console.log(`[HitPay Webhook] No direct match for checkout ${checkoutId}. Trying fallback for order: ${ref}`);
     const { data: byOrder, error: boErr } = await supabase
       .from("payments")
       .select("id, order_id, status, amount, currency, provider_checkout_id")
       .eq("order_id", ref)
-      .eq("status", "pending")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -269,10 +268,20 @@ export async function processHitPayWebhookRequest(req: Request): Promise<HitPayW
       return { ok: false, status: 500, detail: boErr.message };
     }
     
-    if (byOrder && byOrder.provider_checkout_id === checkoutId) {
+    if (byOrder) {
       payment = byOrder;
-      console.log(`[HitPay Webhook] Found payment via order fallback: ${payment.id}`);
+      console.log(`[HitPay Webhook] Found payment via order fallback: ${payment.id} (Status: ${payment.status}, DB Checkout ID: ${payment.provider_checkout_id})`);
     }
+  }
+
+  if (!payment && ref && isUuid(ref)) {
+    // Last ditch: Log EVERYTHING for this order to see why it's missing
+    const { data: allPay } = await supabase
+      .from("payments")
+      .select("id, status, provider_checkout_id")
+      .eq("order_id", ref);
+    
+    console.warn(`[HitPay Webhook] Total failure. Order ${ref} has ${allPay?.length ?? 0} payment rows in DB:`, allPay);
   }
 
   if (!payment) {

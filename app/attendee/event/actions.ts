@@ -627,3 +627,25 @@ export async function retryTicketEmailsAction(formData: FormData) {
   revalidatePath("/attendee/event/tickets", "layout");
   redirect("/attendee/event?ticketsOk=1");
 }
+
+/** Check order status for polling. */
+export async function checkOrderStatusAction(orderId: string): Promise<{ status: string; isPaid: boolean } | { error: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthenticated" };
+
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("status")
+    .eq("id", orderId)
+    .eq("buyer_user_id", user.id)
+    .maybeSingle();
+
+  if (error || !order) return { error: "Order not found" };
+
+  const paidStates = ["paid_unassigned", "partially_assigned", "completed"];
+  return {
+    status: order.status as string,
+    isPaid: paidStates.includes(order.status as string)
+  };
+}
