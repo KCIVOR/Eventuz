@@ -39,11 +39,6 @@ function pathMatchesItem(pathname: string, hash: string, item: NavItem): boolean
   return pathname === normalizedPath;
 }
 
-const linkBase =
-  "block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--sidebar-bg)]";
-const linkInactive = "text-foreground/85 hover:bg-muted/70 hover:text-foreground";
-const linkActive = "bg-primary/12 text-primary shadow-[inset_0_0_0_1px_rgba(114,47,55,0.12)]";
-
 export function SidebarNav({ role, sections, onNavigate }: Props) {
   const pathname = usePathname() ?? "";
   const hash = useSyncExternalStore(
@@ -54,27 +49,47 @@ export function SidebarNav({ role, sections, onNavigate }: Props) {
 
   return (
     <div className="flex h-full flex-col">
-      <p className="mb-5 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+      {/* Role label — DS .sec-label style */}
+      <p
+        className="mb-5 px-3"
+        style={{
+          fontSize: "10px",
+          fontWeight: 600,
+          letterSpacing: "0.35em",
+          textTransform: "uppercase",
+          color: "#C9A96E",
+        }}
+      >
         {roleLabels[role]}
       </p>
+
       <nav aria-label="Primary navigation" className="flex flex-1 flex-col gap-7">
         {sections.map((section, sectionIndex) => (
           <section
             key={section.id}
             aria-labelledby={`sidebar-section-${section.id}`}
-            className={
+            style={
               sectionIndex > 0
-                ? "border-t border-[var(--sidebar-border)] pt-6"
+                ? { borderTop: "1px solid #EDE8E3", paddingTop: "24px" }
                 : undefined
             }
           >
+            {/* Section label */}
             <h2
               id={`sidebar-section-${section.id}`}
-              className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/90"
+              className="mb-2 px-3"
+              style={{
+                fontSize: "10px",
+                fontWeight: 500,
+                letterSpacing: "0.25em",
+                textTransform: "uppercase",
+                color: "#AEA89F",
+              }}
             >
               {section.label}
             </h2>
-            <ul className="flex flex-col gap-1">
+
+            <ul className="flex flex-col gap-0.5">
               {section.items.map((item) => {
                 const active = pathMatchesItem(pathname, hash, item);
                 return (
@@ -83,8 +98,20 @@ export function SidebarNav({ role, sections, onNavigate }: Props) {
                       href={item.href}
                       prefetch={false}
                       onClick={() => onNavigate?.()}
-                      className={`${linkBase} ${active ? linkActive : linkInactive}`}
                       aria-current={active ? "page" : undefined}
+                      className="sidebar-link-hover"
+                      style={{
+                        display: "block",
+                        padding: "10px 12px",
+                        fontSize: "13px",
+                        fontWeight: active ? 500 : 300,
+                        color: active ? "#C9A96E" : "#2E2825",
+                        background: active ? "#FDF6EE" : "transparent",
+                        borderRadius: "2px",
+                        borderLeft: active ? "2px solid #C9A96E" : "2px solid transparent",
+                        textDecoration: "none",
+                        transition: "all 0.15s ease",
+                      }}
                     >
                       {item.label}
                     </Link>

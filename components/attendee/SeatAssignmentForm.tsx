@@ -215,217 +215,242 @@ export function SeatAssignmentForm({
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8 px-1 sm:px-0">
-      <header className="space-y-3 rounded-2xl border border-border bg-card px-6 py-7 text-center shadow-[0_2px_12px_rgba(28,25,23,0.06)] transition-shadow duration-200 motion-reduce:transition-none sm:px-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-gold">Seat assignment</p>
-        <h1 className="font-serif text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+    <div className="space-y-10">
+      <header className="space-y-3 rounded-2xl border border-border bg-card px-8 py-10 text-center shadow-sm">
+        <div className="flex items-center justify-center gap-3 mb-2">
+          <span className="h-[1px] w-8 bg-accent-gold/30" />
+          <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-accent-gold">
+            Seating Plan
+          </p>
+          <span className="h-[1px] w-8 bg-accent-gold/30" />
+        </div>
+        <h1 className="font-serif text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
           {eventName}
         </h1>
-        <p className="text-sm text-muted-foreground">
-          Pick seats, add guest details, and submit. Each submit saves immediately. QR passes become available only after{" "}
-          <span className="font-medium text-foreground">all seats in this order</span> are assigned — then open Your
-          tickets and generate passes.
+        <p className="mx-auto max-w-2xl text-sm font-light leading-relaxed text-muted-foreground">
+          Choose your preferred location. Once selected, provide the attendee details for each seat to finalize your reservation.
         </p>
       </header>
 
-      <section
-        className="rounded-2xl border border-border bg-card px-5 py-5 shadow-[0_2px_12px_rgba(28,25,23,0.06)] transition-shadow duration-200 motion-reduce:transition-none sm:px-6"
-        aria-labelledby="order-summary-heading"
-      >
-        <h2 id="order-summary-heading" className="font-serif text-lg font-semibold text-foreground">
-          Your paid order
-        </h2>
-        <dl className="mt-4 space-y-2 text-sm">
-          <div className="flex justify-between gap-4 border-b border-border/80 py-2">
-            <dt className="text-muted-foreground">Ticket</dt>
-            <dd className="text-right font-medium text-foreground">{ticketTypeName}</dd>
-          </div>
-          <div className="flex justify-between gap-4 border-b border-border/80 py-2">
-            <dt className="text-muted-foreground">Quantity</dt>
-            <dd className="text-right text-foreground">{qty}</dd>
-          </div>
-          <div className="flex justify-between gap-4 py-2">
-            <dt className="text-muted-foreground">Total paid</dt>
-            <dd className="text-right font-semibold text-foreground">{phpTotal}</dd>
-          </div>
-        </dl>
-      </section>
+      <div className="lg:grid lg:grid-cols-12 lg:gap-10 lg:items-start">
+        
+        {/* MAIN: Seating Map & Forms */}
+        <div className="lg:col-span-7 space-y-8">
+          <section
+            className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8"
+            aria-labelledby="available-seats-heading"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 id="available-seats-heading" className="font-serif text-xl font-light text-foreground">
+                Available Seats
+              </h2>
+              <div className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rotate-45 bg-accent-gold" />
+                <span className="text-[10px] uppercase tracking-widest text-accent-gold font-semibold">Tier: {ticketTypeName}</span>
+              </div>
+            </div>
 
-      <form onSubmit={onSubmit} className="space-y-8">
-        <fieldset className="space-y-3 rounded-2xl border border-border bg-card px-5 py-5 sm:px-6">
-          <legend className="font-serif text-lg font-semibold text-foreground">
-            Available seats
-          </legend>
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            Select up to {qty} seat(s) for this ticket type. Tap again to deselect.
-            {selectedSeatIds.length > 0 ? (
-              <>
-                {" "}
-                <span className="text-foreground">
-                  {selectedSeatIds.length} of {qty} selected.
-                </span>
-              </>
-            ) : null}
-          </p>
-          <div className="space-y-4" role="group" aria-label="Seat selection">
-            {seatInventoryTotal === 0 ? (
-              <p className="text-sm leading-relaxed text-muted-foreground" role="status">
-                There isn&apos;t a seating layout for this ticket type yet. If the hosts didn&apos;t plan assigned
-                seating, you&apos;re all set — check{" "}
-                <span className="font-medium text-foreground">Your tickets</span> for entry passes after checkout.
-                Otherwise, the organizer still needs to publish seats.
-              </p>
-            ) : seats.length === 0 ? (
-              <p className="text-sm text-warning" role="status">
-                Every seat may be held or assigned right now. Try again later or contact the organizer if this
-                persists.
-              </p>
-            ) : (
-              <div
-                className={
-                  seatLayoutMode === "tables"
-                    ? "grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
-                    : "space-y-3"
-                }
-              >
-                {seatsByGroup.map((group) =>
-                  seatLayoutMode === "tables" ? (
-                    <section
-                      key={group.label}
-                      className="rounded-xl border border-border bg-background p-4"
-                      aria-label={group.label}
-                    >
-                      <div className="mb-4 flex items-center justify-center">
-                        <div className="flex h-20 w-20 items-center justify-center rounded-full border border-accent-gold/45 bg-card text-center text-sm font-semibold text-foreground">
-                          {group.label}
+            <div className="space-y-6" role="group" aria-label="Seat selection">
+              {seatInventoryTotal === 0 ? (
+                <div className="rounded-xl border border-dashed border-border bg-muted/5 py-16 text-center">
+                  <p className="text-sm italic text-muted-foreground">
+                    No seating layout defined for this package.
+                  </p>
+                </div>
+              ) : (
+                <div
+                  className={
+                    seatLayoutMode === "tables"
+                      ? "grid gap-4 sm:grid-cols-2"
+                      : "space-y-4"
+                  }
+                >
+                  {seatsByGroup.map((group) =>
+                    seatLayoutMode === "tables" ? (
+                      <section
+                        key={group.label}
+                        className="rounded-xl border border-border/60 bg-background p-5"
+                        aria-label={group.label}
+                      >
+                        <div className="mb-6 flex items-center justify-center">
+                          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-accent-gold/20 bg-card text-center text-xs font-semibold text-foreground">
+                            {group.label}
+                          </div>
                         </div>
-                      </div>
-                      <div className="grid grid-cols-4 gap-2">
-                        {group.seats.map((s) => seatButton(s))}
-                      </div>
-                    </section>
-                  ) : (
-                    <section
-                      key={group.label}
-                      className="rounded-xl border border-border bg-background p-3"
-                      aria-label={group.label}
-                    >
-                      <div className="grid grid-cols-[5rem_1fr] items-center gap-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                          {group.label}
-                        </p>
-                        <div
-                          className="grid gap-2"
-                          style={{
-                            gridTemplateColumns: `repeat(${group.seats.length}, minmax(2.5rem, 1fr))`,
-                          }}
-                        >
+                        <div className="grid grid-cols-4 gap-2.5">
                           {group.seats.map((s) => seatButton(s))}
                         </div>
-                      </div>
-                    </section>
-                  )
-                )}
+                      </section>
+                    ) : (
+                      <section
+                        key={group.label}
+                        className="rounded-xl border border-border/60 bg-background p-4"
+                        aria-label={group.label}
+                      >
+                        <div className="grid grid-cols-[4rem_1fr] items-center gap-4">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
+                            {group.label}
+                          </p>
+                          <div
+                            className="grid gap-2"
+                            style={{
+                              gridTemplateColumns: `repeat(${group.seats.length}, minmax(2.5rem, 1fr))`,
+                            }}
+                          >
+                            {group.seats.map((s) => seatButton(s))}
+                          </div>
+                        </div>
+                      </section>
+                    )
+                  )}
+                </div>
+              )}
+            </div>
+          </section>
+
+          {selectedSeatIds.length > 0 && (
+            <section className="animate-fade-in-up space-y-6" aria-labelledby="attendee-details-heading">
+              <div className="flex items-center gap-4">
+                <h2 id="attendee-details-heading" className="font-serif text-xl font-light text-foreground">
+                  Attendee Details
+                </h2>
+                <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
               </div>
-            )}
-          </div>
-        </fieldset>
 
-        {selectedSeatIds.length > 0 ? (
-          <div className="space-y-4 rounded-2xl border border-border bg-card px-5 py-5 sm:px-6">
-            <h3 className="font-serif text-lg font-semibold text-foreground">Attendee details</h3>
-            <p className="text-xs text-muted-foreground">
-              Assign yourself or guests—guests do not need an Eventuz account.
-              {!selectionComplete ? (
-                <>
-                  {" "}
-                  Submit below to confirm these seats right away; you can add more seats later from this page.
-                </>
-              ) : null}
-            </p>
-            <ul className="space-y-5">
-              {sortedSelected.map((seatId) => {
-                const label = labelById.get(seatId) ?? seatId;
-                const det = detailsBySeat[seatId] ?? { name: "", email: "" };
-                const idBase = `seat-${seatId}`;
-                return (
-                  <li
-                    key={seatId}
-                    className="rounded-xl border border-border/90 bg-muted/15 px-4 py-4 transition-colors duration-200 motion-reduce:transition-none"
-                  >
-                    <p className="text-xs font-semibold uppercase tracking-wider text-accent-gold">
-                      Seat {label}
-                    </p>
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-1">
-                        <label htmlFor={`${idBase}-name`} className="text-xs font-medium text-muted-foreground">
-                          Full name
-                        </label>
-                        <input
-                          id={`${idBase}-name`}
-                          className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground transition-shadow duration-200 motion-reduce:transition-none focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
-                          autoComplete="name"
-                          value={det.name}
-                          onChange={(ev) => setDetail(seatId, "name", ev.target.value)}
-                          disabled={pending}
-                          required
-                        />
+              <ul className="space-y-4">
+                {sortedSelected.map((seatId) => {
+                  const label = labelById.get(seatId) ?? seatId;
+                  const det = detailsBySeat[seatId] ?? { name: "", email: "" };
+                  const idBase = `seat-${seatId}`;
+                  return (
+                    <li
+                      key={seatId}
+                      className="panel-card p-6"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-[10px] font-semibold uppercase tracking-widest text-accent-gold">
+                          Seat {label}
+                        </span>
+                        <div className="h-1 w-1 rotate-45 bg-accent-gold/40" />
                       </div>
-                      <div className="space-y-1">
-                        <label htmlFor={`${idBase}-email`} className="text-xs font-medium text-muted-foreground">
-                          Email
-                        </label>
-                        <input
-                          id={`${idBase}-email`}
-                          type="email"
-                          className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground transition-shadow duration-200 motion-reduce:transition-none focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
-                          autoComplete="email"
-                          value={det.email}
-                          onChange={(ev) => setDetail(seatId, "email", ev.target.value)}
-                          disabled={pending}
-                          required
-                        />
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <label htmlFor={`${idBase}-name`} className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                            Full name
+                          </label>
+                          <input
+                            id={`${idBase}-name`}
+                            className="w-full rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground transition-all focus:border-accent-gold focus:ring-1 focus:ring-accent-gold/20"
+                            autoComplete="name"
+                            placeholder="John Doe"
+                            value={det.name}
+                            onChange={(ev) => setDetail(seatId, "name", ev.target.value)}
+                            disabled={pending}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label htmlFor={`${idBase}-email`} className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                            Email address
+                          </label>
+                          <input
+                            id={`${idBase}-email`}
+                            type="email"
+                            className="w-full rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground transition-all focus:border-accent-gold focus:ring-1 focus:ring-accent-gold/20"
+                            autoComplete="email"
+                            placeholder="john@example.com"
+                            value={det.email}
+                            onChange={(ev) => setDetail(seatId, "email", ev.target.value)}
+                            disabled={pending}
+                            required
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ) : null}
-
-        {error ? (
-          <div
-            className="rounded-xl border border-destructive/30 bg-destructive-muted px-4 py-3 text-sm text-destructive"
-            role="alert"
-          >
-            {error}
-          </div>
-        ) : null}
-
-        {success ? (
-          <div
-            className="rounded-xl border border-primary/25 bg-primary/5 px-4 py-3 text-sm text-foreground"
-            role="status"
-          >
-            {success}
-          </div>
-        ) : null}
-
-        <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <button
-            type="submit"
-            disabled={pending || !canSubmit || seats.length === 0 || seatInventoryTotal === 0}
-            className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors duration-200 motion-reduce:transition-none hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            {pending
-              ? "Submitting…"
-              : selectionComplete
-                ? "Submit & finish assignment"
-                : "Submit seats now"}
-          </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
         </div>
-      </form>
+
+        {/* SIDEBAR: Summary & Actions */}
+        <aside className="lg:col-span-5 space-y-6 lg:sticky lg:top-32">
+          
+          <div className="panel-card p-0 overflow-hidden shadow-lg shadow-accent-gold/[0.03]">
+            <div className="bg-accent-gold/[0.03] p-8 border-b border-accent-gold/10">
+              <h2 className="font-serif text-2xl font-light text-foreground mb-1">Your Selection</h2>
+              <p className="text-[10px] uppercase tracking-widest text-accent-gold font-semibold">Order Summary</p>
+            </div>
+
+            <div className="p-8 space-y-6">
+              <dl className="space-y-4">
+                <div className="flex justify-between items-center text-sm">
+                  <dt className="text-muted-foreground font-light">Ticket Tier</dt>
+                  <dd className="font-medium text-foreground">{ticketTypeName}</dd>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <dt className="text-muted-foreground font-light">Quantity Reserved</dt>
+                  <dd className="font-medium text-foreground">{qty} Seats</dd>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <dt className="text-muted-foreground font-light">Total Paid</dt>
+                  <dd className="font-serif text-lg text-foreground">{phpTotal}</dd>
+                </div>
+              </dl>
+
+              <div className="pt-6 border-t border-border/60">
+                <div className="flex items-center justify-between mb-4">
+                   <span className="text-xs font-medium text-foreground">Selection Progress</span>
+                   <span className="text-xs text-muted-foreground">{selectedSeatIds.length} / {qty}</span>
+                </div>
+                <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-accent-gold transition-all duration-500 ease-out" 
+                    style={{ width: `${(selectedSeatIds.length / qty) * 100}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Status Messages */}
+              {error && (
+                <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-xs text-destructive animate-in fade-in slide-in-from-top-1" role="alert">
+                  <p className="font-semibold mb-1">Action Required</p>
+                  <p className="opacity-80 leading-relaxed">{error}</p>
+                </div>
+              )}
+
+              {success && (
+                <div className="rounded-xl border border-success/20 bg-success/5 p-4 text-xs text-success animate-in fade-in slide-in-from-top-1" role="status">
+                  <p className="font-semibold mb-1">Success</p>
+                  <p className="opacity-80 leading-relaxed">{success}</p>
+                </div>
+              )}
+
+              <form onSubmit={onSubmit}>
+                <button
+                  type="submit"
+                  disabled={pending || !canSubmit || seats.length === 0 || seatInventoryTotal === 0}
+                  className="btn-eventuz-gold w-full py-4 shadow-lg shadow-accent-gold/10 text-sm disabled:opacity-40 disabled:shadow-none"
+                >
+                  {pending
+                    ? "Confirming Selection..."
+                    : selectionComplete
+                      ? "Submit & Finish Assignment"
+                      : `Assign ${selectedSeatIds.length} of ${qty} Seats`}
+                </button>
+              </form>
+            </div>
+
+            <div className="bg-muted/30 p-6 border-t border-border/50 text-center">
+              <p className="text-[10px] text-muted-foreground font-light leading-relaxed">
+                Tickets are issued only after all seats in this order are assigned. You can manage them later in your profile.
+              </p>
+            </div>
+          </div>
+        </aside>
+
+      </div>
     </div>
   );
 }

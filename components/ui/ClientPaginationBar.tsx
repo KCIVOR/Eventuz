@@ -1,6 +1,6 @@
 "use client";
 
-import { PaginationLayout, paginationBtnClass } from "./PaginationLayout";
+import { PaginationLayout, paginationBtnClass, paginationBtnStyles } from "./PaginationLayout";
 
 type Props = {
   page: number;
@@ -25,6 +25,8 @@ export function ClientPaginationBar({
   listLabel,
   itemLabel,
 }: Props) {
+  const btnStyle = { ...paginationBtnStyles };
+
   return (
     <PaginationLayout
       total={total}
@@ -38,18 +40,23 @@ export function ClientPaginationBar({
           <button
             type="button"
             className={paginationBtnClass}
+            style={btnStyle}
             disabled={page <= 1}
             onClick={() => onPageChange(page - 1)}
             suppressHydrationWarning
           >
             Previous
           </button>
-          <span className="px-2 text-xs tabular-nums text-muted-foreground">
+          <span 
+            className="px-2 text-[11px] font-medium tracking-wide uppercase"
+            style={{ color: "var(--mid-gray)", fontFamily: "var(--font-sans)" }}
+          >
             Page {page} of {pageCount}
           </span>
           <button
             type="button"
             className={paginationBtnClass}
+            style={btnStyle}
             disabled={page >= pageCount}
             onClick={() => onPageChange(page + 1)}
             suppressHydrationWarning
@@ -58,7 +65,12 @@ export function ClientPaginationBar({
           </button>
         </>
       ) : (
-        <span className="text-xs text-muted-foreground">Single page</span>
+        <span 
+          className="text-[11px] font-medium tracking-wide uppercase"
+          style={{ color: "var(--warm-gray)", fontFamily: "var(--font-sans)" }}
+        >
+          Single page
+        </span>
       )}
     </PaginationLayout>
   );

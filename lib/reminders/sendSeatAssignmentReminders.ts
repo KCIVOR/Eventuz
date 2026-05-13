@@ -3,6 +3,7 @@ import { decryptSmtpPassword } from "@/lib/utils/crypto";
 import { createSmtpTransport, formatSmtpFrom, type SmtpDecryptedConfig } from "@/lib/smtp/sendTestMessage";
 import { getAppOrigin } from "@/lib/url/site";
 import { writeAuditLogSafe } from "@/lib/audit/writeAuditLog";
+import { brandEmailShell, emailButtonHtml } from "@/lib/utils/email/brandTemplates";
 
 function escapeHtml(s: string): string {
   return s
@@ -115,36 +116,27 @@ export async function processSeatAssignmentReminders(): Promise<{ sent: number; 
       `The Eventuz Team`,
     ].join("\n");
 
-    const html = `
-<!DOCTYPE html>
-<html>
-<body style="margin:0;padding:24px;font-family:Georgia,serif;color:#1c1917;background:#faf8f5;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e7e5e4;border-radius:12px;">
-    <tr><td style="padding:24px 28px;">
-      <p style="margin:0 0 8px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#a68a56;">Eventuz</p>
-      <h1 style="margin:0 0 12px;font-size:22px;font-weight:600;">Seats Still Needed</h1>
-      <p style="margin:0 0 20px;font-size:14px;color:#57534e;line-height:1.5;">
-        You've successfully paid for <strong>${escapeHtml(eventName)}</strong>, but your QR passes are waiting for seat assignments.
-      </p>
+    const contentHtml = `
+      <p>Dear ${escapeHtml(profile.full_name || "Guest")},</p>
+      <p>Your payment for <strong>${escapeHtml(eventName)}</strong> has been confirmed. However, your entry passes are currently pending guest registration and seat assignments.</p>
       
-      <p style="margin:24px 0;">
-        <a href="${escapeHtml(seatsUrl)}" style="display:inline-block;border-radius:12px;background:#722f37;color:#faf8f5;font-size:14px;font-weight:600;padding:12px 22px;text-decoration:none;">
-          Choose Your Seats Now
-        </a>
-      </p>
+      <p style="margin:24px 0;">To receive your QR codes and complete your registration, please assign a guest to each seat in your order using the link below:</p>
 
-      <p style="margin:0 0 16px;font-size:13px;color:#57534e;line-height:1.5;">
-        Tickets are only generated once every seat in your order has been assigned to a guest.
+      ${emailButtonHtml("Choose Your Seats", seatsUrl)}
+
+      <p style="margin:32px 0 0;font-size:13px;color:#7A6E68;line-height:1.6;">
+        Please note that tickets are only generated and delivered once all seats in your order have been assigned.
       </p>
       
-      <hr style="border:none;border-top:1px solid #e7e5e4;margin:24px 0;" />
-      <p style="margin:0;font-size:12px;color:#a8a29e;">
-        Order ID: ${order.id.slice(0, 8)}...
-      </p>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+      <div style="margin-top:40px;padding-top:24px;border-top:1px solid #EDE8E3;font-size:11px;color:#A8A29E;font-family:monospace;">
+        Order Ref: ${order.id.slice(0, 8)}...
+      </div>
+    `;
+
+    const html = brandEmailShell({
+      title: "Seats Still Needed",
+      contentHtml
+    });
 
     try {
       await transporter.sendMail({ from, to: profile.email, subject, text, html });

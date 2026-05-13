@@ -4,6 +4,7 @@ import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
 import { EVENT_STATUSES } from "@/lib/organizer/eventForm";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { GooglePlaceAutocomplete } from "@/components/ui/GooglePlaceAutocomplete";
 
 type Props = {
   searchParams: Promise<{ error?: string }>;
@@ -83,7 +84,10 @@ export default async function NewEventPage({ searchParams }: Props) {
 
             <section className="space-y-4 border-t border-border pt-8">
               <h2 className="section-title">Schedule & location</h2>
-              <Field label="Venue" name="venue" placeholder="City or venue name" />
+              <div className="flex flex-col gap-1.5">
+                <label className="label-eventuz">Venue</label>
+                <GooglePlaceAutocomplete placeholder="City or venue name..." />
+              </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Event date" name="event_date" type="date" required />
                 <Field label="Event time" name="event_time" type="time" required />

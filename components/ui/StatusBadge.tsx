@@ -11,42 +11,46 @@ type Props = {
 export function StatusBadge({ status, type = "generic", className = "" }: Props) {
   const normalized = status.toLowerCase().trim();
 
-  // Unified styling base
-  const base = "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition-colors";
+  // DS .sp-* badge base — pill shape, tight tracking
+  const base: React.CSSProperties = {
+    display: "inline-block",
+    fontSize: "10px",
+    fontWeight: 600,
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+    padding: "4px 10px",
+    borderRadius: "9999px", // DS uses 100px for pill
+    fontFamily: "'Jost', sans-serif",
+  };
 
-  // Logic map for colors
-  const getColors = (): string => {
-    // 1. Success variants
-    if (["completed", "succeeded", "valid", "active", "published", "yes"].includes(normalized)) {
-      return "border-success/35 bg-success-muted text-success";
+  // DS color map — exact from .sp-confirmed / .sp-pending / .sp-cancelled
+  const getStyle = (): React.CSSProperties => {
+    // Success / confirmed
+    if (["completed", "succeeded", "valid", "active", "published", "yes", "confirmed"].includes(normalized)) {
+      return { ...base, background: "#DFF0E6", color: "#2A6645" };
     }
-
-    // 2. Warning / Pending variants
+    // Warning / pending
     if (["paid_unassigned", "partially_assigned", "pending", "duplicate", "capacity_held", "payment_pending"].includes(normalized)) {
-      return "border-warning/35 bg-warning/10 text-warning";
+      return { ...base, background: "#F5EDD8", color: "#7A5420" };
     }
-
-    // 3. Primary / Brand variants (Used for emphasis in certain states)
+    // Brand / gold — assigned/issued states
     if (["issued", "assigned"].includes(normalized)) {
-      return "border-primary/30 bg-primary/10 text-primary";
+      return { ...base, background: "#F0E4CC", color: "#8B6914" };
     }
-
-    // 4. Destructive / Error variants
+    // Cancelled / error
     if (["payment_failed", "failed", "invalid", "voided", "cancelled", "disabled"].includes(normalized)) {
-      return "border-destructive/30 bg-destructive-muted text-destructive";
+      return { ...base, background: "#F5DFDF", color: "#7A2020" };
+    }
+    // Muted / expired
+    if (["expired", "no", "inactive"].includes(normalized)) {
+      return { ...base, background: "#EDE8E3", color: "#7A6E68" };
     }
 
-    // 5. Muted / Expired variants
-    if (["expired", "voided", "no", "inactive"].includes(normalized)) {
-      return "border-border bg-muted text-muted-foreground";
-    }
-
-    return "border-border bg-muted text-foreground";
+    return { ...base, background: "#EDE8E3", color: "#2E2825" };
   };
 
   return (
-    <span className={`${base} ${getColors()} ${className}`} role="status">
-      <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-current opacity-70" aria-hidden="true" />
+    <span style={getStyle()} role="status" className={className}>
       {status.replace(/_/g, " ")}
     </span>
   );

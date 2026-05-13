@@ -6,9 +6,8 @@ export type HitPayCreateResponse = {
 };
 
 import {
-  loadHitPaySettings,
   type HitPayDecryptedConfig,
-} from "@/lib/super-admin/loadHitPaySettings";
+} from "@/lib/hitpay/settings";
 
 function hitPayBaseUrl(isSandbox: boolean): string {
   return isSandbox ? "https://api.sandbox.hit-pay.com" : "https://api.hit-pay.com";
@@ -28,17 +27,17 @@ export type CreateHitPayCheckoutParams = {
 };
 
 /**
- * @param preloaded — pass from the caller to avoid a second `loadHitPaySettings()` (e.g. checkout action).
+ * @param preloaded — MUST pass from the caller (the event's organizer settings).
  */
 export async function createHitPayCheckout(
   params: CreateHitPayCheckoutParams,
-  preloaded?: HitPayDecryptedConfig
+  preloaded: HitPayDecryptedConfig
 ): Promise<HitPayCreateResponse> {
-  const dbSettings = preloaded ?? (await loadHitPaySettings());
+  const dbSettings = preloaded;
 
   if (!dbSettings?.apiKey?.trim()) {
     throw new Error(
-      "HitPay is not configured. Add active API key and salt in Super Admin → HitPay settings."
+      "HitPay is not configured for this organizer. Add active API key and salt in Organizer → Settings."
     );
   }
 

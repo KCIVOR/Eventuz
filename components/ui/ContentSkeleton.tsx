@@ -1,25 +1,36 @@
 /** 
- * Lightweight placeholders using existing tokens. 
- * Includes a subtle shimmer effect for a premium feel.
+ * Lightweight loading skeletons using DS tokens.
+ * Uses champagne shimmer on ivory/alt-surface backgrounds.
  */
 
-const shimmer = "relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent";
+// DS shimmer: translucent white sweep over light surface
+const shimmer = "relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/40 before:to-transparent";
+
+// Shared skeleton block — DS .card bg with light-gray border
+const block = (extra: string) =>
+  `${shimmer} ${extra}` ;
 
 export function SeatingShellSkeleton() {
   return (
     <div className="space-y-6" role="status" aria-label="Loading seating">
-      <div className="flex flex-wrap gap-2 border-b border-border pb-3">
+      {/* Tab bar skeleton */}
+      <div className="flex flex-wrap gap-2" style={{ borderBottom: "1px solid #EDE8E3", paddingBottom: "12px" }}>
         {[1, 2, 3].map((i) => (
-          <div key={i} className={`h-10 w-[7.5rem] rounded-lg bg-muted/90 ${shimmer}`} />
+          <div
+            key={i}
+            className={block("h-10 w-[7.5rem]")}
+            style={{ background: "#F7F4EF", border: "1px solid #EDE8E3", borderRadius: "1px" }}
+          />
         ))}
       </div>
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_2px_12px_rgba(28,25,23,0.05)]">
+      {/* Card skeleton */}
+      <div style={{ border: "1px solid #EDE8E3", borderRadius: "2px", background: "#fff" }}>
         <div className="space-y-3 p-6">
-          <div className={`h-7 w-52 max-w-full rounded-md bg-muted/90 ${shimmer}`} />
-          <div className={`h-40 w-full rounded-xl bg-muted/60 ${shimmer}`} />
+          <div className={block("h-7 w-52 max-w-full")} style={{ background: "#F7F4EF", borderRadius: "1px" }} />
+          <div className={block("h-40 w-full")} style={{ background: "#F7F4EF", borderRadius: "1px" }} />
           <div className="flex gap-2">
-            <div className={`h-9 flex-1 rounded-lg bg-muted/70 ${shimmer}`} />
-            <div className={`h-9 w-24 rounded-lg bg-muted/70 ${shimmer}`} />
+            <div className={block("h-9 flex-1")} style={{ background: "#F7F4EF", borderRadius: "1px" }} />
+            <div className={block("h-9 w-24")} style={{ background: "#F7F4EF", borderRadius: "1px" }} />
           </div>
         </div>
       </div>
@@ -35,16 +46,17 @@ export function AttendeeRouteSkeleton() {
       role="status"
       aria-label="Loading"
     >
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-        <div className={`aspect-[21/9] w-full bg-muted/40 ${shimmer}`} />
+      {/* Hero card skeleton */}
+      <div style={{ border: "1px solid #EDE8E3", borderRadius: "2px", background: "#fff", overflow: "hidden" }}>
+        <div className={block("aspect-[21/9] w-full")} style={{ background: "#F0E4CC" }} />
         <div className="space-y-4 px-6 py-10 sm:px-10">
-          <div className={`mx-auto h-4 w-24 rounded bg-muted/60 ${shimmer}`} />
-          <div className={`mx-auto h-10 w-3/4 rounded-lg bg-muted/90 ${shimmer}`} />
-          <div className={`mx-auto h-4 w-1/2 rounded bg-muted/50 ${shimmer}`} />
+          <div className={block("mx-auto h-4 w-24")} style={{ background: "#F7F4EF", borderRadius: "1px" }} />
+          <div className={block("mx-auto h-10 w-3/4")} style={{ background: "#EDE8E3", borderRadius: "1px" }} />
+          <div className={block("mx-auto h-4 w-1/2")} style={{ background: "#F7F4EF", borderRadius: "1px" }} />
         </div>
       </div>
-      <div className={`h-32 rounded-2xl border border-border/90 bg-card ${shimmer}`} />
-      <div className={`h-64 rounded-2xl border border-dashed border-border bg-muted/10 ${shimmer}`} />
+      <div className={block("h-32")} style={{ border: "1px solid #EDE8E3", borderRadius: "2px", background: "#fff" }} />
+      <div className={block("h-64")} style={{ border: "1px dashed #EDE8E3", borderRadius: "2px", background: "#FDFAF4" }} />
     </div>
   );
 }
@@ -54,12 +66,16 @@ export function FormPageSkeleton() {
   return (
     <div className="space-y-8" role="status" aria-label="Loading setup">
       <div className="space-y-4">
-        <div className={`h-8 w-64 rounded-lg bg-muted/90 ${shimmer}`} />
-        <div className={`h-4 w-full max-w-prose rounded bg-muted/50 ${shimmer}`} />
+        <div className={block("h-8 w-64")} style={{ background: "#EDE8E3", borderRadius: "1px" }} />
+        <div className={block("h-4 w-full max-w-prose")} style={{ background: "#F7F4EF", borderRadius: "1px" }} />
       </div>
       <div className="grid gap-6">
         {[1, 2, 3].map((i) => (
-          <div key={i} className={`h-48 rounded-2xl border border-border bg-card ${shimmer}`} />
+          <div
+            key={i}
+            className={block("h-48")}
+            style={{ border: "1px solid #EDE8E3", borderRadius: "2px", background: "#fff" }}
+          />
         ))}
       </div>
     </div>
@@ -70,12 +86,18 @@ export function FormPageSkeleton() {
 export function ScannerSkeleton() {
   return (
     <div className="mx-auto max-w-lg space-y-6" role="status" aria-label="Initializing scanner">
-      <div className="aspect-square w-full rounded-2xl border border-border bg-muted/30 flex items-center justify-center">
-        <div className={`h-48 w-48 rounded-full bg-muted/40 ${shimmer}`} />
+      <div
+        className="aspect-square w-full flex items-center justify-center"
+        style={{ border: "1px solid #EDE8E3", borderRadius: "2px", background: "#F7F4EF" }}
+      >
+        <div
+          className={block("h-48 w-48")}
+          style={{ borderRadius: "9999px", background: "#EDE8E3" }}
+        />
       </div>
       <div className="space-y-3">
-        <div className={`mx-auto h-10 w-full rounded-xl bg-muted/90 ${shimmer}`} />
-        <div className={`mx-auto h-4 w-32 rounded bg-muted/50 ${shimmer}`} />
+        <div className={block("mx-auto h-10 w-full")} style={{ background: "#EDE8E3", borderRadius: "1px" }} />
+        <div className={block("mx-auto h-4 w-32")} style={{ background: "#F7F4EF", borderRadius: "1px" }} />
       </div>
     </div>
   );

@@ -1,7 +1,6 @@
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { writeAuditLogSafe } from "@/lib/audit/writeAuditLog";
 import { verifyHitPayWebhookSignature, verifyHitPayLegacyHmac } from "@/lib/payments/hitpayVerify";
-import { loadHitPaySettings } from "@/lib/super-admin/loadHitPaySettings";
 
 export type HitPayWebhookResult =
   | { ok: true; detail: string }
@@ -55,7 +54,8 @@ function orderEffectivelyExpired(row: {
   return new Date(row.payment_expires_at).getTime() <= Date.now();
 }
 
-function resolveHitStatus(payload: PaymentRequestPayload): string {
+function resolveHitStatus(payload: PaymentRequestPayload | null): string {
+  if (!payload) return "unknown";
   let s = (payload.status ?? "").trim().toLowerCase();
   if (s) return s;
   const list = Array.isArray(payload.payments) ? payload.payments : [];
@@ -124,17 +124,6 @@ function parseWebhookBody(
 }
 
 export async function processHitPayWebhookRequest(req: Request): Promise<HitPayWebhookResult> {
-  const dbSettings = await loadHitPaySettings();
-  const salt = dbSettings?.salt?.trim();
-
-  if (!salt) {
-    return {
-      ok: false,
-      status: 503,
-      detail: "HitPay salt not configured (Super Admin → HitPay settings)",
-    };
-  }
-
   const rawBody = await req.text();
   const contentType = (req.headers.get("content-type") ?? "").toLowerCase();
 
@@ -152,13 +141,76 @@ export async function processHitPayWebhookRequest(req: Request): Promise<HitPayW
   }
 
   const { parsed, format } = bodyResult;
-  console.log("[HitPay Webhook] Parsed body", {
-    format,
-    keys: Object.keys(parsed),
-    hasHmac: !!parsed.hmac,
-  });
+  
+  // 1. Identify the order/payment to find the organizer
+  let json: Record<string, unknown>;
+  if (format === "form") {
+    const mapped: Record<string, unknown> = { ...parsed };
+    if (!mapped.id && mapped.payment_request_id) mapped.id = mapped.payment_request_id;
+    json = mapped;
+  } else {
+    json = parsed;
+  }
 
-  // --- Signature verification ---
+  const payload = asPayload(json);
+  if (!payload) {
+    return { ok: false, status: 400, detail: "invalid payload format" };
+  }
+  const checkoutId = payload.id ? String(payload.id) : null;
+  const ref = payload.reference_number ? String(payload.reference_number) : null;
+
+  if (!checkoutId && !ref) {
+    return { ok: false, status: 400, detail: "missing payment identifiers" };
+  }
+
+  const supabase = createServiceRoleClient();
+
+  // Find the organizer ID via the order
+  let orderIdForLookup = ref;
+  if (!orderIdForLookup && checkoutId) {
+    const { data: p } = await supabase
+      .from("payments")
+      .select("order_id")
+      .eq("provider_checkout_id", checkoutId)
+      .maybeSingle();
+    orderIdForLookup = p?.order_id as string | null;
+  }
+
+  if (!orderIdForLookup || !isUuid(orderIdForLookup)) {
+    return { ok: true, detail: "unrecognized order/checkout — acknowledged" };
+  }
+
+  const { data: orderMeta } = await supabase
+    .from("orders")
+    .select("event_id")
+    .eq("id", orderIdForLookup)
+    .maybeSingle();
+
+  if (!orderMeta) {
+    return { ok: true, detail: "order not found — acknowledged" };
+  }
+
+  const { data: eventMeta } = await supabase
+    .from("events")
+    .select("organizer_id")
+    .eq("id", orderMeta.event_id)
+    .maybeSingle();
+
+  if (!eventMeta) {
+    return { ok: true, detail: "event not found — acknowledged" };
+  }
+
+  // 2. Load settings for the organizer to get the SALT
+  const { loadHitPaySettings } = await import("@/lib/hitpay/settings");
+  const dbSettings = await loadHitPaySettings(eventMeta.organizer_id as string);
+  const salt = dbSettings?.salt?.trim();
+
+  if (!salt) {
+    console.error(`[HitPay Webhook] No HitPay salt found for organizer ${eventMeta.organizer_id}`);
+    return { ok: false, status: 503, detail: "organizer hitpay not configured" };
+  }
+
+  // 3. Now verify the signature
   const legacyHmac = typeof parsed.hmac === "string" ? parsed.hmac : null;
   const sigHeader =
     req.headers.get("X-Signature") ??
@@ -169,78 +221,22 @@ export async function processHitPayWebhookRequest(req: Request): Promise<HitPayW
     req.headers.get("hitpay-signature");
 
   let verified = false;
-
   if (legacyHmac) {
-    console.log("[HitPay Webhook] Attempting legacy hmac verification");
     verified = verifyHitPayLegacyHmac(parsed, legacyHmac, salt, rawBody);
   } else if (sigHeader) {
-    console.log("[HitPay Webhook] Attempting header-based verification");
     verified = verifyHitPayWebhookSignature(rawBody, sigHeader, salt);
-  } else {
-    console.warn("[HitPay Webhook] No signature found in body or headers");
   }
 
   if (!verified) {
-    console.error("[HitPay Webhook] Signature verification failed", {
-      hasLegacyHmac: !!legacyHmac,
-      hasSigHeader: !!sigHeader,
-      saltLength: salt.length,
-    });
+    console.error("[HitPay Webhook] Signature verification failed", { orderId: orderIdForLookup });
     return { ok: false, status: 401, detail: "invalid signature" };
   }
 
-  console.log("[HitPay Webhook] Signature verified successfully");
-
-  // Use the already-parsed body — HitPay payment_request webhooks use
-  // `payment_request_id` (form field) while our downstream code expects `id`.
-  // Map accordingly to preserve existing downstream logic.
-  let json: unknown;
-  if (format === "form") {
-    // HitPay form fields: payment_request_id, reference_number, amount, currency, status, hmac
-    // Downstream expects: id, reference_number, amount, currency, status
-    const mapped: Record<string, unknown> = { ...parsed };
-    if (!mapped.id && mapped.payment_request_id) {
-      mapped.id = mapped.payment_request_id;
-    }
-    json = mapped;
-  } else {
-    json = parsed;
-  }
-
-  const eventObject = (req.headers.get("Hitpay-Event-Object") ?? "").trim().toLowerCase();
-  // Docs list other object types; Online Payments may still set a non–payment_request header.
-  // If the signed body matches our checkout payload shape, process it anyway.
-  if (
-    eventObject &&
-    eventObject !== "payment_request" &&
-    !bodyLooksLikeOnlinePaymentRequest(json)
-  ) {
-    return { ok: true, detail: `ignored object ${eventObject}` };
-  }
-
-  const payload = asPayload(json);
-  if (!payload?.id) {
-    return { ok: false, status: 400, detail: "missing payment request id" };
-  }
-
-  const checkoutId = String(payload.id);
-  const ref = payload.reference_number != null ? String(payload.reference_number) : "";
-
-  let supabase;
-  try {
-    supabase = createServiceRoleClient();
-  } catch (e) {
-    return {
-      ok: false,
-      status: 503,
-      detail: e instanceof Error ? e.message : "service client error",
-    };
-  }
-
+  // 4. Continue with processing (lookup payment record again or use the one we found)
   const { data: payRow, error: payFindErr } = await supabase
     .from("payments")
     .select("id, order_id, status, amount, currency, provider_checkout_id")
-    .eq("provider_checkout_id", checkoutId)
+    .eq("provider_checkout_id", checkoutId!)
     .maybeSingle();
 
   if (payFindErr) {

@@ -29,23 +29,44 @@ export function PaginationLayout({
 
   return (
     <nav
-      className="flex flex-col gap-3 border-t border-border bg-muted/15 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4"
+      className="flex flex-col gap-4 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+      style={{ 
+        borderColor: "var(--border)", 
+        background: "var(--alt-surface)" 
+      }}
       aria-label={`Pagination for ${listLabel}`}
     >
-      <p className="text-xs tabular-nums text-muted-foreground">
+      <p 
+        style={{ 
+          fontSize: "12px", 
+          fontWeight: 300, 
+          color: "var(--warm-gray)", 
+          fontFamily: "var(--font-sans)" 
+        }}
+      >
         Showing{" "}
-        <span className="font-medium text-foreground">
+        <span style={{ fontWeight: 500, color: "var(--foreground)" }}>
           {rangeStart}-{rangeEnd}
         </span>{" "}
-        of <span className="font-medium text-foreground">{total}</span>
+        of <span style={{ fontWeight: 500, color: "var(--foreground)" }}>{total}</span>
         {suffix}
       </p>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-3">
         {children}
       </div>
     </nav>
   );
 }
 
+// DS-aligned small pagination button
 export const paginationBtnClass =
-  "inline-flex min-h-9 min-w-[2.25rem] cursor-pointer items-center justify-center rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:bg-muted active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 disabled:pointer-events-none disabled:opacity-40";
+  "inline-flex min-h-[32px] cursor-pointer items-center justify-center border bg-white px-4 text-[10px] font-medium tracking-[0.15em] uppercase transition-all duration-200 " +
+  "disabled:pointer-events-none disabled:opacity-30 focus-visible:outline-none " +
+  "hover:border-[var(--champagne)] hover:text-[var(--champagne-dark)] active:scale-[0.98]";
+
+export const paginationBtnStyles: React.CSSProperties = {
+  fontFamily: "var(--font-sans)",
+  borderRadius: "1px",
+  borderColor: "var(--border)",
+  color: "var(--charcoal)",
+};

@@ -8,8 +8,7 @@ import {
 import { computeEarlyBirdPriceLockExpiresAt, resolveUnitPrice } from "@/lib/orders/pricing";
 import { writeAuditLogSafe } from "@/lib/audit/writeAuditLog";
 import { createHitPayCheckout } from "@/lib/payments/hitpayClient";
-import { isHitPayDevSimulationAllowed } from "@/lib/payments/hitpayDevSimulation";
-import { loadHitPaySettings } from "@/lib/super-admin/loadHitPaySettings";
+import { loadHitPaySettings } from "@/lib/hitpay/settings";
 import { deliverTicketEmailsForOrder } from "@/lib/tickets/deliverTicketEmails";
 import { sendPaymentSuccessEmail } from "@/lib/payments/sendPaymentSuccessEmail";
 import { getAppOrigin } from "@/lib/url/site";
@@ -27,12 +26,9 @@ export async function simulateHitPaySuccessAction(
   _prev: HitPaySimulateState | undefined,
   formData: FormData
 ): Promise<HitPaySimulateState> {
-  if (!(await isHitPayDevSimulationAllowed())) {
-    return {
-      error:
-        "Payment simulation is not enabled. Turn on “Allow dev simulation” in Super Admin → HitPay settings (use only in non-production).",
-    };
-  }
+  // We need to check if simulation is allowed for this SPECIFIC event's organizer
+  // but for now we'll just check if simulation is allowed at all by loading any settings.
+  // Actually, let's fix simulateHitPaySuccessAction to load settings for the event's organizer.
 
   const orderId = String(formData.get("order_id") ?? "").trim();
   const eventId = String(formData.get("event_id") ?? "").trim();
@@ -67,7 +63,7 @@ export async function simulateHitPaySuccessAction(
 
   const { data: eventRow } = await supabase
     .from("events")
-    .select("status")
+    .select("status, organizer_id")
     .eq("id", eventId)
     .maybeSingle();
 
@@ -173,6 +169,12 @@ export async function simulateHitPaySuccessAction(
     entityId: payment.id as string,
     metadata: { order_id: orderId, event_id: eventId },
   });
+
+  // Check if simulation is allowed for this organizer
+  const hpSettings = await loadHitPaySettings(eventRow.organizer_id as string);
+  if (!hpSettings?.allowSimulation) {
+    return { error: "Payment simulation is not enabled for this event." };
+  }
 
   // Notify the buyer (account owner)
   try {
@@ -445,7 +447,7 @@ export async function startHitPayCheckoutAction(
 
   const { data: eventRow, error: evRowErr } = await supabase
     .from("events")
-    .select("status")
+    .select("status, organizer_id")
     .eq("id", eventId)
     .maybeSingle();
   if (evRowErr || !eventRow || eventRow.status !== "published") {
@@ -487,17 +489,17 @@ export async function startHitPayCheckoutAction(
     return { error: "This order total is below HitPay minimum (0.30)." };
   }
 
-  const hp = await loadHitPaySettings();
+  const hp = await loadHitPaySettings(eventRow.organizer_id as string);
   if (!hp) {
     return {
       error:
-        "HitPay is not configured. A platform admin must save HitPay settings in Super Admin.",
+        "HitPay is not configured for this event. The organizer must save HitPay settings in their dashboard.",
     };
   }
   if (!hp.allowSimulation && !hp.apiKey?.trim()) {
     return {
       error:
-        "HitPay API key is missing. Add it in Super Admin → HitPay settings (or enable “Allow dev simulation” for local testing without real payments).",
+        "HitPay API key is missing. The organizer must add it in their Settings (or enable “Allow dev simulation” for testing).",
     };
   }
   const currency = hp.currency.trim().toUpperCase();

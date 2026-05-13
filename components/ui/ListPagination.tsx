@@ -1,6 +1,6 @@
 import { hrefWithPageParam, type SerializableSearchParams } from "@/lib/ui/paginationUrl";
 import Link from "next/link";
-import { PaginationLayout, paginationBtnClass } from "./PaginationLayout";
+import { PaginationLayout, paginationBtnClass, paginationBtnStyles } from "./PaginationLayout";
 
 const disabledClass = " pointer-events-none opacity-40";
 
@@ -37,6 +37,8 @@ export function ListPagination({
   const nextHref =
     page < pageCount ? hrefWithPageParam(pathname, searchParams, paramKey, page + 1) : null;
 
+  const btnStyle = { ...paginationBtnStyles };
+
   return (
     <PaginationLayout
       total={total}
@@ -48,29 +50,55 @@ export function ListPagination({
       {pageCount > 1 ? (
         <>
           {prevHref ? (
-            <Link href={prevHref} className={paginationBtnClass} prefetch={false}>
+            <Link 
+              href={prevHref} 
+              className={paginationBtnClass} 
+              style={btnStyle}
+              prefetch={false}
+            >
               Previous
             </Link>
           ) : (
-            <span className={paginationBtnClass + disabledClass} aria-disabled="true">
+            <span 
+              className={paginationBtnClass + disabledClass} 
+              style={btnStyle}
+              aria-disabled="true"
+            >
               Previous
             </span>
           )}
-          <span className="px-2 text-xs tabular-nums text-muted-foreground">
+          <span 
+            className="px-2 text-[11px] font-medium tracking-wide uppercase"
+            style={{ color: "var(--mid-gray)", fontFamily: "var(--font-sans)" }}
+          >
             Page {page} of {pageCount}
           </span>
           {nextHref ? (
-            <Link href={nextHref} className={paginationBtnClass} prefetch={false}>
+            <Link 
+              href={nextHref} 
+              className={paginationBtnClass} 
+              style={btnStyle}
+              prefetch={false}
+            >
               Next
             </Link>
           ) : (
-            <span className={paginationBtnClass + disabledClass} aria-disabled="true">
+            <span 
+              className={paginationBtnClass + disabledClass} 
+              style={btnStyle}
+              aria-disabled="true"
+            >
               Next
             </span>
           )}
         </>
       ) : (
-        <span className="text-xs text-muted-foreground">Single page</span>
+        <span 
+          className="text-[11px] font-medium tracking-wide uppercase"
+          style={{ color: "var(--warm-gray)", fontFamily: "var(--font-sans)" }}
+        >
+          Single page
+        </span>
       )}
     </PaginationLayout>
   );

@@ -2,19 +2,23 @@ import type { Metadata } from "next";
 import { AuthDebugConsoleBoot } from "@/components/debug/AuthDebugConsoleBoot";
 import { AuthDebugErrorBoundary } from "@/components/debug/AuthDebugErrorBoundary";
 import { AuthDebugPanel } from "@/components/debug/AuthDebugPanel";
-import { Cormorant_Garamond, Inter } from "next/font/google";
+import { Cormorant_Garamond, Jost } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+// Jost for all body/UI text — exact match to DS (Jost: 300, 400, 500, 600)
+const jost = Jost({
+  variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
   display: "swap",
 });
 
+// Cormorant Garamond for all display/heading text — italic + light weights
 const cormorant = Cormorant_Garamond({
-  variable: "--font-display",
+  variable: "--font-serif",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["300", "400", "600"],
+  style: ["normal", "italic"],
   display: "swap",
 });
 
@@ -28,12 +32,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // suppressHydrationWarning on html/body: extensions may inject attrs (e.g. fdprocessedid) before hydrate.
   return (
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${inter.variable} ${cormorant.variable} h-full antialiased`}
+      className={`${jost.variable} ${cormorant.variable} h-full`}
     >
       <body
         suppressHydrationWarning

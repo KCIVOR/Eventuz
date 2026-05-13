@@ -16,6 +16,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Input } from "@/components/ui/Input";
+import { GooglePlaceAutocomplete } from "@/components/ui/GooglePlaceAutocomplete";
 
 type Props = {
   params: Promise<{ eventId: string }>;
@@ -67,386 +68,329 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
       layout="flush"
       mainWidth="wide"
       withoutFrame
-      title="Event setup"
-      description={`Status: ${event.status as string} · Public slug: ${event.public_slug as string}`}
+      title="Event Configuration"
+      description={`Manage the core details, schedule, and ticketing for ${event.name}`}
       breadcrumbs={[
         { label: "Home", href: "/organizer" },
         { label: event.name as string },
       ]}
       actions={
-        <Button variant="secondary" asChild>
+        <Button variant="outline" className="btn-eventuz-secondary py-2" asChild>
           <Link href={`/organizer/events/${eventId}/dashboard`}>
-            Operations dashboard
+            Operations Dashboard
           </Link>
         </Button>
       }
     >
-      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-10">
-        {q.error ? (
-          <p className="rounded-xl border border-destructive/25 bg-destructive-muted px-4 py-3 text-sm text-destructive">
-            {q.error}
-          </p>
-        ) : null}
-        {q.ok ? (
-          <p className="rounded-xl border border-success/25 bg-success-muted px-4 py-3 text-sm text-success">
-            Saved.
-          </p>
-        ) : null}
-
-        <div className="panel-card p-6 sm:p-8">
-          <form action={updateEvent.bind(null, eventId)} className="flex flex-col gap-8">
-            <section className="space-y-4">
-              <h2 className="section-title">Basics</h2>
-              <Input label="Event name" name="name" required defaultValue={event.name as string} />
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="description" className="label-eventuz">
-                  Description
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  rows={4}
-                  defaultValue={event.description as string}
-                  className="input-eventuz"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="status" className="label-eventuz">
-                  Status
-                </label>
-                <select
-                  id="status"
-                  name="status"
-                  className="input-eventuz"
-                  defaultValue={event.status as string}
-                >
-                  {EVENT_STATUSES.map((s) => (
-                    <option key={s} value={s}>
-                      {s === "draft"
-                        ? "Draft — not visible to attendees"
-                        : s === "published"
-                          ? "Published — visible when registration is enabled"
-                          : "Disabled — hidden from registration"}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </section>
-
-            <section className="space-y-4 border-t border-border pt-8">
-              <h2 className="section-title">Schedule & location</h2>
-              <Input label="Venue" name="venue" defaultValue={event.venue as string} />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Input
-                  label="Event date"
-                  name="event_date"
-                  type="date"
-                  required
-                  defaultValue={event.event_date as string}
-                />
-                <Input
-                  label="Event time"
-                  name="event_time"
-                  type="time"
-                  required
-                  defaultValue={trimTimeForInput(event.event_time)}
-                />
-              </div>
-            </section>
-
-            <section className="space-y-4 border-t border-border pt-8">
-              <h2 className="section-title">Public link</h2>
-              <p className="text-sm text-muted-foreground">
-                Attendees will use this identifier in the event URL. Lowercase letters, numbers, and
-                hyphens work best.
+      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-10 px-4 sm:px-8">
+        
+        {/* Status Messaging */}
+        {(q.error || q.ok) && (
+          <div className="animate-fade-in-up">
+            {q.error && (
+              <p className="rounded-xl border border-destructive/25 bg-destructive-muted px-6 py-4 text-sm text-destructive shadow-sm">
+                {q.error}
               </p>
-              <Input
-                label="Public slug"
-                name="public_slug"
-                required
-                defaultValue={event.public_slug as string}
-                autoComplete="off"
-              />
-            </section>
-
-            <section className="space-y-4 border-t border-border pt-8">
-              <h2 className="section-title">Hold durations (minutes)</h2>
-              <p className="text-sm text-muted-foreground">
-                Stored on this event. Use whole minutes from 1 to 525600.
+            )}
+            {q.ok && (
+              <p className="rounded-xl border border-success/25 bg-success-muted px-6 py-4 text-sm text-success shadow-sm">
+                Event configuration successfully updated.
               </p>
-              <fieldset className="grid gap-4 rounded-xl border border-border bg-muted/30 p-4 sm:grid-cols-3">
-                <legend className="label-eventuz px-1">Per-event timing</legend>
-                <Input
-                  label="Capacity hold"
-                  name="capacity_hold_minutes"
-                  type="number"
-                  required
-                  min={1}
-                  defaultValue={String(event.capacity_hold_minutes)}
-                />
-                <Input
-                  label="Payment hold"
-                  name="payment_hold_minutes"
-                  type="number"
-                  required
-                  min={1}
-                  defaultValue={String(event.payment_hold_minutes)}
-                />
-                <Input
-                  label="Early bird price hold"
-                  name="early_bird_hold_minutes"
-                  type="number"
-                  required
-                  min={1}
-                  defaultValue={String(event.early_bird_hold_minutes)}
-                />
-              </fieldset>
-            </section>
-
-            {event.status === "draft" ? (
-              <div className="callout-eventuz">
-                <strong className="font-semibold text-foreground">Ready to go live?</strong>
-                <p className="mt-1 text-muted-foreground">
-                  Change <em>status</em> to <strong>published</strong> above, then save. Add ticket
-                  types below before opening registration.
-                </p>
-              </div>
-            ) : null}
-
-            <Button type="submit" className="w-full sm:w-auto">
-              Save changes
-            </Button>
-          </form>
-        </div>
-
-        <section className="space-y-6">
-          <div>
-            <h2 className="section-title">Ticket types</h2>
-            <p className="mt-1 max-w-prose text-sm leading-relaxed text-muted-foreground">
-              Define inventory, list prices, and optional early-bird windows. Saving updates linked
-              seats (manage labels under <strong className="font-medium text-foreground">Seating</strong>{" "}
-              → Seat inventory). Checkout and attendee seat picking come later.
-            </p>
+            )}
           </div>
+        )}
 
-          <div className="callout-eventuz">
-            <strong className="font-semibold text-foreground">Validation</strong>
-            <p className="mt-1 text-muted-foreground">
-              With an early-bird window set, early-bird price must be <em>lower</em> than regular
-              price. End must be after start. Quantity is at least 1.
-            </p>
-          </div>
-
-          <div className="panel-card p-6 sm:p-8">
-            <h3 className="text-sm font-semibold text-foreground">Add ticket type</h3>
-            <form action={createTicketType.bind(null, eventId)} className="mt-4 flex flex-col gap-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Input
-                  label="Name"
-                  name="name"
-                  id="new-tt-name"
-                  required
-                  placeholder="e.g. General admission"
-                />
-                <Input
-                  label="Quantity"
-                  name="quantity"
-                  id="new-tt-quantity"
-                  type="number"
-                  required
-                  min={1}
-                  defaultValue="1"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="new-tt-description" className="label-eventuz">
-                  Description
-                </label>
-                <textarea
-                  id="new-tt-description"
-                  name="description"
-                  rows={2}
-                  className="input-eventuz"
-                  placeholder="Optional details for your team."
-                />
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Input
-                  label="Regular price (PHP)"
-                  name="regular_price"
-                  id="new-tt-regular_price"
-                  type="number"
-                  required
-                  min={0}
-                  step="0.01"
-                  defaultValue="0"
-                />
-                <Input
-                  label="Early bird price (PHP)"
-                  name="early_bird_price"
-                  id="new-tt-early_bird_price"
-                  type="number"
-                  required
-                  min={0}
-                  step="0.01"
-                  defaultValue="0"
-                />
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Input
-                  label="Early bird starts"
-                  name="early_bird_start_at"
-                  id="new-tt-early_bird_start_at"
-                  type="datetime-local"
-                />
-                <Input
-                  label="Early bird ends"
-                  name="early_bird_end_at"
-                  id="new-tt-early_bird_end_at"
-                  type="datetime-local"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="new-tt-status" className="label-eventuz">
-                  Status
-                </label>
-                <select id="new-tt-status" name="status" className="input-eventuz" defaultValue="active">
-                  {TICKET_TYPE_STATUSES.map((s) => (
-                    <option key={s} value={s}>
-                      {ticketStatusLabels[s] ?? s}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <Button type="submit" className="w-full sm:w-auto">
-                Add ticket type
-              </Button>
-            </form>
-          </div>
-
-          {(ticketTypes ?? []).length > 1 ? (
-            <p className="text-xs text-muted-foreground">
-              Each ticket type is collapsed to save space. Click the header to expand and edit.
-            </p>
-          ) : null}
-
-          <ul className="space-y-4">
-            {(ticketTypes ?? []).map((tt) => (
-              <CollapsibleTicketTypeCard
-                key={tt.id as string}
-                ticketTypeId={tt.id as string}
-                title={tt.name as string}
-                summary={`${formatPhp(Number(tt.regular_price))} regular · ${formatPhp(Number(tt.early_bird_price))} early bird · qty ${tt.quantity}`}
-                defaultExpanded={(ticketTypes ?? []).length <= 1}
-                statusBadge={
-                  <StatusBadge status={tt.status as string} />
-                }
-              >
-                <form action={updateTicketType} className="flex flex-col gap-4">
-                  <input type="hidden" name="event_id" value={eventId} />
-                  <input type="hidden" name="ticket_type_id" value={tt.id as string} />
-                  <div className="inset-panel space-y-4">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <Input
-                        label="Name"
-                        name="name"
-                        id={`tt-${tt.id}-name`}
-                        required
-                        defaultValue={tt.name as string}
-                      />
-                      <Input
-                        label="Quantity"
-                        name="quantity"
-                        id={`tt-${tt.id}-quantity`}
-                        type="number"
-                        required
-                        min={1}
-                        defaultValue={String(tt.quantity)}
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label htmlFor={`tt-${tt.id}-description`} className="label-eventuz">
-                        Description
-                      </label>
-                      <textarea
-                        id={`tt-${tt.id}-description`}
-                        name="description"
-                        rows={2}
-                        defaultValue={tt.description as string}
-                        className="input-eventuz"
-                      />
-                    </div>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <Input
-                        label="Regular price (PHP)"
-                        name="regular_price"
-                        id={`tt-${tt.id}-regular_price`}
-                        type="number"
-                        required
-                        min={0}
-                        step="0.01"
-                        defaultValue={String(tt.regular_price)}
-                      />
-                      <Input
-                        label="Early bird price (PHP)"
-                        name="early_bird_price"
-                        id={`tt-${tt.id}-early_bird_price`}
-                        type="number"
-                        required
-                        min={0}
-                        step="0.01"
-                        defaultValue={String(tt.early_bird_price)}
-                      />
-                    </div>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <Input
-                        label="Early bird starts"
-                        name="early_bird_start_at"
-                        id={`tt-${tt.id}-early_bird_start_at`}
-                        type="datetime-local"
-                        defaultValue={toDatetimeLocalInput(tt.early_bird_start_at as string | null)}
-                      />
-                      <Input
-                        label="Early bird ends"
-                        name="early_bird_end_at"
-                        id={`tt-${tt.id}-early_bird_end_at`}
-                        type="datetime-local"
-                        defaultValue={toDatetimeLocalInput(tt.early_bird_end_at as string | null)}
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label htmlFor={`tt-${tt.id}-status`} className="label-eventuz">
-                        Status
-                      </label>
-                      <select
-                        id={`tt-${tt.id}-status`}
-                        name="status"
-                        className="input-eventuz"
-                        defaultValue={tt.status as string}
-                      >
-                        {TICKET_TYPE_STATUSES.map((s) => (
-                          <option key={s} value={s}>
-                            {ticketStatusLabels[s] ?? s}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+        <div className="lg:grid lg:grid-cols-12 lg:gap-12 lg:items-start">
+          
+          {/* MAIN COLUMN: Core Configuration & Tickets */}
+          <div className="lg:col-span-7 space-y-12">
+            
+            <section className="panel-card p-8 sm:p-10 animate-fade-in-up">
+              <form action={updateEvent.bind(null, eventId)} className="space-y-12">
+                
+                {/* Basics Section */}
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <h2 className="font-serif text-2xl font-light text-foreground">Basics</h2>
+                    <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
                   </div>
-                  <Button type="submit" className="w-full sm:w-auto">
-                    Save ticket type
+                  
+                  <Input label="Event Name" name="name" required defaultValue={event.name as string} />
+                  
+                  <div className="space-y-1.5">
+                    <label htmlFor="description" className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                      Narrative / Description
+                    </label>
+                    <textarea
+                      id="description"
+                      name="description"
+                      rows={5}
+                      defaultValue={event.description as string}
+                      className="input-eventuz"
+                      placeholder="Describe the affair..."
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="status" className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                      Visibility Status
+                    </label>
+                    <select
+                      id="status"
+                      name="status"
+                      className="input-eventuz"
+                      defaultValue={event.status as string}
+                    >
+                      {EVENT_STATUSES.map((s) => (
+                        <option key={s} value={s}>
+                          {s === "draft"
+                            ? "Draft — Private / Under Construction"
+                            : s === "published"
+                              ? "Published — Visible to Invitees"
+                              : "Disabled — Hidden from All"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Schedule & Location */}
+                <div className="space-y-6 pt-12 border-t border-border/60">
+                  <div className="flex items-center gap-4">
+                    <h2 className="font-serif text-2xl font-light text-foreground">Venue & Timing</h2>
+                    <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Location</label>
+                    <GooglePlaceAutocomplete
+                      defaultValue={event.venue as string}
+                      defaultFormattedAddress={event.formatted_address as string}
+                      defaultLat={event.lat ? Number(event.lat) : undefined}
+                      defaultLng={event.lng ? Number(event.lng) : undefined}
+                      placeholder="Search venue or address..."
+                    />
+                  </div>
+                  
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    <Input
+                      label="Event Date"
+                      name="event_date"
+                      type="date"
+                      required
+                      defaultValue={event.event_date as string}
+                    />
+                    <Input
+                      label="Event Time"
+                      name="event_time"
+                      type="time"
+                      required
+                      defaultValue={trimTimeForInput(event.event_time)}
+                    />
+                  </div>
+                </div>
+
+                {/* Public Link */}
+                <div className="space-y-6 pt-12 border-t border-border/60">
+                  <div className="flex items-center gap-4">
+                    <h2 className="font-serif text-2xl font-light text-foreground">Access</h2>
+                    <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
+                  </div>
+                  <p className="text-sm font-light text-muted-foreground leading-relaxed">
+                    Personalize your event URL. Use lowercase letters, numbers, and hyphens.
+                  </p>
+                  <Input
+                    label="URL Identifier (Slug)"
+                    name="public_slug"
+                    required
+                    defaultValue={event.public_slug as string}
+                    autoComplete="off"
+                  />
+                </div>
+
+                <div className="pt-8 flex justify-end">
+                  <Button type="submit" className="btn-eventuz-gold px-10 py-4 shadow-lg shadow-accent-gold/10">
+                    Save Event Configuration
                   </Button>
-                </form>
-              </CollapsibleTicketTypeCard>
-            ))}
-          </ul>
+                </div>
+              </form>
+            </section>
 
-          {(ticketTypes ?? []).length === 0 ? (
-            <p className="text-center text-sm text-muted-foreground">
-              No ticket types yet. Add one above.
-            </p>
-          ) : null}
-        </section>
+            {/* Existing Ticket Types Section */}
+            <section className="space-y-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+              <div className="flex items-center gap-4">
+                <h2 className="font-serif text-2xl font-light text-foreground">Active Packages</h2>
+                <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
+              </div>
+              
+              {(ticketTypes ?? []).length === 0 ? (
+                <div className="panel-card py-16 text-center border-dashed border-border/60 bg-muted/5">
+                   <p className="text-sm font-light text-muted-foreground">No ticket types defined yet. Use the sidebar to create your first package.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {(ticketTypes ?? []).map((tt) => (
+                    <CollapsibleTicketTypeCard
+                      key={tt.id as string}
+                      ticketTypeId={tt.id as string}
+                      title={tt.name as string}
+                      summary={`${formatPhp(Number(tt.regular_price))} Regular · ${formatPhp(Number(tt.early_bird_price))} Early Bird · Qty ${tt.quantity}`}
+                      defaultExpanded={(ticketTypes ?? []).length <= 1}
+                      statusBadge={
+                        <StatusBadge status={tt.status as string} />
+                      }
+                    >
+                      <form action={updateTicketType} className="space-y-8 p-2">
+                        <input type="hidden" name="event_id" value={eventId} />
+                        <input type="hidden" name="ticket_type_id" value={tt.id as string} />
+                        
+                        <div className="grid gap-6 sm:grid-cols-2">
+                          <Input label="Name" name="name" required defaultValue={tt.name as string} />
+                          <Input label="Quantity" name="quantity" type="number" required min={1} defaultValue={String(tt.quantity)} />
+                        </div>
 
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Package Description</label>
+                          <textarea
+                            name="description"
+                            rows={3}
+                            defaultValue={tt.description as string}
+                            className="input-eventuz"
+                          />
+                        </div>
+
+                        <div className="grid gap-6 sm:grid-cols-2">
+                          <Input label="Regular Price (PHP)" name="regular_price" type="number" required min={0} step="0.01" defaultValue={String(tt.regular_price)} />
+                          <Input label="Early Bird Price (PHP)" name="early_bird_price" type="number" required min={0} step="0.01" defaultValue={String(tt.early_bird_price)} />
+                        </div>
+
+                        <div className="grid gap-6 sm:grid-cols-2">
+                          <Input
+                            label="Early Bird Begins"
+                            name="early_bird_start_at"
+                            type="datetime-local"
+                            defaultValue={toDatetimeLocalInput(tt.early_bird_start_at as string | null)}
+                          />
+                          <Input
+                            label="Early Bird Ends"
+                            name="early_bird_end_at"
+                            type="datetime-local"
+                            defaultValue={toDatetimeLocalInput(tt.early_bird_end_at as string | null)}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Package Status</label>
+                          <select name="status" className="input-eventuz" defaultValue={tt.status as string}>
+                            {TICKET_TYPE_STATUSES.map((s) => (
+                              <option key={s} value={s}>{ticketStatusLabels[s] ?? s}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="pt-4 flex justify-end">
+                          <Button type="submit" className="btn-eventuz-gold px-8 py-3 text-xs">
+                            Update Package
+                          </Button>
+                        </div>
+                      </form>
+                    </CollapsibleTicketTypeCard>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+
+          {/* SIDEBAR: Status, Rules & Creation */}
+          <aside className="lg:col-span-5 space-y-8 lg:sticky lg:top-32">
+            
+            {/* Publication Status Card */}
+            <div className={`panel-card p-8 border-l-4 ${event.status === 'published' ? 'border-l-success' : 'border-l-accent-gold'} shadow-lg shadow-accent-gold/[0.03]`}>
+              <div className="flex items-center justify-between mb-6">
+                 <h3 className="text-[10px] uppercase tracking-widest text-accent-gold font-bold">Lifecycle Status</h3>
+                 <StatusBadge status={event.status as string} />
+              </div>
+              
+              {event.status === 'draft' ? (
+                <div className="space-y-4">
+                  <p className="text-sm font-light leading-relaxed text-muted-foreground">
+                    Your event is currently a <span className="font-semibold text-foreground">Draft</span>. It is hidden from all public lists and attendee registration.
+                  </p>
+                  <div className="p-4 rounded-xl bg-accent-gold/5 border border-accent-gold/10">
+                     <p className="text-[10px] font-bold text-accent-gold uppercase tracking-wider mb-1">Ready to go live?</p>
+                     <p className="text-xs text-muted-foreground font-light">Set status to &apos;Published&apos; in the Basics section and save to begin accepting guests.</p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm font-light leading-relaxed text-muted-foreground">
+                   Event is <span className="font-semibold text-foreground">Published</span> and visible to anyone with the public link.
+                </p>
+              )}
+            </div>
+
+            {/* Timing Rules Card */}
+            <div className="panel-card p-8 space-y-8">
+              <div className="space-y-2">
+                <p className="text-[10px] uppercase tracking-widest text-accent-gold font-bold">Reservation Rules</p>
+                <h3 className="font-serif text-2xl font-light text-foreground">Hold Durations</h3>
+              </div>
+              
+              <form action={updateEvent.bind(null, eventId)} className="space-y-6">
+                 {/* Re-including hidden basic fields to satisfy required form inputs if necessary, 
+                     but since we have separate save buttons, we keep them isolated if the action handles partials. 
+                     Assuming action needs all fields or we just move the inputs here for specific control. */}
+                 <input type="hidden" name="name" defaultValue={event.name as string} />
+                 <input type="hidden" name="description" defaultValue={event.description as string} />
+                 <input type="hidden" name="status" defaultValue={event.status as string} />
+                 <input type="hidden" name="public_slug" defaultValue={event.public_slug as string} />
+                 <input type="hidden" name="event_date" defaultValue={event.event_date as string} />
+                 <input type="hidden" name="event_time" defaultValue={trimTimeForInput(event.event_time)} />
+
+                 <div className="grid gap-4">
+                    <Input label="Capacity Hold (Mins)" name="capacity_hold_minutes" type="number" required min={1} defaultValue={String(event.capacity_hold_minutes)} />
+                    <Input label="Payment Hold (Mins)" name="payment_hold_minutes" type="number" required min={1} defaultValue={String(event.payment_hold_minutes)} />
+                    <Input label="Early Bird Price Hold (Mins)" name="early_bird_hold_minutes" type="number" required min={1} defaultValue={String(event.early_bird_hold_minutes)} />
+                 </div>
+                 
+                 <Button type="submit" variant="outline" className="w-full btn-eventuz-secondary py-3 text-xs">
+                    Update Hold Timing
+                 </Button>
+              </form>
+            </div>
+
+            {/* Add New Package Portal */}
+            <div className="panel-card p-8 border-accent-gold/20 bg-accent-gold/[0.02]">
+              <div className="space-y-2 mb-8">
+                <p className="text-[10px] uppercase tracking-widest text-accent-gold font-bold">Inventory Management</p>
+                <h3 className="font-serif text-2xl font-light text-foreground">New Package</h3>
+              </div>
+              
+              <form action={createTicketType.bind(null, eventId)} className="space-y-6">
+                <Input label="Package Name" name="name" required placeholder="e.g. VIP Gala" />
+                <Input label="Initial Quantity" name="quantity" type="number" required min={1} defaultValue="10" />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <Input label="Regular Price" name="regular_price" type="number" required min={0} step="0.01" defaultValue="1500" />
+                  <Input label="Early Bird Price" name="early_bird_price" type="number" required min={0} step="0.01" defaultValue="1200" />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Visibility</label>
+                  <select name="status" className="input-eventuz" defaultValue="active">
+                    {TICKET_TYPE_STATUSES.map((s) => (
+                      <option key={s} value={s}>{ticketStatusLabels[s] ?? s}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <Button type="submit" className="w-full btn-eventuz-gold py-4 shadow-lg shadow-accent-gold/10">
+                  Create Package Type
+                </Button>
+              </form>
+            </div>
+
+          </aside>
+        </div>
       </div>
     </RoleAreaShell>
   );

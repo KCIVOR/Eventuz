@@ -3,6 +3,7 @@ import type { EventuzRole } from "@/lib/auth/roles";
 import type { BreadcrumbItem } from "./Breadcrumbs";
 import { DashboardFrame } from "./DashboardFrame";
 import { PageHeader } from "./PageHeader";
+import { createClient } from "@/lib/supabase/server";
 import { navSectionsForRole, roleHomeHref, type NavContext } from "./navigation";
 
 type Props = {
@@ -26,7 +27,7 @@ type Props = {
   withoutFrame?: boolean;
 };
 
-export function RoleAreaShell({
+export async function RoleAreaShell({
   role,
   title,
   description,
@@ -34,13 +35,34 @@ export function RoleAreaShell({
   children,
   layout = "panel",
   mainWidth = "default",
-  navContext,
+  navContext: initialNavContext,
   breadcrumbs,
   actions,
   showPageHeader = true,
   withoutFrame = false,
 }: Props) {
-  const sections = navSectionsForRole(role, navContext ?? {});
+  let navContext = initialNavContext ?? {};
+
+  // If organizer/staff and no eventId, try to find the "active" one to populate sidebar
+  if ((role === "organizer" || role === "staff") && !navContext.eventId) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: event } = await supabase
+          .from("events")
+          .select("id")
+          .eq("organizer_id", user.id)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+      if (event) {
+        navContext = { ...navContext, eventId: event.id };
+      }
+    }
+  }
+
+  const sections = navSectionsForRole(role, navContext);
   const homeHref = roleHomeHref(role);
   const maxW = mainWidth === "wide" ? "max-w-7xl" : "max-w-5xl";
 
@@ -57,16 +79,25 @@ export function RoleAreaShell({
         />
       ) : null}
       {layout === "flush" ? (
-        <div className="space-y-8">{children}</div>
+        <div className="space-y-10">{children}</div>
       ) : (
-        <div className="rounded-2xl border border-border/70 bg-card/50 p-6 shadow-[0_1px_3px_rgba(28,25,23,0.04)] sm:p-8">
+        // DS Panel — .card style with sharp corners
+        <div 
+          className="p-6 sm:p-10"
+          style={{ 
+            background: "#fff", 
+            border: "1px solid #EDE8E3", 
+            borderRadius: "2px",
+            boxShadow: "0 2px 12px rgba(26,21,18,0.03)" 
+          }}
+        >
           {children}
         </div>
       )}
     </>
   );
 
-  const content = <div className={`mx-auto w-full ${maxW} px-4 py-8 sm:px-6 sm:py-10`}>{inner}</div>;
+  const content = <div className={`mx-auto w-full ${maxW} px-4 py-8 sm:px-6 sm:py-12`}>{inner}</div>;
 
   if (withoutFrame) {
     return content;

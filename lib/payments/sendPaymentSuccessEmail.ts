@@ -2,6 +2,7 @@ import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { decryptSmtpPassword } from "@/lib/utils/crypto";
 import { createSmtpTransport, formatSmtpFrom, type SmtpDecryptedConfig } from "@/lib/smtp/sendTestMessage";
 import { getAppOrigin } from "@/lib/url/site";
+import { brandEmailShell, emailButtonHtml, emailSecondaryButtonHtml } from "@/lib/utils/email/brandTemplates";
 
 function escapeHtml(s: string): string {
   return s
@@ -109,52 +110,45 @@ export async function sendPaymentSuccessEmail(orderId: string): Promise<void> {
     `Thank you for using Eventuz!`,
   ].join("\n");
 
-  const html = `
-<!DOCTYPE html>
-<html>
-<body style="margin:0;padding:24px;font-family:Georgia,serif;color:#1c1917;background:#faf8f5;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e7e5e4;border-radius:12px;">
-    <tr><td style="padding:24px 28px;">
-      <p style="margin:0 0 8px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#a68a56;">Eventuz</p>
-      <h1 style="margin:0 0 12px;font-size:22px;font-weight:600;">Payment Successful</h1>
-      <p style="margin:0 0 20px;font-size:14px;color:#57534e;line-height:1.5;">
-        Your payment for <strong>${escapeHtml(eventName)}</strong> was received.
-      </p>
-      
-      <div style="margin:24px 0;padding:20px;background:#faf8f5;border-radius:8px;border:1px solid #e7e5e4;">
-        <table width="100%">
-          <tr>
-            <td style="font-size:13px;color:#78716c;padding-bottom:4px;">Amount Paid</td>
-            <td style="font-size:13px;color:#78716c;padding-bottom:4px;text-align:right;">Order ID</td>
-          </tr>
-          <tr>
-            <td style="font-size:18px;font-weight:600;color:#1c1917;">${amount} ${currency}</td>
-            <td style="font-size:13px;font-family:monospace;color:#1c1917;text-align:right;">${orderId.slice(0, 8)}...</td>
-          </tr>
-        </table>
-      </div>
+  const contentHtml = `
+    <p>Dear ${escapeHtml(buyerName)},</p>
+    <p>Your payment for <strong>${escapeHtml(eventName)}</strong> has been successfully processed. We are delighted to have you join us for this celebration.</p>
+    
+    <div style="margin:32px 0;padding:24px;background-color:#F7F4EF;border:1px solid #EDE8E3;border-radius:2px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="font-size:11px;text-transform:uppercase;letter-spacing:0.15em;color:#7A6E68;padding-bottom:8px;">Amount Paid</td>
+          <td style="font-size:11px;text-transform:uppercase;letter-spacing:0.15em;color:#7A6E68;padding-bottom:8px;text-align:right;">Order ID</td>
+        </tr>
+        <tr>
+          <td style="font-size:20px;color:#1A1512;font-weight:300;">₱${amount}</td>
+          <td style="font-size:13px;color:#1A1512;text-align:right;font-family:monospace;">${orderId.slice(0, 8)}...</td>
+        </tr>
+      </table>
+    </div>
 
-      <h2 style="margin:24px 0 12px;font-size:16px;font-weight:600;">Next Steps</h2>
-      <p style="margin:0 0 16px;font-size:14px;color:#57534e;line-height:1.5;">
-        To get your entry passes, you need to assign seats for your guests and generate the QR codes:
-      </p>
-      
-      <p style="margin:0 0 24px;">
-        <a href="${escapeHtml(seatsUrl)}" style="display:inline-block;border-radius:12px;background:#722f37;color:#faf8f5;font-size:14px;font-weight:600;padding:12px 22px;text-decoration:none;margin-right:8px;">
-          Choose Seats
-        </a>
-        <a href="${escapeHtml(ticketsUrl)}" style="display:inline-block;border-radius:12px;border:1px solid #e7e5e4;background:#ffffff;color:#1c1917;font-size:14px;font-weight:600;padding:12px 22px;text-decoration:none;">
-          View Tickets
-        </a>
-      </p>
+    <h2 style="font-family:Georgia, serif;font-size:18px;font-weight:300;margin:32px 0 16px;color:#1A1512;">Next Steps</h2>
+    <p>To ensure a seamless experience on the day of the event, please complete your guest registration and seating assignments:</p>
+    
+    <div style="margin:32px 0;text-align:center;">
+      <a href="${seatsUrl}" style="display:inline-block;background-color:#1A1512;color:#FDFAF4;padding:14px 32px;font-size:11px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;text-decoration:none;border-radius:1px;margin-bottom:12px;min-width:180px;">
+        Choose Seats
+      </a>
+      <br />
+      <a href="${ticketsUrl}" style="display:inline-block;background-color:transparent;border:1px solid #1A1512;color:#1A1512;padding:14px 32px;font-size:11px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;text-decoration:none;border-radius:1px;min-width:180px;">
+        View Tickets
+      </a>
+    </div>
 
-      <p style="margin:0;font-size:13px;color:#78716c;line-height:1.5;">
-        If you have any questions, please contact the event organizer.
-      </p>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+    <p style="font-size:13px;color:#7A6E68;margin-top:40px;border-top:1px solid #EDE8E3;padding-top:24px;">
+      If you have any questions regarding your order, please do not hesitate to reach out to the event organizers.
+    </p>
+  `;
+
+  const html = brandEmailShell({
+    title: "Payment Successful",
+    contentHtml
+  });
 
   try {
     const transporter = createSmtpTransport(cfg);

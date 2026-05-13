@@ -1,20 +1,26 @@
-import React, { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 type Props = {
   children: ReactNode;
   className?: string;
 };
 
-/**
- * Standardizes the scrollable table pattern with a subtle border-radius and overflow handling.
- * Ensures that tables look premium on mobile and desktop without breaking the panel layout.
+/** 
+ * Enforces a horizontal scroll on small screens for tables.
+ * Styled to match the design system's card panels.
  */
 export function ScrollableTableWrapper({ children, className = "" }: Props) {
   return (
-    <div className={`overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_3px_rgba(28,25,23,0.04)] ${className}`.trim()}>
-      <div className="overflow-x-auto">
-        {children}
-      </div>
+    <div 
+      className={`w-full overflow-x-auto ${className}`.trim()}
+      style={{
+        border: "1px solid #EDE8E3",
+        borderRadius: "2px",
+        background: "#fff",
+        boxShadow: "0 1px 3px rgba(26,21,18,0.02)"
+      }}
+    >
+      {children}
     </div>
   );
 }

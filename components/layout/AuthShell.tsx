@@ -5,7 +5,6 @@ import { SiteFooter } from "./SiteFooter";
 type Props = {
   title: string;
   children: ReactNode;
-  /** In-card back control (e.g. home from login, login from register). */
   backHref?: string;
   backLabel?: string;
 };
@@ -13,33 +12,95 @@ type Props = {
 export function AuthShell({ title, children, backHref, backLabel }: Props) {
   return (
     <div className="flex min-h-full flex-col">
-      <div className="border-b border-[var(--sidebar-border)] bg-card/95 px-4 py-4 backdrop-blur-md supports-[backdrop-filter]:bg-card/90 sm:px-6">
+      {/* Auth top bar — dark obsidian, same as dashboard header */}
+      <div
+        style={{
+          background: "#1A1512",
+          borderBottom: "1px solid rgba(201,169,110,0.2)",
+          padding: "16px 24px",
+        }}
+      >
         <Link
           href="/"
-          className="text-sm font-semibold text-primary transition-colors hover:text-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
+          className="hover-gold-text"
+          style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontSize: "20px",
+            fontWeight: 300,
+            color: "#FDFAF4",
+            textDecoration: "none",
+            letterSpacing: "0.05em",
+            transition: "color 0.2s",
+          }}
         >
-          ← Eventuz
+          Eventuz
         </Link>
       </div>
-      <main className="flex flex-1 flex-col items-center justify-center bg-[var(--surface-app)] px-4 py-16">
-        <div className="w-full max-w-sm rounded-2xl border border-border/80 bg-card p-8 shadow-[0_2px_16px_rgba(28,25,23,0.06)]">
+
+      {/* Main auth area — ivory background */}
+      <main
+        className="flex flex-1 flex-col items-center justify-center px-4 py-16"
+        style={{ background: "#F7F4EF" }}
+      >
+        {/* Auth card — DS .modal-box style */}
+        <div
+          className="w-full"
+          style={{
+            maxWidth: "440px",
+            background: "#fff",
+            border: "1px solid #EDE8E3",
+            borderRadius: "2px",
+            padding: "36px 40px",
+          }}
+        >
           {backHref && backLabel ? (
-            <p className="mb-4">
+            <p className="mb-5">
               <Link
                 href={backHref}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 rounded-md"
+                className="hover-gold-text"
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 500,
+                  letterSpacing: "0.15em",
+                  textTransform: "uppercase",
+                  color: "#7A6E68",
+                  textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  transition: "color 0.2s",
+                }}
               >
                 <span aria-hidden>←</span>
                 {backLabel}
               </Link>
             </p>
           ) : null}
-          <h1 className="mb-6 text-center font-serif text-2xl font-semibold tracking-tight text-foreground">
+
+          {/* Ornament above title */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
+            <span style={{ flex: 1, height: "1px", background: "linear-gradient(to right, transparent, #EDE8E3)" }} />
+            <div style={{ width: "5px", height: "5px", background: "#C9A96E", transform: "rotate(45deg)", flexShrink: 0 }} />
+            <span style={{ flex: 1, height: "1px", background: "linear-gradient(to left, transparent, #EDE8E3)" }} />
+          </div>
+
+          {/* Title — DS .modal-title */}
+          <h1
+            className="mb-6 text-center"
+            style={{
+              fontFamily: "'Cormorant Garamond', serif",
+              fontSize: "28px",
+              fontWeight: 300,
+              color: "#1A1512",
+            }}
+          >
             {title}
           </h1>
+
           {children}
         </div>
       </main>
+
       <SiteFooter />
     </div>
   );

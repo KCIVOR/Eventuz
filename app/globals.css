@@ -1,102 +1,285 @@
 @import "tailwindcss";
 
-/* Eventuz tokens — see docs/eventuz-design-guide.md */
+/* ─── Design System Tokens (from docs/wedding-expo-design-system.jsx) ─────── */
 :root {
-  --background: #faf8f5;
-  /* Slight champagne lift for dashboard/public main surfaces */
-  --surface-app: #faf7f2;
-  --sidebar-bg: #f5f0e8;
-  --sidebar-border: #e4dcd0;
-  --foreground: #1c1917;
-  --card: #ffffff;
-  --muted: #f5f5f4;
-  --muted-foreground: #57534e;
-  --border: #e7e5e4;
-  --primary: #722f37;
-  --primary-hover: #8b3a42;
-  --primary-foreground: #faf8f5;
-  --accent-gold: #a68a56;
-  --success: #166534;
-  --success-muted: #ecfdf5;
-  --destructive: #b91c1c;
-  --destructive-muted: #fef2f2;
-  --warning: #a16207;
+  /* Brand Colors */
+  --champagne:       #C9A96E;
+  --champagne-light: #F0E4CC;
+  --champagne-dark:  #8B6914;
+  --blush:           #E8C4C4;
+  --blush-dark:      #A0686B;
+  --ivory:           #FDFAF4;
+  --obsidian:        #1A1512;
+  --charcoal:        #2E2825;
+  --warm-gray:       #7A6E68;
+  --light-gray:      #EDE8E3;
+  --mid-gray:        #6E6460;
+  --alt-surface:     #F7F4EF;
+
+  /* Semantic Aliases */
+  --background:           #FDFAF4;
+  --surface-app:          #F7F4EF;
+  --sidebar-bg:           #F7F4EF;
+  --sidebar-border:       #EDE8E3;
+  --foreground:           #1A1512;
+  --card:                 #FFFFFF;
+  --muted:                #F7F4EF;
+  --muted-foreground:     #7A6E68;
+  --border:               #EDE8E3;
+  --primary:              #1A1512;
+  --primary-hover:        #C9A96E;
+  --primary-foreground:   #FDFAF4;
+  --accent-gold:          #C9A96E;
+  --accent-gold-light:    #F0E4CC;
+  --accent-gold-dark:     #8B6914;
+  --accent-blush:         #E8C4C4;
+  --accent-blush-dark:    #A0686B;
+  --success:              #2A6645;
+  --success-muted:        #DFF0E6;
+  --destructive:          #C0534B;
+  --destructive-muted:    #FCEAEA;
+  --warning:              #C9A030;
+  --warning-muted:        #F9F0DE;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-border: var(--border);
-  --color-primary: var(--primary);
-  --color-primary-hover: var(--primary-hover);
+  --color-background:         var(--background);
+  --color-foreground:         var(--foreground);
+  --color-card:               var(--card);
+  --color-muted:              var(--muted);
+  --color-muted-foreground:   var(--muted-foreground);
+  --color-border:             var(--border);
+  --color-primary:            var(--primary);
+  --color-primary-hover:      var(--primary-hover);
   --color-primary-foreground: var(--primary-foreground);
-  --color-accent-gold: var(--accent-gold);
-  --color-success: var(--success);
-  --color-success-muted: var(--success-muted);
-  --color-destructive: var(--destructive);
-  --color-destructive-muted: var(--destructive-muted);
-  --color-warning: var(--warning);
-  --color-surface-app: var(--surface-app);
-  --color-sidebar-bg: var(--sidebar-bg);
-  --color-sidebar-border: var(--sidebar-border);
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-display), ui-serif, Georgia, "Times New Roman", serif;
-  --radius-lg: 12px;
-  --radius-xl: 14px;
+  --color-accent-gold:        var(--accent-gold);
+  --color-accent-gold-light:  var(--accent-gold-light);
+  --color-accent-gold-dark:   var(--accent-gold-dark);
+  --color-accent-blush:       var(--accent-blush);
+  --color-accent-blush-dark:  var(--accent-blush-dark);
+  --color-success:            var(--success);
+  --color-success-muted:      var(--success-muted);
+  --color-destructive:        var(--destructive);
+  --color-destructive-muted:  var(--destructive-muted);
+  --color-warning:            var(--warning);
+  --color-warning-muted:      var(--warning-muted);
+  --color-surface-app:        var(--surface-app);
+  --color-sidebar-bg:         var(--sidebar-bg);
+  --color-sidebar-border:     var(--sidebar-border);
+
+  /* Font variables are managed by next/font/google in layout.tsx (--font-sans, --font-serif) */
+
+  /* Radii — sharp/minimal per DS (1px–2px) */
+  --radius-sm:   2px;
+  --radius-md:   2px;
+  --radius-lg:   4px;
+  --radius-xl:   4px;
+  --radius-2xl:  4px;
+  --radius-full: 9999px;
 }
 
+/* ─── Base ───────────────────────────────────────────────────────────────── */
 body {
   background: var(--background);
   color: var(--foreground);
+  font-family: var(--font-sans);
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
 }
 
-@utility panel-card {
-  @apply rounded-2xl border border-border bg-card shadow-[0_2px_12px_rgba(28,25,23,0.06)] transition-shadow duration-200 hover:shadow-[0_4px_20px_rgba(28,25,23,0.08)];
-}
-
+/* ─── Form Input — exact .fi in DS ──────────────────────────────────────── */
 @utility input-eventuz {
-  @apply w-full rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground shadow-[inset_0_1px_1px_rgba(28,25,23,0.04)] transition-[border-color,box-shadow] duration-200 placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 300;
+  color: #1A1512;
+  background: #fff;
+  border: 1px solid #EDE8E3;
+  border-radius: 1px;
+  padding: 12px 16px;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
 }
 
+.input-eventuz:focus,
+.input-eventuz:focus-visible {
+  border-color: #C9A96E;
+  box-shadow: none;
+  outline: none;
+}
+
+.input-eventuz::placeholder {
+  color: #AEA89F;
+}
+
+/* ─── Label — .fl in DS ──────────────────────────────────────────────────── */
 @utility label-eventuz {
-  @apply text-xs font-semibold uppercase tracking-wide text-muted-foreground;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #7A6E68;
 }
 
+/* ─── Section Title — .sec-title ─────────────────────────────────────────── */
 @utility section-title {
-  @apply font-serif text-lg font-semibold tracking-tight text-foreground;
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 300;
+  color: #1A1512;
+  line-height: 1.1;
+}
+
+/* ─── Eyebrow — .ds-eyebrow / .sec-label ────────────────────────────────── */
+@utility eyebrow {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: #C9A96E;
+}
+
+/* ─── Panel Card — .card in DS ──────────────────────────────────────────── */
+@utility panel-card {
+  background: #fff;
+  border: 1px solid #EDE8E3;
+  border-radius: 2px;
+  transition: box-shadow 0.25s ease;
+}
+
+/* ─── Inset Panel — alt surface section ─────────────────────────────────── */
+@utility inset-panel {
+  background: #F7F4EF;
+  border: 1px solid #EDE8E3;
+  border-radius: 2px;
+  padding: 20px 24px;
+}
+
+/* ─── Callout / Alert ────────────────────────────────────────────────────── */
+@utility callout-eventuz {
+  padding: 14px 18px;
+  border-radius: 2px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+/* ─── Buttons (base) ─────────────────────────────────────────────────────── */
+@utility btn-base {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  outline: none;
+  border: none;
 }
 
 @utility btn-eventuz-primary {
-  @apply inline-flex cursor-pointer items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_1px_2px_rgba(28,25,23,0.06)] transition-colors duration-200 hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30;
+  @apply btn-base;
+  background: #1A1512;
+  color: #FDFAF4;
+  padding: 14px 32px;
+  border-radius: 1px;
 }
+.btn-eventuz-primary:hover { background: #C9A96E; color: #1A1512; }
 
 @utility btn-eventuz-secondary {
-  @apply inline-flex cursor-pointer items-center justify-center rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition-colors duration-200 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20;
+  @apply btn-base;
+  background: transparent;
+  color: #1A1512;
+  padding: 13px 32px;
+  border: 1px solid #1A1512;
+  border-radius: 1px;
+}
+.btn-eventuz-secondary:hover { background: #1A1512; color: #FDFAF4; }
+
+@utility btn-eventuz-gold {
+  @apply btn-base;
+  background: #C9A96E;
+  color: #1A1512;
+  padding: 14px 32px;
+  border-radius: 1px;
+}
+.btn-eventuz-gold:hover { background: #8B6914; color: #FDFAF4; }
+
+@utility btn-eventuz-ghost {
+  @apply btn-base;
+  background: transparent;
+  color: #C9A96E;
+  padding: 13px 32px;
+  border: 1px solid #C9A96E;
+  border-radius: 1px;
+}
+.btn-eventuz-ghost:hover { background: #C9A96E; color: #1A1512; }
+
+@utility btn-eventuz-destructive {
+  @apply btn-base;
+  background: #FCEAEA;
+  color: #C0534B;
+  padding: 13px 32px;
+  border: 1px solid rgba(192, 83, 75, 0.2);
+  border-radius: 1px;
+}
+.btn-eventuz-destructive:hover { background: #C0534B; color: #fff; }
+
+/* ─── Hover Utilities for SSR Compatibility ───────────────────────────────── */
+@utility hover-gold-text {
+  transition: color 0.2s ease;
+}
+.hover-gold-text:hover {
+  color: #C9A96E !important;
 }
 
-@utility callout-eventuz {
-  @apply rounded-xl border border-primary/15 bg-primary/[0.04] px-4 py-3 text-sm text-foreground;
+@utility hover-gold-bg {
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.hover-gold-bg:hover {
+  background: #8B6914 !important;
+  color: #FDFAF4 !important;
 }
 
-@utility inset-panel {
-  @apply rounded-xl border border-border/80 bg-muted/15 p-4 sm:p-5 transition-colors duration-200 hover:bg-muted/25;
+@utility sidebar-link-hover {
+  transition: all 0.15s ease;
+}
+.sidebar-link-hover:not([aria-current="page"]):hover {
+  background: #FDF6EE !important;
+  color: #C9A96E !important;
 }
 
+/* ─── Print ──────────────────────────────────────────────────────────────── */
 @media print {
-  body {
-    background: #ffffff !important;
-  }
-
-  .no-print {
-    display: none !important;
-  }
+  body { background: #ffffff !important; }
+  .no-print { display: none !important; }
 }
 
+/* ─── Keyframes ──────────────────────────────────────────────────────────── */
 @keyframes shimmer {
-  100% {
-    transform: translateX(100%);
-  }
+  100% { transform: translateX(100%); }
 }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: scale(0.97) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.animate-fade-in-up { animation: fadeInUp 0.3s ease forwards; }
+.animate-drop-in    { animation: dropIn 0.25s ease forwards; }

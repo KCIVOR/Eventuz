@@ -18,7 +18,6 @@ type Props = {
   role: EventuzRole;
   homeHref: string;
   navSections: NavSection[];
-  /** Shown in the sticky top bar when the main page omits a duplicate `PageHeader` title. */
   compactTitle?: string;
   children: React.ReactNode;
 };
@@ -33,32 +32,41 @@ export function DashboardFrame({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex min-h-full flex-col bg-[var(--surface-app)]">
+    <div className="flex min-h-full flex-col" style={{ background: "var(--surface-app)" }}>
       <a
         href="#dashboard-main"
-        className="no-print sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-card focus:px-3 focus:py-2 focus:text-sm focus:shadow-md"
+        className="no-print sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:shadow-md"
       >
         Skip to content
       </a>
 
-      <header className="no-print sticky top-0 z-40 border-b border-[var(--sidebar-border)] bg-card/95 backdrop-blur-md supports-[backdrop-filter]:bg-card/90">
-        <div className="flex h-14 items-center gap-3 px-4 sm:px-5">
+      {/* Top Bar — dark obsidian, DS .nav */}
+      <header
+        className="no-print sticky top-0 z-40"
+        style={{
+          background: "#1A1512",
+          borderBottom: "1px solid rgba(201,169,110,0.2)",
+        }}
+      >
+        <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
+          {/* Mobile hamburger */}
           <button
             type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border/80 bg-background text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 lg:hidden"
+            className="inline-flex h-9 w-9 items-center justify-center lg:hidden hover-gold-text"
+            style={{
+              border: "1px solid rgba(201,169,110,0.25)",
+              borderRadius: "2px",
+              color: "#AEA89F",
+              transition: "color 0.2s",
+              background: "transparent",
+              cursor: "pointer"
+            }}
             aria-expanded={mobileOpen}
             aria-controls="mobile-drawer-nav"
             onClick={() => setMobileOpen((o) => !o)}
           >
             <span className="sr-only">{mobileOpen ? "Close menu" : "Open menu"}</span>
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              aria-hidden
-            >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden>
               {mobileOpen ? (
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
               ) : (
@@ -67,36 +75,79 @@ export function DashboardFrame({
             </svg>
           </button>
 
+          {/* Brand — DS .nav-brand */}
           <Link
             href={homeHref}
             prefetch={false}
-            className="shrink-0 font-serif text-lg font-semibold tracking-tight text-primary transition-colors hover:text-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
+            className="shrink-0 focus-visible:outline-none hover-gold-text"
+            style={{
+              fontFamily: "'Cormorant Garamond', serif",
+              fontSize: "22px",
+              fontWeight: 300,
+              color: "#FDFAF4",
+              letterSpacing: "0.05em",
+              textDecoration: "none",
+              transition: "color 0.2s",
+            }}
           >
             Eventuz
           </Link>
 
+          {/* Compact title */}
           {compactTitle ? (
-            <p className="min-w-0 flex-1 truncate text-center font-serif text-sm font-medium text-foreground/90 sm:text-left">
+            <p
+              className="min-w-0 flex-1 truncate text-center sm:text-left"
+              style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                fontSize: "14px",
+                fontWeight: 300,
+                color: "#AEA89F",
+                fontStyle: "italic",
+              }}
+            >
               {compactTitle}
             </p>
           ) : (
             <span className="flex-1" />
           )}
 
-          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          {/* Role badge + sign out — DS .nav-link pattern */}
+          <div className="flex shrink-0 items-center gap-3">
             <div className="hidden items-center gap-2 sm:flex" aria-label="Account">
               <span
-                className="rounded-full border border-accent-gold/35 bg-muted/50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary"
-                title="Your role"
+                className="hidden sm:inline-block"
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  letterSpacing: "0.2em",
+                  textTransform: "uppercase",
+                  color: "#C9A96E",
+                  border: "1px solid rgba(201,169,110,0.35)",
+                  padding: "3px 10px",
+                  borderRadius: "1px",
+                }}
               >
                 {roleShort[role]}
               </span>
-              <span className="h-6 w-px bg-border/90" aria-hidden />
+              <span style={{ width: 1, height: 16, background: "rgba(201,169,110,0.2)" }} aria-hidden />
             </div>
             <Link
               href="/auth/sign-out"
               prefetch={false}
-              className="rounded-lg border border-border/80 bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors duration-150 hover:border-border hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 sm:px-3"
+              className="hover-gold-text"
+              style={{
+                fontFamily: "'Jost', sans-serif",
+                fontSize: "11px",
+                fontWeight: 500,
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                color: "#AEA89F",
+                textDecoration: "none",
+                transition: "color 0.2s",
+                padding: "6px 12px",
+                border: "1px solid rgba(201,169,110,0.2)",
+                borderRadius: "1px",
+              }}
             >
               Sign out
             </Link>
@@ -108,28 +159,33 @@ export function DashboardFrame({
         {mobileOpen ? (
           <button
             type="button"
-            className="no-print fixed inset-0 z-40 bg-foreground/20 backdrop-blur-[1px] lg:hidden"
+            className="no-print fixed inset-0 z-40 lg:hidden"
+            style={{ background: "rgba(26,21,18,0.5)", backdropFilter: "blur(1px)", border: "none", cursor: "pointer" }}
             aria-label="Close navigation"
             onClick={() => setMobileOpen(false)}
           />
         ) : null}
 
+        {/* Sidebar — DS .nav-links style, ivory/alt-surface bg */}
         <aside
           id="mobile-drawer-nav"
-          className={`no-print fixed bottom-0 left-0 top-14 z-50 w-[min(18rem,88vw)] border-r border-[var(--sidebar-border)] bg-[var(--sidebar-bg)] shadow-[4px_0_24px_rgba(28,25,23,0.06)] transition-transform duration-200 ease-out lg:static lg:top-auto lg:z-auto lg:flex lg:min-h-[calc(100vh-3.5rem)] lg:w-60 lg:shrink-0 lg:translate-x-0 lg:shadow-none ${
+          className={`no-print fixed bottom-0 left-0 top-14 z-50 lg:static lg:top-auto lg:z-auto lg:flex lg:min-h-[calc(100vh-3.5rem)] lg:w-60 lg:shrink-0 lg:translate-x-0 ${
             mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           }`}
+          style={{
+            width: "min(18rem, 88vw)",
+            borderRight: "1px solid #EDE8E3",
+            background: "#F7F4EF",
+            boxShadow: mobileOpen ? "4px 0 24px rgba(26,21,18,0.06)" : undefined,
+            transition: "transform 0.2s ease-out",
+          }}
         >
-          <div className="h-full overflow-y-auto px-3 py-4 lg:sticky lg:top-14 lg:max-h-[calc(100vh-3.5rem)] lg:py-6">
+          <div className="h-full overflow-y-auto px-3 py-6 lg:sticky lg:top-14 lg:max-h-[calc(100vh-3.5rem)]">
             <SidebarNav role={role} sections={navSections} onNavigate={() => setMobileOpen(false)} />
           </div>
         </aside>
 
-        <div
-          id="dashboard-main"
-          className="min-w-0 flex-1 overflow-x-hidden"
-          tabIndex={-1}
-        >
+        <div id="dashboard-main" className="min-w-0 flex-1 overflow-x-hidden" tabIndex={-1}>
           {children}
         </div>
       </div>

@@ -60,6 +60,12 @@ export async function createEvent(formData: FormData) {
   let public_slug = slugify(String(formData.get("public_slug") ?? "") || name);
   const status = parseEventStatus(formData.get("status"));
 
+  const formatted_address = emptyToNull(formData.get("formatted_address"));
+  const latRaw = formData.get("lat");
+  const lngRaw = formData.get("lng");
+  const lat = latRaw ? Number(latRaw) : null;
+  const lng = lngRaw ? Number(lngRaw) : null;
+
   const cap = parseHoldMinutesOptional(formData.get("capacity_hold_minutes"));
   const pay = parseHoldMinutesOptional(formData.get("payment_hold_minutes"));
   const eb = parseHoldMinutesOptional(formData.get("early_bird_hold_minutes"));
@@ -90,6 +96,9 @@ export async function createEvent(formData: FormData) {
     event_time,
     status,
     public_slug,
+    formatted_address,
+    lat: isNaN(lat!) ? null : lat,
+    lng: isNaN(lng!) ? null : lng,
     ...(cap !== undefined ? { capacity_hold_minutes: cap } : {}),
     ...(pay !== undefined ? { payment_hold_minutes: pay } : {}),
     ...(eb !== undefined ? { early_bird_hold_minutes: eb } : {}),
@@ -174,6 +183,12 @@ export async function updateEvent(eventId: string, formData: FormData) {
   const prevStatus = (gate.status as string) || "";
   const nextStatus = parseEventStatus(formData.get("status"));
 
+  const formatted_address = emptyToNull(formData.get("formatted_address"));
+  const latRaw = formData.get("lat");
+  const lngRaw = formData.get("lng");
+  const lat = latRaw ? Number(latRaw) : null;
+  const lng = lngRaw ? Number(lngRaw) : null;
+
   const { error } = await supabase
     .from("events")
     .update({
@@ -184,6 +199,9 @@ export async function updateEvent(eventId: string, formData: FormData) {
       event_time: String(formData.get("event_time") ?? "").trim(),
       status: nextStatus,
       public_slug,
+      formatted_address,
+      lat: isNaN(lat!) ? null : lat,
+      lng: isNaN(lng!) ? null : lng,
       capacity_hold_minutes: cap,
       payment_hold_minutes: pay,
       early_bird_hold_minutes: eb,

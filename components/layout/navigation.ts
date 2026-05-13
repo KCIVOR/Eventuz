@@ -50,23 +50,22 @@ export function navSectionsForRole(role: EventuzRole, ctx: NavContext = {}): Nav
         },
       ];
     case "organizer": {
+      const sections: NavSection[] = [];
+
       if (!eventId) {
-        return [
-          {
-            id: "get-started",
-            label: "Get started",
-            items: [
-              {
-                id: "create",
-                label: "Create your event",
-                href: "/organizer/events/new",
-              },
-            ],
-          },
-        ];
-      }
-      return [
-        {
+        sections.push({
+          id: "get-started",
+          label: "Get started",
+          items: [
+            {
+              id: "create",
+              label: "Create your event",
+              href: "/organizer/events/new",
+            },
+          ],
+        });
+      } else {
+        sections.push({
           id: "event",
           label: "Your event",
           items: [
@@ -92,8 +91,23 @@ export function navSectionsForRole(role: EventuzRole, ctx: NavContext = {}): Nav
               href: `/organizer/events/${eventId}/staff`,
             },
           ],
-        },
-      ];
+        });
+      }
+
+      // Always show settings
+      sections.push({
+        id: "settings",
+        label: "Settings",
+        items: [
+          {
+            id: "hitpay",
+            label: "Payment settings",
+            href: "/organizer/settings/hitpay",
+          },
+        ],
+      });
+
+      return sections;
     }
     case "staff":
       return [
@@ -132,11 +146,6 @@ export function navSectionsForRole(role: EventuzRole, ctx: NavContext = {}): Nav
               id: "smtp",
               label: "Email delivery",
               href: "/super-admin/smtp",
-            },
-            {
-              id: "hitpay",
-              label: "HitPay settings",
-              href: "/super-admin/hitpay",
             },
           ],
         },

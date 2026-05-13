@@ -3,6 +3,7 @@ import { decryptSmtpPassword } from "@/lib/utils/crypto";
 import { createSmtpTransport, formatSmtpFrom, type SmtpDecryptedConfig } from "@/lib/smtp/sendTestMessage";
 import { getAppOrigin } from "@/lib/url/site";
 import { writeAuditLogSafe } from "@/lib/audit/writeAuditLog";
+import { brandEmailShell, emailButtonHtml } from "@/lib/utils/email/brandTemplates";
 
 function escapeHtml(s: string): string {
   return s
@@ -116,42 +117,36 @@ export async function processPreEventReminders(): Promise<{ sent: number; skippe
         `The Eventuz Team`,
       ].join("\n");
 
-      const html = `
-<!DOCTYPE html>
-<html>
-<body style="margin:0;padding:24px;font-family:Georgia,serif;color:#1c1917;background:#faf8f5;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e7e5e4;border-radius:12px;">
-    <tr><td style="padding:24px 28px;">
-      <p style="margin:0 0 8px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#a68a56;">Eventuz</p>
-      <h1 style="margin:0 0-12px;font-size:22px;font-weight:600;">Your Event is Soon</h1>
-      <p style="margin:0 0 20px;font-size:14px;color:#57534e;line-height:1.5;">
-        We're looking forward to seeing you at <strong>${escapeHtml(event.name as string)}</strong>.
-      </p>
+    const contentHtml = `
+      <p>Dear ${escapeHtml(ticket.attendee_name)},</p>
+      <p>We are looking forward to welcoming you to <strong>${escapeHtml(event.name as string)}</strong>. This is a courtesy reminder of your upcoming event details.</p>
       
-      <div style="margin:24px 0;padding:20px;background:#faf8f5;border-radius:8px;border:1px solid #e7e5e4;">
-        <p style="margin:0 0 4px;font-size:13px;color:#78716c;">When</p>
-        <p style="margin:0 0 16px;font-size:15px;font-weight:600;color:#1c1917;">${escapeHtml(when)}</p>
-        <p style="margin:0 0 4px;font-size:13px;color:#78716c;">Venue</p>
-        <p style="margin:0;font-size:15px;font-weight:600;color:#1c1917;">${escapeHtml(event.venue as string || "—")}</p>
+      <div style="margin:32px 0;padding:24px;background-color:#F7F4EF;border:1px solid #EDE8E3;border-radius:2px;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr><td style="padding-bottom:16px;">
+            <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.15em;color:#7A6E68;">When</p>
+            <p style="margin:4px 0 0;font-size:16px;color:#1A1512;font-weight:300;">${escapeHtml(when)}</p>
+          </td></tr>
+          <tr><td>
+            <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.15em;color:#7A6E68;">Venue</p>
+            <p style="margin:4px 0 0;font-size:16px;color:#1A1512;font-weight:300;">${escapeHtml(event.venue as string || "—")}</p>
+          </td></tr>
+        </table>
       </div>
 
-      <p style="margin:0 0 16px;font-size:14px;color:#57534e;line-height:1.5;">
-        To ensure a smooth check-in, please have your QR code ready on your phone when you arrive.
-      </p>
+      <p>To ensure a smooth arrival, please have your digital QR pass ready on your mobile device for check-in.</p>
       
-      <p style="margin:0 0 24px;">
-        <a href="${escapeHtml(ticketUrl)}" style="display:inline-block;border-radius:12px;background:#722f37;color:#faf8f5;font-size:14px;font-weight:600;padding:12px 22px;text-decoration:none;">
-          View Your Ticket QR
-        </a>
-      </p>
+      ${emailButtonHtml("View Ticket QR", ticketUrl)}
 
-      <p style="margin:0;font-size:13px;color:#78716c;line-height:1.5;">
-        Safe travels!
+      <p style="margin:0;font-size:13px;color:#7A6E68;line-height:1.5;">
+        We wish you a safe journey and an unforgettable experience.
       </p>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+    `;
+
+    const html = brandEmailShell({
+      title: "Your Event is Soon",
+      contentHtml
+    });
 
       try {
         await transporter.sendMail({ from, to: ticket.attendee_email, subject, text, html });

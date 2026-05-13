@@ -13,24 +13,44 @@ export function Breadcrumbs({ items }: Props) {
   if (!items.length) return null;
 
   return (
-    <nav aria-label="Breadcrumb" className="text-[11px] leading-snug text-muted-foreground/90">
-      <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+    <nav aria-label="Breadcrumb">
+      <ol className="flex flex-wrap items-center gap-x-2 gap-y-1">
         {items.map((item, i) => (
-          <li key={`${item.label}-${i}`} className="flex items-center gap-1.5">
+          <li key={`${item.label}-${i}`} className="flex items-center gap-2">
             {i > 0 ? (
-              <span className="text-border select-none" aria-hidden>
-                /
+              // DS .bc-sep — gold ›
+              <span
+                style={{ color: "#C9A96E", fontSize: "12px" }}
+                aria-hidden
+              >
+                ›
               </span>
             ) : null}
             {item.href ? (
               <Link
                 href={item.href}
-                className="rounded-sm font-medium text-primary transition-colors duration-150 hover:text-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                className="hover-gold-text"
+                style={{
+                  fontSize: "12px",
+                  fontWeight: 400,
+                  color: "#7A6E68",
+                  textDecoration: "none",
+                  transition: "color 0.15s",
+                }}
               >
                 {item.label}
               </Link>
             ) : (
-              <span className="font-medium text-muted-foreground">{item.label}</span>
+              // DS .bc-item.active
+              <span
+                style={{
+                  fontSize: "12px",
+                  fontWeight: 500,
+                  color: "#1A1512",
+                }}
+              >
+                {item.label}
+              </span>
             )}
           </li>
         ))}

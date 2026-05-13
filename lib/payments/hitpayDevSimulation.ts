@@ -1,9 +1,9 @@
-import { loadHitPaySettings } from "@/lib/super-admin/loadHitPaySettings";
+import { loadHitPaySettings } from "@/lib/hitpay/settings";
 
 /**
- * Simulate HitPay webhook success without HitPay (Super Admin → HitPay → Allow dev simulation).
+ * Check if HitPay simulation is allowed for an organizer.
  */
-export async function isHitPayDevSimulationAllowed(): Promise<boolean> {
-  const dbSettings = await loadHitPaySettings();
+export async function isHitPayDevSimulationAllowed(organizerId: string): Promise<boolean> {
+  const dbSettings = await loadHitPaySettings(organizerId);
   return dbSettings?.allowSimulation === true;
 }

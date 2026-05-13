@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { loadSmtpSettingsPublic } from "@/lib/super-admin/loadSmtpSettings";
-import { loadHitPaySettingsPublic } from "@/lib/super-admin/loadHitPaySettings";
 
 export type PlatformCounts = {
   profilesTotal: number;
@@ -53,12 +52,6 @@ export type PlatformOverview = {
     fromEmail: string;
     lastTestError: string | null;
   } | null;
-  hitpay: {
-    configured: boolean;
-    isActive: boolean;
-    isSandbox: boolean;
-    currency: string;
-  } | null;
   loadError: string | null;
 };
 
@@ -98,7 +91,6 @@ export async function loadPlatformOverview(): Promise<PlatformOverview> {
     profilesRes,
     eventsRes,
     smtpRes,
-    hitpayRes,
   ] = await Promise.all([
     rowCount(supabase, "profiles", {}),
     rowCount(supabase, "profiles", { status: "disabled" }),
@@ -133,7 +125,6 @@ export async function loadPlatformOverview(): Promise<PlatformOverview> {
       .order("created_at", { ascending: false })
       .limit(500),
     loadSmtpSettingsPublic(),
-    loadHitPaySettingsPublic(),
   ]);
 
   const ordersOpenHolds = ordersOpenHoldsRes.error ? 0 : (ordersOpenHoldsRes.count ?? 0);
@@ -162,14 +153,6 @@ export async function loadPlatformOverview(): Promise<PlatformOverview> {
       }
     : null;
 
-  const hitpay = hitpayRes.settings
-    ? {
-        configured: true,
-        isActive: hitpayRes.settings.is_active,
-        isSandbox: hitpayRes.settings.is_sandbox,
-        currency: hitpayRes.settings.currency,
-      }
-    : null;
 
   const organizerNameById: Record<string, string> = {};
   const orgIds = [...new Set(events.map((e) => e.organizer_id))];
@@ -184,7 +167,6 @@ export async function loadPlatformOverview(): Promise<PlatformOverview> {
     profilesRes.error?.message ??
     eventsRes.error?.message ??
     smtpRes.error ??
-    hitpayRes.error?.message ??
     null;
 
   return {
@@ -211,7 +193,6 @@ export async function loadPlatformOverview(): Promise<PlatformOverview> {
     events,
     organizerNameById,
     smtp,
-    hitpay,
     loadError,
   };
 }

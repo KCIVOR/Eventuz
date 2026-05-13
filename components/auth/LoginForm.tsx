@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Input } from "@/components/ui/Input";
+import Link from "next/link";
 
 export function LoginForm() {
   const router = useRouter();
@@ -45,6 +46,7 @@ export function LoginForm() {
       .select("role, status")
       .eq("id", uid)
       .single();
+    
     authDebug("login.profile", {
       userId: uid,
       ok: !profileError && !!profile?.role,
@@ -59,6 +61,7 @@ export function LoginForm() {
           }
         : null,
     });
+    
     if (!profile?.role) {
       setMsgIsError(true);
       setMessage("Profile missing. Complete Supabase migration and try again.");
@@ -78,57 +81,82 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      {message ? (
-        <p
-          className={`rounded-lg px-3 py-2 text-center text-sm ${
-            msgIsError
-              ? "border border-destructive/20 bg-destructive-muted text-destructive"
-              : "border border-success/20 bg-success-muted text-success"
-          }`}
-        >
-          {message}
-        </p>
-      ) : null}
-      <Input
-        id="email"
-        name="email"
-        type="email"
-        autoComplete="email"
-        required
-        label="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <div className="relative">
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          label="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <div className="mt-1.5 flex justify-end">
-          <button
-            type="button"
-            onClick={() => router.push("/forgot-password")}
-            className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+    <div className="flex flex-col gap-6">
+      <form onSubmit={onSubmit} className="flex flex-col gap-4">
+        {message ? (
+          <p
+            className="px-3 py-2 text-center text-xs border animate-drop-in"
+            style={{ 
+              background: msgIsError ? "var(--destructive-muted)" : "var(--success-muted)",
+              color: msgIsError ? "var(--destructive)" : "var(--success)",
+              borderColor: msgIsError ? "rgba(192,83,75,0.1)" : "rgba(42,102,69,0.1)",
+              borderRadius: "1px",
+              fontFamily: "var(--font-sans)",
+              fontWeight: 300
+            }}
           >
-            Forgot password?
-          </button>
+            {message}
+          </p>
+        ) : null}
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          label="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <div className="relative">
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+            label="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <div className="mt-2 flex justify-end">
+            <Link
+              href="/forgot-password"
+              className="text-[10px] font-medium tracking-wide uppercase hover-gold-text"
+              style={{ 
+                color: "var(--warm-gray)", 
+                textDecoration: "none", 
+                fontFamily: "var(--font-sans)" 
+              }}
+            >
+              Forgot password?
+            </Link>
+          </div>
         </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className="btn-eventuz-primary mt-2"
+        >
+          {loading ? "Signing in…" : "Sign in"}
+        </button>
+      </form>
+
+      <div className="flex flex-col items-center gap-4">
+        <div className="flex w-full items-center gap-4">
+          <span className="h-[1px] flex-1" style={{ background: "var(--border)" }} />
+          <span className="text-[10px] uppercase tracking-[0.2em]" style={{ color: "var(--warm-gray)" }}>or</span>
+          <span className="h-[1px] flex-1" style={{ background: "var(--border)" }} />
+        </div>
+        
+        <Link
+          href="/register"
+          className="btn-eventuz-secondary w-full text-center"
+        >
+          Create account
+        </Link>
       </div>
-      <button
-        type="submit"
-        disabled={loading}
-        className="mt-2 rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-50"
-      >
-        {loading ? "Signing in…" : "Sign in"}
-      </button>
-    </form>
+    </div>
   );
 }
 

@@ -32,7 +32,7 @@ export default async function SuperAdminHomePage({ searchParams }: Props) {
   const pgEv = parsePageParam(q.lp_ev);
   const pgAu = parsePageParam(q.lp_au);
   
-  const { counts, revenuePhp, profiles, events, organizerNameById, smtp, hitpay, loadError } = overview;
+  const { counts, revenuePhp, profiles, events, organizerNameById, smtp, loadError } = overview;
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -84,12 +84,6 @@ export default async function SuperAdminHomePage({ searchParams }: Props) {
             </Link>{" "}
             · Outbound mail for tickets and staff invites.
           </p>
-          <p className="mt-2 text-muted-foreground">
-            <Link href="/super-admin/hitpay" className="font-medium text-primary underline-offset-4 hover:text-primary-hover hover:underline">
-              HitPay settings
-            </Link>{" "}
-            · Checkout integration and webhook verification.
-          </p>
 
           <div className="mt-5 flex flex-wrap gap-4">
             {smtp && (
@@ -108,23 +102,6 @@ export default async function SuperAdminHomePage({ searchParams }: Props) {
               </div>
             )}
 
-            {hitpay && (
-              <div className="flex flex-1 min-w-[200px] flex-col gap-2 rounded-xl border border-border/80 bg-muted/20 px-4 py-3 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-foreground uppercase tracking-tight opacity-70">HitPay Checkout</span>
-                  <span className={`rounded-full border px-2 py-0.5 font-bold uppercase tracking-wide text-[10px] ${hitpay.isActive ? "border-success/35 bg-success-muted text-success" : "border-border bg-muted text-muted-foreground"}`}>
-                    {hitpay.isActive ? "Active" : "Inactive"}
-                  </span>
-                </div>
-                <div className="text-muted-foreground">
-                  <span className={`font-medium ${hitpay.isSandbox ? "text-warning" : "text-success"}`}>
-                    {hitpay.isSandbox ? "Sandbox Mode" : "Production Mode"}
-                  </span>
-                  <span className="mx-2 text-border">·</span>
-                  {hitpay.currency}
-                </div>
-              </div>
-            )}
           </div>
           {loadError && (
             <p className="mt-3 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
