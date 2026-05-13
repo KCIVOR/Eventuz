@@ -30,7 +30,8 @@ export function authDebug(tag: string, payload: AuthDebugPayload): void {
  */
 export function authPanelConsole(tag: string, payload: AuthDebugPayload): void {
   if (!isAuthDebugEnabled()) return;
-  console.info(`[eventuz:auth:panel:${tag}]`, payload);
+  // Use console.log so lines appear when DevTools “Info” level is hidden.
+  console.log(`[eventuz:auth:panel:${tag}]`, payload);
 }
 
 function envFlagTrue(name: string): boolean {
