@@ -26,18 +26,35 @@ export async function loadHitPaySettings(): Promise<HitPayDecryptedConfig | null
     .limit(1)
     .maybeSingle();
 
-  if (error || !data) return null;
+  if (error) {
+    console.error("[HitPay Config] DB error fetching settings:", error.message);
+    return null;
+  }
+  if (!data) {
+    console.warn("[HitPay Config] No active HitPay settings row found in DB.");
+    return null;
+  }
 
   try {
+    const apiKey = decryptSecret(data.encrypted_api_key);
+    const salt = decryptSecret(data.encrypted_salt);
+    
+    console.log("[HitPay Config] Settings decrypted successfully", {
+      isSandbox: data.is_sandbox,
+      hasApiKey: !!apiKey,
+      saltLength: salt?.length ?? 0,
+      currency: data.currency
+    });
+
     return {
-      apiKey: decryptSecret(data.encrypted_api_key),
-      salt: decryptSecret(data.encrypted_salt),
+      apiKey,
+      salt,
       isSandbox: data.is_sandbox,
       currency: data.currency,
       allowSimulation: data.allow_simulation,
     };
   } catch (e) {
-    console.error("Failed to decrypt HitPay settings:", e);
+    console.error("[HitPay Config] Failed to decrypt HitPay secrets. Check SMTP_SETTINGS_ENCRYPTION_KEY in Vercel env.", e);
     return null;
   }
 }

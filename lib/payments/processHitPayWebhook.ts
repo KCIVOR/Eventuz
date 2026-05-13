@@ -138,19 +138,28 @@ export async function processHitPayWebhookRequest(req: Request): Promise<HitPayW
   const rawBody = await req.text();
   const contentType = (req.headers.get("content-type") ?? "").toLowerCase();
 
+  console.log("[HitPay Webhook] Incoming request", {
+    contentType,
+    rawBodyLength: rawBody.length,
+    userAgent: req.headers.get("user-agent"),
+  });
+
   // Parse the body (form-urlencoded or JSON)
   const bodyResult = parseWebhookBody(rawBody, contentType);
   if (!bodyResult) {
+    console.error("[HitPay Webhook] Failed to parse body");
     return { ok: false, status: 400, detail: "unable to parse webhook body" };
   }
 
   const { parsed, format } = bodyResult;
+  console.log("[HitPay Webhook] Parsed body", {
+    format,
+    keys: Object.keys(parsed),
+    hasHmac: !!parsed.hmac,
+  });
 
   // --- Signature verification ---
-  // Path 1 (primary): HitPay payment_request webhooks include `hmac` in form body
   const legacyHmac = typeof parsed.hmac === "string" ? parsed.hmac : null;
-
-  // Path 2 (fallback): Header-based signature (Event webhooks / newer API)
   const sigHeader =
     req.headers.get("X-Signature") ??
     req.headers.get("x-signature") ??
@@ -162,16 +171,25 @@ export async function processHitPayWebhookRequest(req: Request): Promise<HitPayW
   let verified = false;
 
   if (legacyHmac) {
-    // Body-field HMAC: sorted-field concatenation (proven working method)
-    verified = verifyHitPayLegacyHmac(parsed, legacyHmac, salt);
+    console.log("[HitPay Webhook] Attempting legacy hmac verification");
+    verified = verifyHitPayLegacyHmac(parsed, legacyHmac, salt, rawBody);
   } else if (sigHeader) {
-    // Header-based HMAC: raw body hash (fallback for Event webhooks)
+    console.log("[HitPay Webhook] Attempting header-based verification");
     verified = verifyHitPayWebhookSignature(rawBody, sigHeader, salt);
+  } else {
+    console.warn("[HitPay Webhook] No signature found in body or headers");
   }
 
   if (!verified) {
+    console.error("[HitPay Webhook] Signature verification failed", {
+      hasLegacyHmac: !!legacyHmac,
+      hasSigHeader: !!sigHeader,
+      saltLength: salt.length,
+    });
     return { ok: false, status: 401, detail: "invalid signature" };
   }
+
+  console.log("[HitPay Webhook] Signature verified successfully");
 
   // Use the already-parsed body — HitPay payment_request webhooks use
   // `payment_request_id` (form field) while our downstream code expects `id`.
@@ -226,12 +244,17 @@ export async function processHitPayWebhookRequest(req: Request): Promise<HitPayW
     .maybeSingle();
 
   if (payFindErr) {
+    console.error(`[HitPay Webhook] DB error looking up payment ${checkoutId}:`, payFindErr.message);
     return { ok: false, status: 500, detail: payFindErr.message };
   }
 
   let payment = payRow;
+  if (payment) {
+    console.log(`[HitPay Webhook] Found payment record by provider_checkout_id: ${payment.id}`);
+  }
 
   if (!payment && ref && isUuid(ref)) {
+    console.log(`[HitPay Webhook] No direct match for ${checkoutId}. Trying fallback for order: ${ref}`);
     const { data: byOrder, error: boErr } = await supabase
       .from("payments")
       .select("id, order_id, status, amount, currency, provider_checkout_id")
@@ -240,17 +263,24 @@ export async function processHitPayWebhookRequest(req: Request): Promise<HitPayW
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+    
     if (boErr) {
+      console.error(`[HitPay Webhook] DB error on order fallback ${ref}:`, boErr.message);
       return { ok: false, status: 500, detail: boErr.message };
     }
+    
     if (byOrder && byOrder.provider_checkout_id === checkoutId) {
       payment = byOrder;
+      console.log(`[HitPay Webhook] Found payment via order fallback: ${payment.id}`);
     }
   }
 
   if (!payment) {
+    console.warn(`[HitPay Webhook] No payment record found for checkout ${checkoutId} or ref ${ref}`);
     return { ok: true, detail: "no matching payment — acknowledged" };
   }
+
+  console.log(`[HitPay Webhook] Processing payment update for order: ${payment.order_id}`);
 
   await writeAuditLogSafe(supabase, {
     action: "hitpay.webhook.received",
@@ -307,6 +337,7 @@ export async function processHitPayWebhookRequest(req: Request): Promise<HitPayW
   }
 
   if (payment.status === "succeeded" && order.status === "paid_unassigned") {
+    console.log(`[HitPay Webhook] Already paid and succeeded (Idempotent skip).`);
     await supabase
       .from("payments")
       .update({
@@ -318,14 +349,18 @@ export async function processHitPayWebhookRequest(req: Request): Promise<HitPayW
   }
 
   if (payment.status === "succeeded" && order.status === "payment_pending") {
+    console.log(`[HitPay Webhook] Transitioning order ${order.id} to paid_unassigned...`);
     const { error: fixOrd } = await supabase
       .from("orders")
       .update({ status: "paid_unassigned" })
       .eq("id", order.id)
       .eq("status", "payment_pending");
+    
     if (fixOrd) {
+      console.error(`[HitPay Webhook] Failed to update order status:`, fixOrd.message);
       return { ok: false, status: 500, detail: fixOrd.message };
     }
+    console.log(`[HitPay Webhook] Order ${order.id} updated to paid_unassigned successfully.`);
     return { ok: true, detail: "reconciled order to paid_unassigned" };
   }
 

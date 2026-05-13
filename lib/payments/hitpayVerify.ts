@@ -7,44 +7,100 @@ export function signHitPayWebhookPayload(rawBody: string, salt: string): string 
 
 /**
  * HitPay payment_request webhooks: the `hmac` field is included in the
- * form-urlencoded body. Verification uses sorted-field concatenation:
- *   1. Take all fields except `hmac`, filter out empty/null/undefined
- *   2. Sort alphabetically by key
- *   3. Concatenate `key+value` with no separator
- *   4. HMAC-SHA256 of that string with the salt → hex digest
- * Mirrors the proven implementation from startuplab-business-ticketing.
+ * form-urlencoded body. Verification can be tricky as different HitPay versions
+ * sign different variations of the payload.
+ *
+ * Ported from the working PHP/Express implementations:
+ * tries multiple "candidates" covering raw string, sorted KV, and concatenation.
  */
 export function verifyHitPayLegacyHmac(
   payload: Record<string, unknown>,
   receivedHmac: string,
-  salt: string
+  salt: string,
+  rawBody?: string
 ): boolean {
   if (!receivedHmac?.trim() || !salt) return false;
 
   const received = String(receivedHmac).trim().replace(/^sha256=/i, "");
+  const candidates: string[] = [];
 
-  const entries = Object.entries(payload)
-    .filter(([k, v]) => k !== "hmac" && v !== undefined && v !== null && v !== "")
-    .sort(([a], [b]) => a.localeCompare(b));
-  const message = entries.map(([k, v]) => `${k}${v}`).join("");
+  // 1. Raw body variants (most reliable for direct payment_request webhooks)
+  if (rawBody) {
+    // rawBody as-is
+    candidates.push(rawBody);
 
-  const computedHex = createHmac("sha256", salt).update(message, "utf8").digest("hex");
-
-  // Try hex comparison (primary)
-  if (/^[0-9a-fA-F]+$/.test(received) && received.length % 2 === 0) {
-    const computedBuf = Buffer.from(computedHex, "hex");
-    const receivedBuf = Buffer.from(received, "hex");
-    if (computedBuf.length !== receivedBuf.length) return false;
-    try {
-      return timingSafeEqual(computedBuf, receivedBuf);
-    } catch {
-      return false;
+    // rawBody without hmac param
+    const parts = rawBody.split("&").filter(Boolean);
+    const withoutHmac = parts.filter((p) => !p.toLowerCase().startsWith("hmac=")).join("&");
+    if (withoutHmac) {
+      candidates.push(withoutHmac);
+      // decoded version
+      try {
+        const decoded = decodeURIComponent(withoutHmac.replace(/\+/g, " "));
+        if (decoded !== withoutHmac) candidates.push(decoded);
+      } catch { /* ignore */ }
     }
+
+    // Sorted query string (reconstructed)
+    try {
+      const params = new URLSearchParams(rawBody);
+      params.delete("hmac");
+      const keys = Array.from(params.keys()).sort((a, b) => a.localeCompare(b));
+      const sortedParts: string[] = [];
+      for (const k of keys) {
+        for (const v of params.getAll(k)) {
+          sortedParts.push(`${encodeURIComponent(k)}=${encodeURIComponent(v)}`);
+        }
+      }
+      if (sortedParts.length > 0) candidates.push(sortedParts.join("&"));
+    } catch { /* ignore */ }
   }
 
-  // Try base64 comparison (fallback)
-  const computedB64 = createHmac("sha256", salt).update(message, "utf8").digest("base64");
-  if (computedB64 === received) return true;
+  // 2. Parsed payload variants
+  const entries = Object.entries(payload)
+    .filter(([k]) => k !== "hmac")
+    .map(([k, v]) => [k, v === null || v === undefined ? "" : String(v)])
+    .sort(([a], [b]) => a.localeCompare(b));
+
+  console.log("[HitPay Verify] Payload fields for signature:", Object.fromEntries(entries));
+
+  if (entries.length > 0) {
+    // key=value&...
+    candidates.push(entries.map(([k, v]) => `${k}=${v}`).join("&"));
+
+    // key:value|...
+    candidates.push(entries.map(([k, v]) => `${k}:${v}`).join("|"));
+
+    // keyvalue... (concatenation)
+    const concatStr = entries.map(([k, v]) => `${k}${v}`).join("");
+    candidates.push(concatStr);
+
+    // keyvalue... (excluding empty strings)
+    const concatNoEmpty = entries
+      .filter(([, v]) => v !== "")
+      .map(([k, v]) => `${k}${v}`)
+      .join("");
+    if (concatNoEmpty !== concatStr) candidates.push(concatNoEmpty);
+  }
+
+  // Verification loop
+  const receivedBuf = Buffer.from(received, /^[0-9a-f]+$/i.test(received) ? "hex" : "base64");
+  console.log(`[HitPay Verify] Checking ${candidates.length} candidates. Received HMAC: ${received}`);
+
+  for (const [idx, message] of candidates.entries()) {
+    const hmacHex = createHmac("sha256", salt).update(message, "utf8").digest("hex");
+    const matched = hmacHex.toLowerCase() === received.toLowerCase();
+    
+    console.log(`[HitPay Verify] Candidate #${idx}: "${message}" -> Computed Hex: ${hmacHex} -> ${matched ? "MATCH!" : "FAIL"}`);
+
+    if (matched) return true;
+
+    const hmacB64 = createHmac("sha256", salt).update(message, "utf8").digest("base64");
+    if (hmacB64 === received) {
+      console.log(`[HitPay Verify] Candidate #${idx} MATCHED (Base64)!`);
+      return true;
+    }
+  }
 
   return false;
 }
@@ -55,9 +111,6 @@ function trimHitPaySignatureHeader(header: string): string {
 
 /**
  * HitPay: HMAC-SHA256 of the raw JSON body, key = salt (Dashboard → API Keys).
- * Mirrors production edge cases handled in prior integrations: optional `sha256=` prefix
- * and base64-encoded digest, in addition to plain hex.
- * @see https://docs.hitpayapp.com/apis/guide/events — "Validating Webhook"
  */
 export function verifyHitPayWebhookSignature(
   rawBody: string,
@@ -67,33 +120,21 @@ export function verifyHitPayWebhookSignature(
   if (!signatureHeader?.trim() || !salt) return false;
 
   const normalized = trimHitPaySignatureHeader(signatureHeader);
-
   const computedHex = createHmac("sha256", salt).update(rawBody, "utf8").digest("hex");
   const computedBuf = Buffer.from(computedHex, "hex");
 
-  if (/^[0-9a-fA-F]+$/.test(normalized) && normalized.length % 2 === 0) {
-    const received = Buffer.from(normalized, "hex");
-    if (received.length !== computedBuf.length) return false;
+  const received = Buffer.from(normalized, /^[0-9a-f]+$/i.test(normalized) ? "hex" : "base64");
+
+  if (received.length === computedBuf.length) {
     try {
-      return timingSafeEqual(computedBuf, received);
-    } catch {
-      return false;
-    }
+      if (timingSafeEqual(computedBuf, received)) return true;
+    } catch { /* ignore */ }
   }
 
+  if (computedHex.toLowerCase() === normalized.toLowerCase()) return true;
+  
   const computedB64 = createHmac("sha256", salt).update(rawBody, "utf8").digest("base64");
   if (computedB64 === normalized) return true;
 
-  let receivedB64Buf: Buffer;
-  try {
-    receivedB64Buf = Buffer.from(normalized, "base64");
-  } catch {
-    return false;
-  }
-  if (receivedB64Buf.length !== computedBuf.length) return false;
-  try {
-    return timingSafeEqual(computedBuf, receivedB64Buf);
-  } catch {
-    return false;
-  }
+  return false;
 }
