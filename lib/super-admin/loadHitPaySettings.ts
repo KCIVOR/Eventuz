@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { decryptSecret } from "@/lib/utils/crypto";
 
 export type HitPayDecryptedConfig = {
@@ -9,10 +10,14 @@ export type HitPayDecryptedConfig = {
   allowSimulation: boolean;
 };
 
-/** Load active HitPay settings from DB. Falls back to null if none found or active. */
+/**
+ * Load active HitPay settings from DB (server-only).
+ * Uses the service role so checkout/webhooks work for non–super-admin users; RLS on
+ * `hitpay_settings` allows only super_admins to read with a normal session.
+ */
 export async function loadHitPaySettings(): Promise<HitPayDecryptedConfig | null> {
-  const supabase = await createClient();
-  
+  const supabase = createServiceRoleClient();
+
   const { data, error } = await supabase
     .from("hitpay_settings")
     .select("encrypted_api_key, encrypted_salt, is_sandbox, currency, allow_simulation")
