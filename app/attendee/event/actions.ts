@@ -11,6 +11,7 @@ import { createHitPayCheckout } from "@/lib/payments/hitpayClient";
 import { isHitPayDevSimulationAllowed } from "@/lib/payments/hitpayDevSimulation";
 import { loadHitPaySettings } from "@/lib/super-admin/loadHitPaySettings";
 import { deliverTicketEmailsForOrder } from "@/lib/tickets/deliverTicketEmails";
+import { sendPaymentSuccessEmail } from "@/lib/payments/sendPaymentSuccessEmail";
 import { getAppOrigin } from "@/lib/url/site";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -172,6 +173,13 @@ export async function simulateHitPaySuccessAction(
     entityId: payment.id as string,
     metadata: { order_id: orderId, event_id: eventId },
   });
+
+  // Notify the buyer (account owner)
+  try {
+    await sendPaymentSuccessEmail(orderId);
+  } catch (e) {
+    console.error(`[Simulation] Failed to trigger success email:`, e);
+  }
 
   revalidatePath("/attendee/event");
   return { ok: true };

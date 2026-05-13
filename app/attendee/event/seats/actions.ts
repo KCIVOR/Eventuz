@@ -36,18 +36,36 @@ export async function submitSeatAssignments(
     return { error: error.message } as const;
   }
 
-  revalidatePath("/attendee/event");
-  revalidatePath("/attendee/event/seats");
-  revalidatePath("/attendee/event/tickets");
-
+  // Automatically issue tickets if the order is now completed
   const { data: ord } = await supabase
     .from("orders")
     .select("status")
     .eq("id", orderId)
     .maybeSingle();
 
-  if ((ord?.status as string | undefined) === "completed") {
-    redirect("/attendee/event?seats=done");
+  if (ord?.status === "completed") {
+    // 1. Issue the QR tickets in the database
+    const { error: issueErr } = await supabase.rpc("issue_qr_tickets_for_order", {
+      p_order_id: orderId,
+    });
+
+    if (!issueErr) {
+      // 2. Trigger email delivery (async)
+      try {
+        const { deliverTicketEmailsForOrder } = await import("@/lib/tickets/deliverTicketEmails");
+        await deliverTicketEmailsForOrder(supabase, orderId, user.id);
+      } catch (e) {
+        console.error("[Seats Action] Failed to deliver ticket emails:", e);
+      }
+    }
+  }
+
+  revalidatePath("/attendee/event");
+  revalidatePath("/attendee/event/seats");
+  revalidatePath("/attendee/event/tickets");
+
+  if (ord?.status === "completed") {
+    redirect("/attendee/event?ticketsOk=1");
   }
 
   return { ok: true as const, partial: true };

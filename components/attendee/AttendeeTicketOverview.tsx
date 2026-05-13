@@ -167,40 +167,7 @@ export function AttendeeTicketOverview({
         </section>
       ) : null}
 
-      {ordersNeedingQrIssue.length > 0 ? (
-        <section
-          className="rounded-2xl border border-border bg-card px-5 py-6 shadow-[0_2px_12px_rgba(28,25,23,0.06)] sm:px-8"
-          aria-labelledby="qr-issue-heading"
-        >
-          <h2 id="qr-issue-heading" className="font-serif text-lg font-semibold text-foreground">
-            Generate QR passes
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Seats are saved. Create one secure QR pass per guest from each completed order below.
-          </p>
-          <ul className="mt-5 space-y-3">
-            {ordersNeedingQrIssue.map((o) => (
-              <li
-                key={o.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/90 bg-muted/10 px-4 py-3"
-              >
-                <form action={issueAdmissionTicketsAction} className="flex flex-wrap items-center gap-3">
-                  <input type="hidden" name="order_id" value={o.id} />
-                  <span className="text-sm text-muted-foreground">
-                    Order · {String(o.quantity)} guest{Number(o.quantity) === 1 ? "" : "s"}
-                  </span>
-                  <button
-                    type="submit"
-                    className="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-lg border border-primary bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                  >
-                    Generate QR tickets
-                  </button>
-                </form>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+      {/* Automated ticket generation now happens on seat assignment save */}
 
       {qrTickets.length > 0 ? (
         <section className="space-y-4" aria-labelledby="pass-list-heading">

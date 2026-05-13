@@ -545,5 +545,13 @@ export async function processHitPayWebhookRequest(req: Request): Promise<HitPayW
     actorOverride: null,
   });
 
+  // Notify the buyer (account owner)
+  try {
+    const { sendPaymentSuccessEmail } = await import("@/lib/payments/sendPaymentSuccessEmail");
+    await sendPaymentSuccessEmail(order.id);
+  } catch (e) {
+    console.error(`[HitPay Webhook] Failed to trigger success email:`, e);
+  }
+
   return { ok: true, detail: "payment succeeded; order paid_unassigned" };
 }

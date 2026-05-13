@@ -100,16 +100,27 @@ export function LoginForm() {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
-      <Input
-        id="password"
-        name="password"
-        type="password"
-        autoComplete="current-password"
-        required
-        label="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
+      <div className="relative">
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          required
+          label="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <div className="mt-1.5 flex justify-end">
+          <button
+            type="button"
+            onClick={() => router.push("/forgot-password")}
+            className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+          >
+            Forgot password?
+          </button>
+        </div>
+      </div>
       <button
         type="submit"
         disabled={loading}
