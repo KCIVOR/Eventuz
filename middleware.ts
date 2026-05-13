@@ -36,13 +36,16 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (!user) {
+    const all = request.cookies.getAll();
     authDebug("middleware.no_user", {
       pathname,
       requiredRole,
       redirect: "login",
       supabaseApiHost: authSupabaseApiHost(),
       requestHost: request.nextUrl.hostname,
-      ...authCookieNamesForLog(request.cookies.getAll()),
+      ...authCookieNamesForLog(all),
+      incomingCookieCount: all.length,
+      incomingCookieNamesSample: all.slice(0, 20).map((c) => c.name),
     });
     const url = new URL("/login", request.url);
     url.searchParams.set("next", pathname);
