@@ -1,6 +1,6 @@
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { writeAuditLogSafe } from "@/lib/audit/writeAuditLog";
-import { verifyHitPayWebhookSignature } from "@/lib/payments/hitpayVerify";
+import { verifyHitPayWebhookSignature, verifyHitPayLegacyHmac } from "@/lib/payments/hitpayVerify";
 import { loadHitPaySettings } from "@/lib/super-admin/loadHitPaySettings";
 
 export type HitPayWebhookResult =
@@ -76,6 +76,53 @@ function bodyLooksLikeOnlinePaymentRequest(raw: unknown): boolean {
   return true;
 }
 
+/**
+ * Parse the raw body into a key-value object.
+ * HitPay payment_request webhooks send `application/x-www-form-urlencoded`.
+ * Older Event webhooks may send JSON with an X-Signature header.
+ */
+function parseWebhookBody(
+  rawBody: string,
+  contentType: string
+): { parsed: Record<string, unknown>; format: "form" | "json" } | null {
+  // Try form-urlencoded first if content-type suggests it
+  if (contentType.includes("application/x-www-form-urlencoded")) {
+    try {
+      const params = new URLSearchParams(rawBody);
+      const obj: Record<string, string> = {};
+      for (const [k, v] of params.entries()) {
+        obj[k] = v;
+      }
+      if (Object.keys(obj).length > 0) return { parsed: obj, format: "form" };
+    } catch { /* fall through */ }
+  }
+
+  // Try JSON
+  if (contentType.includes("application/json") || contentType === "") {
+    try {
+      const j = JSON.parse(rawBody);
+      if (j && typeof j === "object") return { parsed: j as Record<string, unknown>, format: "json" };
+    } catch { /* fall through */ }
+  }
+
+  // Unknown content-type: try JSON first, then form
+  try {
+    const j = JSON.parse(rawBody);
+    if (j && typeof j === "object") return { parsed: j as Record<string, unknown>, format: "json" };
+  } catch { /* not json */ }
+
+  try {
+    const params = new URLSearchParams(rawBody);
+    const obj: Record<string, string> = {};
+    for (const [k, v] of params.entries()) {
+      obj[k] = v;
+    }
+    if (Object.keys(obj).length > 0) return { parsed: obj, format: "form" };
+  } catch { /* not form */ }
+
+  return null;
+}
+
 export async function processHitPayWebhookRequest(req: Request): Promise<HitPayWebhookResult> {
   const dbSettings = await loadHitPaySettings();
   const salt = dbSettings?.salt?.trim();
@@ -89,17 +136,57 @@ export async function processHitPayWebhookRequest(req: Request): Promise<HitPayW
   }
 
   const rawBody = await req.text();
-  const sig = req.headers.get("X-Signature") ?? req.headers.get("x-signature") ?? req.headers.get("Hitpay-Signature") ?? req.headers.get("hitpay-signature");
+  const contentType = (req.headers.get("content-type") ?? "").toLowerCase();
 
-  if (!verifyHitPayWebhookSignature(rawBody, sig, salt)) {
+  // Parse the body (form-urlencoded or JSON)
+  const bodyResult = parseWebhookBody(rawBody, contentType);
+  if (!bodyResult) {
+    return { ok: false, status: 400, detail: "unable to parse webhook body" };
+  }
+
+  const { parsed, format } = bodyResult;
+
+  // --- Signature verification ---
+  // Path 1 (primary): HitPay payment_request webhooks include `hmac` in form body
+  const legacyHmac = typeof parsed.hmac === "string" ? parsed.hmac : null;
+
+  // Path 2 (fallback): Header-based signature (Event webhooks / newer API)
+  const sigHeader =
+    req.headers.get("X-Signature") ??
+    req.headers.get("x-signature") ??
+    req.headers.get("X-HitPay-Signature") ??
+    req.headers.get("x-hitpay-signature") ??
+    req.headers.get("Hitpay-Signature") ??
+    req.headers.get("hitpay-signature");
+
+  let verified = false;
+
+  if (legacyHmac) {
+    // Body-field HMAC: sorted-field concatenation (proven working method)
+    verified = verifyHitPayLegacyHmac(parsed, legacyHmac, salt);
+  } else if (sigHeader) {
+    // Header-based HMAC: raw body hash (fallback for Event webhooks)
+    verified = verifyHitPayWebhookSignature(rawBody, sigHeader, salt);
+  }
+
+  if (!verified) {
     return { ok: false, status: 401, detail: "invalid signature" };
   }
 
+  // Use the already-parsed body — HitPay payment_request webhooks use
+  // `payment_request_id` (form field) while our downstream code expects `id`.
+  // Map accordingly to preserve existing downstream logic.
   let json: unknown;
-  try {
-    json = JSON.parse(rawBody);
-  } catch {
-    return { ok: false, status: 400, detail: "invalid json" };
+  if (format === "form") {
+    // HitPay form fields: payment_request_id, reference_number, amount, currency, status, hmac
+    // Downstream expects: id, reference_number, amount, currency, status
+    const mapped: Record<string, unknown> = { ...parsed };
+    if (!mapped.id && mapped.payment_request_id) {
+      mapped.id = mapped.payment_request_id;
+    }
+    json = mapped;
+  } else {
+    json = parsed;
   }
 
   const eventObject = (req.headers.get("Hitpay-Event-Object") ?? "").trim().toLowerCase();

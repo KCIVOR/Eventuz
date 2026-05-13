@@ -12,6 +12,7 @@
  *   node ... --url https://your-app.vercel.app --payment-id <payments.id>
  */
 
+import crypto from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { decryptSecret } from "@/lib/utils/crypto";
 import { signHitPayWebhookPayload } from "@/lib/payments/hitpayVerify";
@@ -118,24 +119,24 @@ async function main() {
   const amount = Math.round(Number(pay.amount) * 100) / 100;
   const currency = String(pay.currency ?? "PHP").trim().toLowerCase();
 
-  const payload = {
-    id: pay.provider_checkout_id,
-    reference_number: pay.order_id,
-    amount,
+  const payload: Record<string, string> = {
+    payment_request_id: String(pay.provider_checkout_id),
+    reference_number: String(pay.order_id),
+    amount: String(amount),
     currency,
-    status: "succeeded",
-    payments: [
-      {
-        id: `sim-pay-${pay.id}`,
-        status: "succeeded",
-        amount: String(amount),
-        currency,
-      },
-    ],
+    status: "completed",
   };
 
-  const rawBody = JSON.stringify(payload);
-  const signature = signHitPayWebhookPayload(rawBody, salt.trim());
+  const entries = Object.entries(payload)
+    .filter(([k, v]) => k !== "hmac" && v !== undefined && v !== null && v !== "")
+    .sort(([a], [b]) => a.localeCompare(b));
+  const message = entries.map(([k, v]) => `${k}${v}`).join("");
+  const hmac = crypto.createHmac("sha256", salt.trim()).update(message, "utf8").digest("hex");
+
+  payload.hmac = hmac;
+
+  const formParams = new URLSearchParams(payload);
+  const rawBody = formParams.toString();
 
   const webhookUrl = url.includes("/api/hitpay/webhook")
     ? url
@@ -147,9 +148,7 @@ async function main() {
   const res = await fetch(webhookUrl, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      "X-Signature": signature,
-      "Hitpay-Event-Object": "payment_request",
+      "Content-Type": "application/x-www-form-urlencoded",
     },
     body: rawBody,
   });
