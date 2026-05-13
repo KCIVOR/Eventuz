@@ -23,6 +23,16 @@ export function authDebug(tag: string, payload: AuthDebugPayload): void {
   console.log(`[eventuz:auth:${tag}]`, payload);
 }
 
+/**
+ * Browser-console mirror for the auth debug UI (`AuthDebugPanel`).
+ * Use DevTools filter: `eventuz:auth:panel`
+ * Does not print secrets (callers must pass safe fields only).
+ */
+export function authPanelConsole(tag: string, payload: AuthDebugPayload): void {
+  if (!isAuthDebugEnabled()) return;
+  console.info(`[eventuz:auth:panel:${tag}]`, payload);
+}
+
 function envFlagTrue(name: string): boolean {
   const v = process.env[name]?.trim().toLowerCase();
   return v === "true" || v === "1" || v === "yes";

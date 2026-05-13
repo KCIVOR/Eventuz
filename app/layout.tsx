@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AuthDebugErrorBoundary } from "@/components/debug/AuthDebugErrorBoundary";
 import { AuthDebugPanel } from "@/components/debug/AuthDebugPanel";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
@@ -38,7 +39,9 @@ export default function RootLayout({
         className="min-h-full flex flex-col bg-background font-sans text-foreground"
       >
         {children}
-        <AuthDebugPanel />
+        <AuthDebugErrorBoundary>
+          <AuthDebugPanel />
+        </AuthDebugErrorBoundary>
       </body>
     </html>
   );
