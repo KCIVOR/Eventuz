@@ -22,3 +22,41 @@ export function authDebug(tag: string, payload: AuthDebugPayload): void {
   if (!isAuthDebugEnabled()) return;
   console.log(`[eventuz:auth:${tag}]`, payload);
 }
+
+function envFlagTrue(name: string): boolean {
+  const v = process.env[name]?.trim().toLowerCase();
+  return v === "true" || v === "1" || v === "yes";
+}
+
+/** Extra middleware request logs (can be noisy on high traffic). */
+export function isAuthDebugVerbose(): boolean {
+  return isAuthDebugEnabled() && envFlagTrue("NEXT_PUBLIC_AUTH_DEBUG_VERBOSE");
+}
+
+/**
+ * Hostname from NEXT_PUBLIC_SUPABASE_URL for logs (no path, no keys). Empty if unset/invalid.
+ */
+export function authSupabaseApiHost(): string | null {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  if (!raw) return null;
+  try {
+    return new URL(raw).hostname;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Count / list Supabase auth-related cookie names only (never values).
+ */
+export function authCookieNamesForLog(
+  cookies: Iterable<{ name: string }>
+): { supabaseAuthCookieCount: number; supabaseAuthCookieNames: string[] } {
+  const names: string[] = [];
+  for (const c of cookies) {
+    if (c.name.includes("auth-token") || c.name.startsWith("sb-")) {
+      names.push(c.name);
+    }
+  }
+  return { supabaseAuthCookieCount: names.length, supabaseAuthCookieNames: names };
+}

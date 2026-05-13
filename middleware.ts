@@ -1,5 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { authDebug } from "@/lib/auth/debug";
+import {
+  authCookieNamesForLog,
+  authDebug,
+  authSupabaseApiHost,
+  isAuthDebugVerbose,
+} from "@/lib/auth/debug";
 import {
   getRequiredRoleForPathname,
   roleMatchesProfile,
@@ -16,11 +21,29 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  if (isAuthDebugVerbose()) {
+    authDebug("middleware.request", {
+      pathname,
+      requiredRole,
+      supabaseApiHost: authSupabaseApiHost(),
+      requestHost: request.nextUrl.hostname,
+      ...authCookieNamesForLog(request.cookies.getAll()),
+    });
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
+    authDebug("middleware.no_user", {
+      pathname,
+      requiredRole,
+      redirect: "login",
+      supabaseApiHost: authSupabaseApiHost(),
+      requestHost: request.nextUrl.hostname,
+      ...authCookieNamesForLog(request.cookies.getAll()),
+    });
     const url = new URL("/login", request.url);
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
@@ -51,6 +74,10 @@ export async function middleware(request: NextRequest) {
   }
 
   if (profile.status === "disabled") {
+    authDebug("middleware.disabled", {
+      pathname,
+      userId: user.id,
+    });
     const out = new URL("/auth/sign-out", request.url);
     out.searchParams.set(
       "error",
@@ -60,6 +87,12 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!roleMatchesProfile(profile.role as EventuzRole, requiredRole)) {
+    authDebug("middleware.role_mismatch", {
+      pathname,
+      profileRole: profile.role,
+      requiredRole,
+      userId: user.id,
+    });
     return NextResponse.redirect(new URL("/", request.url));
   }
 
