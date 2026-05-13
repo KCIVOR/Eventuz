@@ -38,7 +38,7 @@ export default async function AttendeeEventPage({ searchParams }: Props) {
     message,
   } = await loadAttendeeEventContext();
 
-  const showDevHitPaySimulate = isHitPayDevSimulationAllowed();
+  const showDevHitPaySimulate = await isHitPayDevSimulationAllowed();
   const showHoldForm = ticketTypes.length > 0 || Boolean(activeOrder);
 
   if (message || !event) {

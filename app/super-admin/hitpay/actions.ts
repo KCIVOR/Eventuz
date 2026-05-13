@@ -10,19 +10,37 @@ export async function saveHitPaySettings(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== "super_admin") throw new Error("Forbidden");
+
   const apiKey = formData.get("apiKey") as string;
   const salt = formData.get("salt") as string;
   const isSandbox = formData.get("isSandbox") === "true";
   const currency = (formData.get("currency") as string || "PHP").toUpperCase();
   const isActive = formData.get("isActive") === "true";
+  const allowSimulation = formData.get("allowSimulation") === "true";
 
   if (!apiKey || !salt) {
     return { error: "API Key and Salt are required." };
   }
 
   try {
-    const encryptedApiKey = encryptSecret(apiKey);
-    const encryptedSalt = encryptSecret(salt);
+    // Check if we should re-encrypt or use existing encrypted values
+    // This allows the UI to display and resubmit the encrypted "v1:..." blob
+    const { data: current } = await supabase
+      .from("hitpay_settings")
+      .select("encrypted_api_key, encrypted_salt")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const encryptedApiKey = (apiKey === current?.encrypted_api_key) 
+      ? apiKey 
+      : encryptSecret(apiKey);
+      
+    const encryptedSalt = (salt === current?.encrypted_salt) 
+      ? salt 
+      : encryptSecret(salt);
 
     // Disable all other active settings first
     await supabase
@@ -38,6 +56,7 @@ export async function saveHitPaySettings(formData: FormData) {
         is_sandbox: isSandbox,
         currency,
         is_active: isActive,
+        allow_simulation: allowSimulation,
       });
 
     if (error) throw error;
@@ -46,7 +65,7 @@ export async function saveHitPaySettings(formData: FormData) {
       action: "hitpay.settings.updated",
       entityType: "system_settings",
       entityId: null,
-      metadata: { is_sandbox: isSandbox, currency, is_active: isActive },
+      metadata: { is_sandbox: isSandbox, currency, is_active: isActive, allow_simulation: allowSimulation },
       actorOverride: user.id,
     });
 
@@ -62,6 +81,9 @@ export async function toggleHitPayActive(id: string, active: boolean) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
+
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== "super_admin") throw new Error("Forbidden");
 
   try {
     if (active) {

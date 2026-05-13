@@ -1,9 +1,9 @@
 import { HitPaySettingsForm } from "@/components/super-admin/HitPaySettingsForm";
 import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
-import { loadHitPaySettingsPublic } from "@/lib/super-admin/loadHitPaySettings";
+import { loadHitPaySettingsFull } from "@/lib/super-admin/loadHitPaySettings";
 
 export default async function SuperAdminHitPayPage() {
-  const { settings, error } = await loadHitPaySettingsPublic();
+  const settings = await loadHitPaySettingsFull();
 
   return (
     <RoleAreaShell
@@ -18,7 +18,7 @@ export default async function SuperAdminHitPayPage() {
         { label: "HitPay settings" },
       ]}
     >
-      <HitPaySettingsForm initial={settings} loadError={error} />
+      <HitPaySettingsForm initial={settings} loadError={null} />
     </RoleAreaShell>
   );
 }

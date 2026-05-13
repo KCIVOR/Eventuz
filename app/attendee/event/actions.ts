@@ -25,7 +25,7 @@ export async function simulateHitPaySuccessAction(
   _prev: HitPaySimulateState | undefined,
   formData: FormData
 ): Promise<HitPaySimulateState> {
-  if (!isHitPayDevSimulationAllowed()) {
+  if (!(await isHitPayDevSimulationAllowed())) {
     return { error: "Payment simulation is not enabled (set ALLOW_HITPAY_DEV_SIMULATION=true locally)." };
   }
 
@@ -496,7 +496,7 @@ export async function startHitPayCheckoutAction(
   const webhookUrl = process.env.HITPAY_WEBHOOK_URL?.trim() || null;
 
   let hitpay: { id: string; url: string };
-  if (isHitPayDevSimulationAllowed()) {
+  if (await isHitPayDevSimulationAllowed()) {
     // Skip HitPay API: simulation only completes after "Simulate payment succeeded",
     // which needs payment_pending + a pending payments row (same as real checkout).
     hitpay = { id: `dev-checkout-${orderId}`, url: redirectUrl };
