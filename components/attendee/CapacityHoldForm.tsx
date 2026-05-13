@@ -19,7 +19,7 @@ type Props = {
   ticketTypes: TicketTypeWithSlots[];
   activeHold: Record<string, unknown> | null;
   resumeCheckoutUrl?: string | null;
-  /** When ALLOW_HITPAY_DEV_SIMULATION is set (server). */
+  /** When Super Admin → HitPay has “Allow dev simulation” enabled. */
   showDevHitPaySimulate?: boolean;
 };
 
@@ -213,11 +213,9 @@ export function CapacityHoldForm({
                 <form action={simAction} className="rounded-lg border border-dashed border-warning/40 bg-warning/5 p-3">
                   <p className="text-xs font-semibold text-warning">Local dev only</p>
                   <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-                    Simulate HitPay success without a real account. Requires{" "}
-                    <code className="rounded bg-muted px-1 py-0.5 font-mono text-[10px] text-foreground">
-                      ALLOW_HITPAY_DEV_SIMULATION=true
-                    </code>{" "}
-                    on the server. Never use in production.
+                    Simulate HitPay success without a real account. Enable{" "}
+                    <span className="font-medium text-foreground">Allow dev simulation</span> in Super
+                    Admin → HitPay settings. Never use in production.
                   </p>
                   <input type="hidden" name="order_id" value={String(activeHold.id)} />
                   <input type="hidden" name="event_id" value={eventId} />

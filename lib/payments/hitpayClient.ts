@@ -5,11 +5,13 @@ export type HitPayCreateResponse = {
   url: string;
 };
 
-import { loadHitPaySettings } from "@/lib/super-admin/loadHitPaySettings";
+import {
+  loadHitPaySettings,
+  type HitPayDecryptedConfig,
+} from "@/lib/super-admin/loadHitPaySettings";
 
-function hitPayBaseUrl(isSandbox?: boolean): string {
-  const sandbox = isSandbox ?? (process.env.HITPAY_SANDBOX === "true" || process.env.HITPAY_SANDBOX === "1");
-  return sandbox ? "https://api.sandbox.hit-pay.com" : "https://api.hit-pay.com";
+function hitPayBaseUrl(isSandbox: boolean): string {
+  return isSandbox ? "https://api.sandbox.hit-pay.com" : "https://api.hit-pay.com";
 }
 
 export type CreateHitPayCheckoutParams = {
@@ -25,17 +27,23 @@ export type CreateHitPayCheckoutParams = {
   webhookUrl?: string | null;
 };
 
+/**
+ * @param preloaded — pass from the caller to avoid a second `loadHitPaySettings()` (e.g. checkout action).
+ */
 export async function createHitPayCheckout(
-  params: CreateHitPayCheckoutParams
+  params: CreateHitPayCheckoutParams,
+  preloaded?: HitPayDecryptedConfig
 ): Promise<HitPayCreateResponse> {
-  const dbSettings = await loadHitPaySettings();
-  
-  const apiKey = dbSettings?.apiKey || process.env.HITPAY_API_KEY;
-  const isSandbox = dbSettings ? dbSettings.isSandbox : undefined;
+  const dbSettings = preloaded ?? (await loadHitPaySettings());
 
-  if (!apiKey?.trim()) {
-    throw new Error("HitPay is not configured (missing API key).");
+  if (!dbSettings?.apiKey?.trim()) {
+    throw new Error(
+      "HitPay is not configured. Add active API key and salt in Super Admin → HitPay settings."
+    );
   }
+
+  const apiKey = dbSettings.apiKey.trim();
+  const isSandbox = dbSettings.isSandbox;
 
   const body: Record<string, unknown> = {
     amount: params.amount,
@@ -57,7 +65,7 @@ export async function createHitPayCheckout(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-BUSINESS-API-KEY": apiKey.trim(),
+      "X-BUSINESS-API-KEY": apiKey,
     },
     body: JSON.stringify(body),
   });

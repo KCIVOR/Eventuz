@@ -9,6 +9,7 @@ import { computeEarlyBirdPriceLockExpiresAt, resolveUnitPrice } from "@/lib/orde
 import { writeAuditLogSafe } from "@/lib/audit/writeAuditLog";
 import { createHitPayCheckout } from "@/lib/payments/hitpayClient";
 import { isHitPayDevSimulationAllowed } from "@/lib/payments/hitpayDevSimulation";
+import { loadHitPaySettings } from "@/lib/super-admin/loadHitPaySettings";
 import { deliverTicketEmailsForOrder } from "@/lib/tickets/deliverTicketEmails";
 import { getAppOrigin } from "@/lib/url/site";
 import { revalidatePath } from "next/cache";
@@ -20,13 +21,16 @@ export type PayActionState = { error?: string };
 
 export type HitPaySimulateState = { error?: string; ok?: boolean };
 
-/** Dev only (ALLOW_HITPAY_DEV_SIMULATION): mark pending HitPay payment succeeded like a real webhook. */
+/** Mark pending HitPay payment succeeded (Super Admin → HitPay → Allow dev simulation). */
 export async function simulateHitPaySuccessAction(
   _prev: HitPaySimulateState | undefined,
   formData: FormData
 ): Promise<HitPaySimulateState> {
   if (!(await isHitPayDevSimulationAllowed())) {
-    return { error: "Payment simulation is not enabled (set ALLOW_HITPAY_DEV_SIMULATION=true locally)." };
+    return {
+      error:
+        "Payment simulation is not enabled. Turn on “Allow dev simulation” in Super Admin → HitPay settings (use only in non-production).",
+    };
   }
 
   const orderId = String(formData.get("order_id") ?? "").trim();
@@ -475,7 +479,20 @@ export async function startHitPayCheckoutAction(
     return { error: "This order total is below HitPay minimum (0.30)." };
   }
 
-  const currency = (process.env.HITPAY_CURRENCY ?? "PHP").trim().toUpperCase();
+  const hp = await loadHitPaySettings();
+  if (!hp) {
+    return {
+      error:
+        "HitPay is not configured. A platform admin must save HitPay settings in Super Admin.",
+    };
+  }
+  if (!hp.allowSimulation && !hp.apiKey?.trim()) {
+    return {
+      error:
+        "HitPay API key is missing. Add it in Super Admin → HitPay settings (or enable “Allow dev simulation” for local testing without real payments).",
+    };
+  }
+  const currency = hp.currency.trim().toUpperCase();
 
   const { data: existingPending } = await supabase
     .from("payments")
@@ -493,24 +510,27 @@ export async function startHitPayCheckoutAction(
 
   const origin = await getAppOrigin();
   const redirectUrl = `${origin}/attendee/event?hitpay_return=1`;
-  const webhookUrl = process.env.HITPAY_WEBHOOK_URL?.trim() || null;
+  const webhookUrl = `${origin}/api/hitpay/webhook`;
 
   let hitpay: { id: string; url: string };
-  if (await isHitPayDevSimulationAllowed()) {
+  if (hp.allowSimulation) {
     // Skip HitPay API: simulation only completes after "Simulate payment succeeded",
     // which needs payment_pending + a pending payments row (same as real checkout).
     hitpay = { id: `dev-checkout-${orderId}`, url: redirectUrl };
   } else {
     try {
-      hitpay = await createHitPayCheckout({
-        amount,
-        currency,
-        email: user.email,
-        name: (profile?.full_name as string) || undefined,
-        referenceNumber: orderId,
-        redirectUrl,
-        webhookUrl,
-      });
+      hitpay = await createHitPayCheckout(
+        {
+          amount,
+          currency,
+          email: user.email,
+          name: (profile?.full_name as string) || undefined,
+          referenceNumber: orderId,
+          redirectUrl,
+          webhookUrl,
+        },
+        hp
+      );
     } catch (e) {
       return { error: e instanceof Error ? e.message : "Could not reach HitPay." };
     }

@@ -40,7 +40,7 @@ This document maps the Eventuz MVP to the validation checklist, notes what enfor
 
 ## Local HitPay simulation (no gateway account)
 
-For development, set **`ALLOW_HITPAY_DEV_SIMULATION=true`** in `.env.local`. On the attendee event page, when an order is **`payment_pending`**, a **“Simulate payment succeeded”** control appears. It performs the same payment/order transitions as a successful webhook (RLS-safe buyer updates), writes a small `raw_webhook_payload` marker, and logs **`hitpay.dev_simulation`** in audit logs. **Do not set this in production.**
+For development, enable **Allow dev simulation** in **Super Admin → HitPay settings** (stored in the database). On the attendee event page, when an order is **`payment_pending`**, a **“Simulate payment succeeded”** control appears. It performs the same payment/order transitions as a successful webhook (RLS-safe buyer updates), writes a small `raw_webhook_payload` marker, and logs **`hitpay.dev_simulation`** in audit logs. **Never enable in production.**
 
 
 1. Sign in as attendee → confirm `/organizer` redirects away.

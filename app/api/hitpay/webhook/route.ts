@@ -5,7 +5,8 @@ export const runtime = "nodejs";
 
 /**
  * HitPay payment_request webhooks.
- * Register the same URL in HitPay Dashboard (API Keys → webhook) and set HITPAY_WEBHOOK_URL when creating checkout.
+ * Register this URL in HitPay Dashboard (API Keys → webhook). Checkout sends
+ * `{origin}/api/hitpay/webhook` automatically (see `getAppOrigin` / `NEXT_PUBLIC_SITE_URL`).
  */
 export async function POST(req: Request) {
   const result = await processHitPayWebhookRequest(req);
