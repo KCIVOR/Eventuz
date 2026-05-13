@@ -69,6 +69,7 @@ export function DashboardFrame({
 
           <Link
             href={homeHref}
+            prefetch={false}
             className="shrink-0 font-serif text-lg font-semibold tracking-tight text-primary transition-colors hover:text-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
           >
             Eventuz
@@ -94,6 +95,7 @@ export function DashboardFrame({
             </div>
             <Link
               href="/auth/sign-out"
+              prefetch={false}
               className="rounded-lg border border-border/80 bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors duration-150 hover:border-border hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 sm:px-3"
             >
               Sign out

@@ -81,6 +81,7 @@ export function SidebarNav({ role, sections, onNavigate }: Props) {
                   <li key={`${section.id}-${item.id}`}>
                     <Link
                       href={item.href}
+                      prefetch={false}
                       onClick={() => onNavigate?.()}
                       className={`${linkBase} ${active ? linkActive : linkInactive}`}
                       aria-current={active ? "page" : undefined}

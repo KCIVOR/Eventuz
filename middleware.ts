@@ -104,9 +104,13 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/organizer",
     "/organizer/:path*",
+    "/attendee",
     "/attendee/:path*",
+    "/staff",
     "/staff/:path*",
+    "/super-admin",
     "/super-admin/:path*",
   ],
 };
