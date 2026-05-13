@@ -148,7 +148,7 @@ async function main() {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Hitpay-Signature": signature,
+      "X-Signature": signature,
       "Hitpay-Event-Object": "payment_request",
     },
     body: rawBody,

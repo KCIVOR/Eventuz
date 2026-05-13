@@ -89,7 +89,7 @@ export async function processHitPayWebhookRequest(req: Request): Promise<HitPayW
   }
 
   const rawBody = await req.text();
-  const sig = req.headers.get("Hitpay-Signature") ?? req.headers.get("hitpay-signature");
+  const sig = req.headers.get("X-Signature") ?? req.headers.get("x-signature") ?? req.headers.get("Hitpay-Signature") ?? req.headers.get("hitpay-signature");
 
   if (!verifyHitPayWebhookSignature(rawBody, sig, salt)) {
     return { ok: false, status: 401, detail: "invalid signature" };
