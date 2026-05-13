@@ -1,6 +1,7 @@
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { writeAuditLogSafe } from "@/lib/audit/writeAuditLog";
 import { verifyHitPayWebhookSignature } from "@/lib/payments/hitpayVerify";
+import { loadHitPaySettings } from "@/lib/super-admin/loadHitPaySettings";
 
 export type HitPayWebhookResult =
   | { ok: true; detail: string }
@@ -64,7 +65,16 @@ function resolveHitStatus(payload: PaymentRequestPayload): string {
   return String(pick?.status ?? "").trim().toLowerCase();
 }
 
-import { loadHitPaySettings } from "@/lib/super-admin/loadHitPaySettings";
+/** Body shape for HitPay Online Payments `/v1/payment-requests` webhooks (what we create in checkout). */
+function bodyLooksLikeOnlinePaymentRequest(raw: unknown): boolean {
+  if (!raw || typeof raw !== "object") return false;
+  const p = raw as Record<string, unknown>;
+  const id = p.id;
+  const ref = p.reference_number;
+  if (typeof id !== "string" || !isUuid(id)) return false;
+  if (typeof ref !== "string" || !isUuid(ref.trim())) return false;
+  return true;
+}
 
 export async function processHitPayWebhookRequest(req: Request): Promise<HitPayWebhookResult> {
   const dbSettings = await loadHitPaySettings();
@@ -93,7 +103,13 @@ export async function processHitPayWebhookRequest(req: Request): Promise<HitPayW
   }
 
   const eventObject = (req.headers.get("Hitpay-Event-Object") ?? "").trim().toLowerCase();
-  if (eventObject && eventObject !== "payment_request") {
+  // Docs list other object types; Online Payments may still set a non–payment_request header.
+  // If the signed body matches our checkout payload shape, process it anyway.
+  if (
+    eventObject &&
+    eventObject !== "payment_request" &&
+    !bodyLooksLikeOnlinePaymentRequest(json)
+  ) {
     return { ok: true, detail: `ignored object ${eventObject}` };
   }
 
@@ -176,9 +192,15 @@ export async function processHitPayWebhookRequest(req: Request): Promise<HitPayW
 
   const hitStatus = resolveHitStatus(payload);
   const isSuccessStates =
-    hitStatus === "completed" || hitStatus === "succeeded" || hitStatus === "success";
+    hitStatus === "completed" ||
+    hitStatus === "complete" ||
+    hitStatus === "succeeded" ||
+    hitStatus === "success";
   const isFailedStates =
-    hitStatus === "failed" || hitStatus === "expired" || hitStatus === "canceled";
+    hitStatus === "failed" ||
+    hitStatus === "expired" ||
+    hitStatus === "canceled" ||
+    hitStatus === "cancelled";
 
   /** HitPay amount / currency: prefer a succeeded nested payment row when present. */
   let amountHit = parseAmount(payload.amount);
@@ -273,7 +295,8 @@ export async function processHitPayWebhookRequest(req: Request): Promise<HitPayW
     return { ok: true, detail: `ignored status ${hitStatus || "unknown"}` };
   }
 
-  const amountOrder = Math.round(Number(order.total_amount) * 100) / 100;
+  /** Must match the amount stored on our pending payment (what HitPay was asked to charge). */
+  const amountExpected = Math.round(Number(payment.amount) * 100) / 100;
   const currencyOrder = normCurrency(payment.currency);
 
   if (amountHit == null || currencyHit == null) {
@@ -292,7 +315,7 @@ export async function processHitPayWebhookRequest(req: Request): Promise<HitPayW
     return { ok: true, detail: "reject: missing amount/currency in webhook" };
   }
 
-  if (Math.abs(amountHit - amountOrder) > 0.01 || currencyHit !== currencyOrder) {
+  if (Math.abs(amountHit - amountExpected) > 0.01 || currencyHit !== currencyOrder) {
     await supabase
       .from("payments")
       .update({
