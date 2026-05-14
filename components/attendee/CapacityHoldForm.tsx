@@ -194,60 +194,64 @@ export function CapacityHoldForm({
             <span className="text-[10px] uppercase tracking-widest text-accent-gold font-semibold">Step 02</span>
           </div>
 
-          <div className="panel-card p-8 bg-muted/20 border-accent-gold/10">
-            <form action={placeAction} className="flex flex-col md:flex-row items-center gap-8">
+          <div className="panel-card bg-muted/20 border-accent-gold/10 overflow-hidden">
+            <form action={placeAction} className="flex flex-col">
               <input type="hidden" name="event_id" value={eventId} />
               <input type="hidden" name="ticket_type_id" value={selectedTypeId} />
               
-              <div className="w-full md:w-auto">
-                <label htmlFor="quantity-input" className="block text-[10px] uppercase tracking-[0.2em] text-accent-gold font-semibold mb-3">
-                  Number of Guests
-                </label>
-                <div className="flex items-center gap-4">
-                  <button 
-                    type="button"
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="h-12 w-12 border border-border bg-card flex items-center justify-center hover:bg-muted transition-colors"
+              <div className="p-6 sm:p-8 space-y-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                  <div className="space-y-3">
+                    <label htmlFor="quantity-input" className="block text-[10px] uppercase tracking-[0.2em] text-accent-gold font-semibold">
+                      Number of Guests
+                    </label>
+                    <div className="flex items-center">
+                      <button 
+                        type="button"
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        className="h-12 w-12 border border-border bg-card flex items-center justify-center hover:bg-muted transition-colors rounded-l"
+                      >
+                        —
+                      </button>
+                      <input
+                        id="quantity-input"
+                        name="quantity"
+                        type="number"
+                        value={quantity}
+                        readOnly
+                        className="h-12 w-16 text-center border-y border-border bg-card font-serif text-xl focus:outline-none"
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => setQuantity(Math.min(selectedTicket.slotsLeft || 1, quantity + 1))}
+                        className="h-12 w-12 border border-border bg-card flex items-center justify-center hover:bg-muted transition-colors rounded-r"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="text-left sm:text-right">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-accent-gold font-semibold mb-1">Estimated Total</p>
+                    <p className="text-3xl font-serif text-foreground">
+                      {formatPhp((selectedTicket.early_bird_price ? Number(selectedTicket.early_bird_price) : Number(selectedTicket.regular_price)) * quantity)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-border/40">
+                  <p className="text-[11px] text-muted-foreground font-light italic mb-6">
+                    Seating selection will be available after payment confirmation.
+                  </p>
+                  <button
+                    type="submit"
+                    disabled={placePending}
+                    className="btn-eventuz-gold w-full py-5 text-base shadow-lg shadow-accent-gold/10"
                   >
-                    —
-                  </button>
-                  <input
-                    id="quantity-input"
-                    name="quantity"
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value))}
-                    min={1}
-                    max={selectedTicket.slotsLeft || 1}
-                    className="h-12 w-20 text-center border-y border-border bg-card font-serif text-xl focus:outline-none"
-                  />
-                  <button 
-                    type="button"
-                    onClick={() => setQuantity(Math.min(selectedTicket.slotsLeft || 1, quantity + 1))}
-                    className="h-12 w-12 border border-border bg-card flex items-center justify-center hover:bg-muted transition-colors"
-                  >
-                    +
+                    {placePending ? "Securing..." : "Confirm Selection"}
                   </button>
                 </div>
               </div>
-
-              <div className="flex-1 text-center md:text-right border-t md:border-t-0 md:border-l border-border/50 pt-6 md:pt-0 md:pl-8">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-accent-gold font-semibold mb-1">Estimated Total</p>
-                <p className="text-3xl font-serif text-foreground">
-                  {formatPhp((selectedTicket.early_bird_price ? Number(selectedTicket.early_bird_price) : Number(selectedTicket.regular_price)) * quantity)}
-                </p>
-                <p className="text-[11px] text-muted-foreground mt-2 font-light">
-                  Seating selection will be available after payment confirmation.
-                </p>
-              </div>
-
-              <button
-                type="submit"
-                disabled={placePending}
-                className="btn-eventuz-gold w-full md:w-auto min-w-[200px] py-4"
-              >
-                {placePending ? "Securing..." : "Confirm Selection"}
-              </button>
             </form>
           </div>
         </section>
