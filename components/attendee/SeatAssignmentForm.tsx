@@ -308,16 +308,25 @@ export function SeatAssignmentForm({
             </div>
           </section>
 
+        </div>
+
+        {/* SIDEBAR: Summary & Actions */}
+        <aside className="lg:col-span-5 space-y-6 lg:sticky lg:top-32">
           {selectedSeatIds.length > 0 && (
-            <section className="animate-fade-in-up space-y-6" aria-labelledby="attendee-details-heading">
-              <div className="flex items-center gap-4">
-                <h2 id="attendee-details-heading" className="font-serif text-xl font-light text-foreground">
+            <section
+              className="panel-card animate-fade-in-up overflow-hidden p-0 shadow-lg shadow-accent-gold/[0.03]"
+              aria-labelledby="attendee-details-heading"
+            >
+              <div className="border-b border-accent-gold/10 bg-accent-gold/[0.03] p-8">
+                <h2 id="attendee-details-heading" className="mb-1 font-serif text-2xl font-light text-foreground">
                   Attendee Details
                 </h2>
-                <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-accent-gold">
+                  Guest Information
+                </p>
               </div>
 
-              <ul className="space-y-4">
+              <ul className="space-y-4 p-8">
                 {sortedSelected.map((seatId) => {
                   const label = labelById.get(seatId) ?? seatId;
                   const det = detailsBySeat[seatId] ?? { name: "", email: "" };
@@ -325,7 +334,7 @@ export function SeatAssignmentForm({
                   return (
                     <li
                       key={seatId}
-                      className="panel-card p-6"
+                      className="rounded-xl border border-border/70 bg-card p-5"
                     >
                       <div className="flex items-center justify-between mb-4">
                         <span className="text-[10px] font-semibold uppercase tracking-widest text-accent-gold">
@@ -333,7 +342,7 @@ export function SeatAssignmentForm({
                         </span>
                         <div className="h-1 w-1 rotate-45 bg-accent-gold/40" />
                       </div>
-                      <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                         <div className="space-y-1.5">
                           <label htmlFor={`${idBase}-name`} className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
                             Full name
@@ -372,10 +381,6 @@ export function SeatAssignmentForm({
               </ul>
             </section>
           )}
-        </div>
-
-        {/* SIDEBAR: Summary & Actions */}
-        <aside className="lg:col-span-5 space-y-6 lg:sticky lg:top-32">
           
           <div className="panel-card p-0 overflow-hidden shadow-lg shadow-accent-gold/[0.03]">
             <div className="bg-accent-gold/[0.03] p-8 border-b border-accent-gold/10">
