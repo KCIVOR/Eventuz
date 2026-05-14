@@ -7,6 +7,8 @@ export type SeatPickerRow = {
   display_label: string;
   seat_label: string;
   table_label: string | null;
+  status: string;
+  is_owned_assignment: boolean;
 };
 
 export type ExistingAssignment = {
@@ -194,12 +196,11 @@ export async function loadSeatAssignmentPage(
   const ticketTypeName = (tt?.name as string) || "Ticket";
   const seatLayoutMode = tt?.seat_layout_mode === "tables" ? "tables" : "rowed";
 
-  const { data: availRows } = await supabase
+  const { data: seatRows } = await supabase
     .from("seats")
     .select("id, display_label, seat_label, table_label, status")
     .eq("event_id", eventId)
     .eq("ticket_type_id", ticketTypeId)
-    .eq("status", "available")
     .order("display_label", { ascending: true });
 
   const { data: existing } = await supabase
@@ -210,32 +211,15 @@ export async function loadSeatAssignmentPage(
 
   const assignedIds = [...new Set((existing ?? []).map((r) => r.seat_id as string))];
 
-  let ownedAssignedRows: typeof availRows = [];
-  if (assignedIds.length > 0) {
-    const { data: owned } = await supabase
-      .from("seats")
-      .select("id, display_label, seat_label, table_label, status")
-      .eq("event_id", eventId)
-      .eq("ticket_type_id", ticketTypeId)
-      .in("id", assignedIds);
-    ownedAssignedRows = owned ?? [];
-  }
-
   const byId = new Map<string, SeatPickerRow>();
-  for (const r of availRows ?? []) {
+  for (const r of seatRows ?? []) {
     byId.set(r.id as string, {
       id: r.id as string,
       display_label: (r.display_label as string) ?? "",
       seat_label: (r.seat_label as string) ?? "",
       table_label: (r.table_label as string | null) ?? null,
-    });
-  }
-  for (const r of ownedAssignedRows) {
-    byId.set(r.id as string, {
-      id: r.id as string,
-      display_label: (r.display_label as string) ?? "",
-      seat_label: (r.seat_label as string) ?? "",
-      table_label: (r.table_label as string | null) ?? null,
+      status: (r.status as string) ?? "available",
+      is_owned_assignment: assignedIds.includes(r.id as string),
     });
   }
 

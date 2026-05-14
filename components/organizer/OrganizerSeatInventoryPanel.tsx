@@ -45,23 +45,30 @@ function RowedPreview({ config }: { config: Extract<SeatLayoutConfig, { mode: "r
 }
 
 function TablesPreview({ config }: { config: Extract<SeatLayoutConfig, { mode: "tables" }> }) {
-  const tables = Array.from({ length: config.tableCount }, (_, i) => i + 1);
+  const byTable = new Map<string, ReturnType<typeof generateSeatLayout>>();
+  for (const seat of generateSeatLayout(config)) {
+    const key = seat.tableLabel ?? "Table";
+    const list = byTable.get(key) ?? [];
+    list.push(seat);
+    byTable.set(key, list);
+  }
+  const tables = [...byTable.entries()];
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      {tables.map((tableNo) => (
-        <div key={tableNo} className="rounded-[2px] border border-[#EDE8E3] bg-white p-3">
+      {tables.map(([tableLabel, seats]) => (
+        <div key={tableLabel} className="rounded-[2px] border border-[#EDE8E3] bg-white p-3">
           <div className="mb-3 flex items-center justify-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-full border border-[#C9A96E] bg-[#FDFAF4] text-center text-xs font-medium text-[#1A1512]">
-              Table {tableNo}
+              {tableLabel}
             </div>
           </div>
           <div className="grid grid-cols-4 gap-2">
-            {Array.from({ length: config.seatsPerTable }, (_, idx) => (
+            {seats.map((seat) => (
               <div
-                key={idx}
+                key={seat.index}
                 className="flex aspect-square min-h-8 items-center justify-center rounded-[2px] border border-[#EDE8E3] bg-[#FDFAF4] text-[10px] font-medium text-[#1A1512]"
               >
-                {idx + 1}
+                {seat.displayLabel}
               </div>
             ))}
           </div>

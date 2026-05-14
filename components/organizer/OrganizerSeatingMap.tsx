@@ -90,7 +90,7 @@ function SeatTile({
   if (!taken) {
     return (
       <div className={className} title={label} aria-label={label}>
-        {row.seatLabel || row.displayLabel}
+        {row.displayLabel}
       </div>
     );
   }
@@ -103,7 +103,7 @@ function SeatTile({
       aria-label={`${label}. Open attendee details.`}
       onClick={() => onSelect(row)}
     >
-      {row.seatLabel || row.displayLabel}
+      {row.displayLabel}
     </button>
   );
 }

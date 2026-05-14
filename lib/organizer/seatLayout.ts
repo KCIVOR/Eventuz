@@ -62,9 +62,9 @@ export function generateSeatLayout(config: SeatLayoutConfig): GeneratedSeatLayou
     for (let s = 1; s <= config.seatsPerTable; s++) {
       items.push({
         index: items.length,
-        tableLabel: `Table ${t}`,
+        tableLabel: `T${t}`,
         seatLabel: String(s),
-        displayLabel: `Table ${t} - Seat ${s}`,
+        displayLabel: `T${t}-${s}`,
       });
     }
   }

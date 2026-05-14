@@ -1,6 +1,6 @@
 import React from "react";
 
-type BadgeType = "order" | "payment" | "scan" | "generic";
+type BadgeType = "order" | "payment" | "scan" | "ticket" | "generic";
 
 type Props = {
   status: string;
@@ -50,7 +50,7 @@ export function StatusBadge({ status, type = "generic", className = "" }: Props)
   };
 
   return (
-    <span style={getStyle()} role="status" className={className}>
+    <span style={getStyle()} role="status" className={className} data-badge-type={type}>
       {status.replace(/_/g, " ")}
     </span>
   );

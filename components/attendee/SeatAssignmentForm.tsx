@@ -74,6 +74,12 @@ export function SeatAssignmentForm({
     return m;
   }, [seats]);
 
+  const seatById = useMemo(() => {
+    const m = new Map<string, SeatPickerRow>();
+    seats.forEach((s) => m.set(s.id, s));
+    return m;
+  }, [seats]);
+
   const sortedSelected = useMemo(() => {
     return [...selectedSeatIds].sort((a, b) =>
       (labelById.get(a) ?? "").localeCompare(labelById.get(b) ?? "", undefined, { numeric: true })
@@ -81,6 +87,9 @@ export function SeatAssignmentForm({
   }, [selectedSeatIds, labelById]);
 
   function toggleSeat(seatId: string) {
+    const seat = seatById.get(seatId);
+    if (!seat || (seat.status !== "available" && !seat.is_owned_assignment)) return;
+
     setError(null);
     setSuccess(null);
     setSelectedSeatIds((prev) => {
@@ -120,6 +129,10 @@ export function SeatAssignmentForm({
     }
     const rows: SeatAssignmentRow[] = [];
     for (const seatId of sortedSelected) {
+      const seat = seatById.get(seatId);
+      if (!seat || (seat.status !== "available" && !seat.is_owned_assignment)) {
+        return `Seat ${labelById.get(seatId) ?? seatId} is no longer available.`;
+      }
       const det = detailsBySeat[seatId];
       const name = (det?.name ?? "").trim();
       const email = (det?.email ?? "").trim();
@@ -190,26 +203,30 @@ export function SeatAssignmentForm({
 
   function seatButton(s: SeatPickerRow) {
     const selected = selectedSeatIds.includes(s.id);
+    const occupied = s.status !== "available" && !s.is_owned_assignment;
     const atCapacity = selectedSeatIds.length >= qty && !selected;
     return (
       <button
         key={s.id}
         type="button"
         onClick={() => toggleSeat(s.id)}
-        disabled={pending || atCapacity}
+        disabled={pending || atCapacity || occupied}
         aria-pressed={selected}
+        aria-label={`${s.display_label}${occupied ? " occupied" : selected ? " selected" : ""}`}
         className={[
           "flex aspect-square min-h-10 min-w-10 cursor-pointer items-center justify-center rounded-md border px-2 text-xs font-semibold transition-colors duration-200 motion-reduce:transition-none",
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
-          selected
+          occupied
+            ? "cursor-not-allowed border-border bg-muted/70 text-muted-foreground opacity-55"
+            : selected
             ? "border-primary bg-primary text-primary-foreground"
             : "border-border bg-background text-foreground hover:border-primary/50 hover:bg-muted/40",
           atCapacity ? "cursor-not-allowed opacity-45 hover:border-border hover:bg-background" : "",
           pending ? "opacity-60" : "",
         ].join(" ")}
-        title={s.display_label}
+        title={occupied ? `${s.display_label} is occupied` : s.display_label}
       >
-        {seatLayoutMode === "tables" ? s.seat_label || s.display_label : s.display_label}
+        {s.display_label}
       </button>
     );
   }
