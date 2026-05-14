@@ -4,7 +4,6 @@ import {
   OrganizerSeatingTabs,
   type SeatingTabId,
 } from "@/components/organizer/OrganizerSeatingTabs";
-import { OrganizerTableLayoutView } from "@/components/organizer/OrganizerTableLayoutView";
 import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
 import { SeatingShellSkeleton } from "@/components/ui/ContentSkeleton";
 import { loadOrganizerSeatingOverview } from "@/lib/organizer/loadSeatingOverview";
@@ -19,7 +18,7 @@ type Props = {
 };
 
 function parseTab(raw: string | undefined): SeatingTabId {
-  if (raw === "inventory" || raw === "tables" || raw === "map") return raw;
+  if (raw === "inventory" || raw === "map") return raw;
   return "map";
 }
 
@@ -39,7 +38,7 @@ export default async function OrganizerSeatingPage({ params, searchParams }: Pro
       mainWidth="wide"
       withoutFrame
       title="Seating"
-      description={`${loaded.eventName} · Overview, inventory labels, and table layout.`}
+      description={`${loaded.eventName} - Overview and ticket-group seat layouts.`}
       breadcrumbs={[
         { label: "Home", href: "/organizer" },
         { label: loaded.eventName, href: `/organizer/events/${eventId}` },
@@ -63,7 +62,11 @@ export default async function OrganizerSeatingPage({ params, searchParams }: Pro
             eventId={eventId}
             defaultTab={defaultTab}
             mapContent={
-              <OrganizerSeatingMap rows={loaded.rows} ticketTypes={loaded.ticketTypes} />
+              <OrganizerSeatingMap
+                eventId={eventId}
+                rows={loaded.rows}
+                ticketTypes={loaded.ticketTypes}
+              />
             }
             inventoryContent={
               <OrganizerSeatInventoryPanel
@@ -72,7 +75,6 @@ export default async function OrganizerSeatingPage({ params, searchParams }: Pro
                 seatsByTypeId={loaded.inventorySeatsByTypeId}
               />
             }
-            tablesContent={<OrganizerTableLayoutView rows={loaded.rows} ticketTypes={loaded.ticketTypes} />}
           />
         </Suspense>
       </div>

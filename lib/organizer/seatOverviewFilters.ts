@@ -17,9 +17,29 @@ export function filterSeatOverviewRows(
     if (f.ticketTypeId && r.ticketTypeId !== f.ticketTypeId) return false;
 
     if (f.occupancy === "vacant") {
-      if (r.guestName || r.seatStatus !== "available") return false;
+      if (
+        r.guestName ||
+        r.guestEmail ||
+        r.assignmentStatus ||
+        r.ticketCode ||
+        r.ticketStatus === "issued" ||
+        r.ticketStatus === "checked_in" ||
+        r.seatStatus !== "available"
+      ) {
+        return false;
+      }
     } else if (f.occupancy === "guests") {
-      if (!r.guestName?.trim()) return false;
+      const taken = Boolean(
+        r.guestName?.trim() ||
+          r.guestEmail?.trim() ||
+          r.assignmentStatus?.trim() ||
+          r.ticketCode?.trim() ||
+          r.ticketStatus === "issued" ||
+          r.ticketStatus === "checked_in" ||
+          r.seatStatus === "assigned" ||
+          r.seatStatus === "checked_in"
+      );
+      if (!taken) return false;
     } else if (f.occupancy === "checked_in") {
       const cin = r.seatStatus === "checked_in" || r.ticketStatus === "checked_in";
       if (!cin) return false;

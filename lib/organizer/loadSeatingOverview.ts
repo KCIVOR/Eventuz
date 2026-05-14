@@ -17,7 +17,17 @@ export type SeatOverviewRow = {
   checkedInAt: string | null;
 };
 
-export type TicketTypeOption = { id: string; name: string };
+export type TicketTypeOption = {
+  id: string;
+  name: string;
+  quantity: number;
+  seatLayoutMode: "rowed" | "tables";
+  seatLayoutRows: number | null;
+  seatLayoutColumns: number | null;
+  seatLayoutTableCount: number | null;
+  seatLayoutSeatsPerTable: number | null;
+  seatOverviewOrder: number;
+};
 
 /** Serialized seat row for the inventory editor (labels + status). */
 export type SeatInventoryEditorSeat = {
@@ -37,6 +47,7 @@ export type InventoryTicketType = {
   seatLayoutColumns: number | null;
   seatLayoutTableCount: number | null;
   seatLayoutSeatsPerTable: number | null;
+  seatOverviewOrder: number;
 };
 
 type SeatingOverviewRawSeat = {
@@ -87,17 +98,13 @@ export async function loadOrganizerSeatingOverview(eventId: string): Promise<
   const { data: ticketTypes } = await supabase
     .from("ticket_types")
     .select(
-      "id, name, quantity, seat_layout_mode, seat_layout_rows, seat_layout_columns, seat_layout_table_count, seat_layout_seats_per_table"
+      "id, name, quantity, seat_layout_mode, seat_layout_rows, seat_layout_columns, seat_layout_table_count, seat_layout_seats_per_table, seat_overview_order"
     )
     .eq("event_id", eventId)
+    .order("seat_overview_order", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: true });
 
-  const typeOptions: TicketTypeOption[] = (ticketTypes ?? []).map((t) => ({
-    id: t.id as string,
-    name: (t.name as string) || "Ticket",
-  }));
-
-  const inventoryTicketTypes: InventoryTicketType[] = (ticketTypes ?? []).map((t) => ({
+  const typeOptions: TicketTypeOption[] = (ticketTypes ?? []).map((t, index) => ({
     id: t.id as string,
     name: (t.name as string) || "Ticket",
     quantity: Number(t.quantity ?? 0),
@@ -108,6 +115,21 @@ export async function loadOrganizerSeatingOverview(eventId: string): Promise<
       t.seat_layout_table_count == null ? null : Number(t.seat_layout_table_count),
     seatLayoutSeatsPerTable:
       t.seat_layout_seats_per_table == null ? null : Number(t.seat_layout_seats_per_table),
+    seatOverviewOrder: Number(t.seat_overview_order ?? index + 1),
+  }));
+
+  const inventoryTicketTypes: InventoryTicketType[] = (ticketTypes ?? []).map((t, index) => ({
+    id: t.id as string,
+    name: (t.name as string) || "Ticket",
+    quantity: Number(t.quantity ?? 0),
+    seatLayoutMode: t.seat_layout_mode === "tables" ? "tables" : "rowed",
+    seatLayoutRows: t.seat_layout_rows == null ? null : Number(t.seat_layout_rows),
+    seatLayoutColumns: t.seat_layout_columns == null ? null : Number(t.seat_layout_columns),
+    seatLayoutTableCount:
+      t.seat_layout_table_count == null ? null : Number(t.seat_layout_table_count),
+    seatLayoutSeatsPerTable:
+      t.seat_layout_seats_per_table == null ? null : Number(t.seat_layout_seats_per_table),
+    seatOverviewOrder: Number(t.seat_overview_order ?? index + 1),
   }));
 
   let allSeats: SeatingOverviewRawSeat[] = [];

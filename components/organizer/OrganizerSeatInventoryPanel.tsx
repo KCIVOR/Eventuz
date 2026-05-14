@@ -1,8 +1,6 @@
 "use client";
 
-import { saveSeatLayout, updateSeat } from "@/app/organizer/events/actions";
-import { ScrollableTableWrapper } from "@/components/ui/ScrollableTableWrapper";
-import { ClientPaginationBar } from "@/components/ui/ClientPaginationBar";
+import { saveSeatLayout } from "@/app/organizer/events/actions";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type {
   InventoryTicketType,
@@ -14,20 +12,12 @@ import {
   type SeatLayoutConfig,
   type SeatLayoutMode,
 } from "@/lib/organizer/seatLayout";
-import { SEAT_OVERVIEW_PAGE_SIZE, slicePage } from "@/lib/ui/pagination";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 
 type Props = {
   eventId: string;
   ticketTypes: InventoryTicketType[];
   seatsByTypeId: Record<string, SeatInventoryEditorSeat[]>;
-};
-
-const seatStatusBadge: Record<string, string> = {
-  available: "bg-success-muted text-success",
-  assigned: "bg-muted text-foreground",
-  checked_in: "bg-primary/10 text-primary",
-  disabled: "bg-muted text-muted-foreground",
 };
 
 function positiveOrFallback(value: number | null, fallback: number): number {
@@ -44,7 +34,7 @@ function RowedPreview({ config }: { config: Extract<SeatLayoutConfig, { mode: "r
       {seats.map((s) => (
         <div
           key={s.index}
-          className="flex aspect-square min-h-9 items-center justify-center rounded-md border border-border bg-background px-1 text-[10px] font-semibold text-foreground"
+          className="flex aspect-square min-h-9 items-center justify-center rounded-[2px] border border-[#EDE8E3] bg-white px-1 text-[10px] font-medium text-[#1A1512]"
           title={s.displayLabel}
         >
           {s.displayLabel}
@@ -59,9 +49,9 @@ function TablesPreview({ config }: { config: Extract<SeatLayoutConfig, { mode: "
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       {tables.map((tableNo) => (
-        <div key={tableNo} className="rounded-xl border border-border bg-background p-3">
+        <div key={tableNo} className="rounded-[2px] border border-[#EDE8E3] bg-white p-3">
           <div className="mb-3 flex items-center justify-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-accent-gold/45 bg-card text-center text-xs font-semibold text-foreground">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-[#C9A96E] bg-[#FDFAF4] text-center text-xs font-medium text-[#1A1512]">
               Table {tableNo}
             </div>
           </div>
@@ -69,7 +59,7 @@ function TablesPreview({ config }: { config: Extract<SeatLayoutConfig, { mode: "
             {Array.from({ length: config.seatsPerTable }, (_, idx) => (
               <div
                 key={idx}
-                className="flex aspect-square min-h-8 items-center justify-center rounded-md border border-border bg-card text-[10px] font-semibold text-foreground"
+                className="flex aspect-square min-h-8 items-center justify-center rounded-[2px] border border-[#EDE8E3] bg-[#FDFAF4] text-[10px] font-medium text-[#1A1512]"
               >
                 {idx + 1}
               </div>
@@ -114,9 +104,9 @@ function LayoutDesigner({
     <form action={saveSeatLayout} className="grid gap-5 lg:grid-cols-[18rem_1fr]">
       <input type="hidden" name="event_id" value={eventId} />
       <input type="hidden" name="ticket_type_id" value={ticketType.id} />
-      <aside className="space-y-4 rounded-xl border border-border bg-muted/15 p-4">
+      <aside className="space-y-4 rounded-[2px] border border-[#EDE8E3] bg-[#F7F4EF] p-4">
         <div className="space-y-1">
-          <label htmlFor={`${ticketType.id}-layout-mode`} className="label-eventuz">
+          <label htmlFor={`${ticketType.id}-layout-mode`} className="text-[11px] font-medium uppercase tracking-[0.15em] text-[#7A6E68]">
             Layout type
           </label>
           <select
@@ -124,7 +114,7 @@ function LayoutDesigner({
             name="layout_mode"
             value={mode}
             onChange={(e) => setMode(e.target.value as SeatLayoutMode)}
-            className="input-eventuz"
+            className="w-full rounded-[1px] border border-[#EDE8E3] bg-white px-4 py-3 text-sm font-light text-[#1A1512] outline-none transition-colors focus:border-[#C9A96E]"
             suppressHydrationWarning
           >
             <option value="rowed">Rowed seats</option>
@@ -135,7 +125,7 @@ function LayoutDesigner({
         {mode === "rowed" ? (
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label htmlFor={`${ticketType.id}-rows`} className="label-eventuz">
+              <label htmlFor={`${ticketType.id}-rows`} className="text-[11px] font-medium uppercase tracking-[0.15em] text-[#7A6E68]">
                 Rows
               </label>
               <input
@@ -145,12 +135,12 @@ function LayoutDesigner({
                 min={1}
                 value={rows}
                 onChange={(e) => setRows(Number(e.target.value))}
-                className="input-eventuz"
+                className="w-full rounded-[1px] border border-[#EDE8E3] bg-white px-4 py-3 text-sm font-light text-[#1A1512] outline-none transition-colors focus:border-[#C9A96E]"
                 suppressHydrationWarning
               />
             </div>
             <div className="space-y-1">
-              <label htmlFor={`${ticketType.id}-columns`} className="label-eventuz">
+              <label htmlFor={`${ticketType.id}-columns`} className="text-[11px] font-medium uppercase tracking-[0.15em] text-[#7A6E68]">
                 Columns
               </label>
               <input
@@ -160,7 +150,7 @@ function LayoutDesigner({
                 min={1}
                 value={columns}
                 onChange={(e) => setColumns(Number(e.target.value))}
-                className="input-eventuz"
+                className="w-full rounded-[1px] border border-[#EDE8E3] bg-white px-4 py-3 text-sm font-light text-[#1A1512] outline-none transition-colors focus:border-[#C9A96E]"
                 suppressHydrationWarning
               />
             </div>
@@ -168,7 +158,7 @@ function LayoutDesigner({
         ) : (
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label htmlFor={`${ticketType.id}-tables`} className="label-eventuz">
+              <label htmlFor={`${ticketType.id}-tables`} className="text-[11px] font-medium uppercase tracking-[0.15em] text-[#7A6E68]">
                 Tables
               </label>
               <input
@@ -178,12 +168,12 @@ function LayoutDesigner({
                 min={1}
                 value={tableCount}
                 onChange={(e) => setTableCount(Number(e.target.value))}
-                className="input-eventuz"
+                className="w-full rounded-[1px] border border-[#EDE8E3] bg-white px-4 py-3 text-sm font-light text-[#1A1512] outline-none transition-colors focus:border-[#C9A96E]"
                 suppressHydrationWarning
               />
             </div>
             <div className="space-y-1">
-              <label htmlFor={`${ticketType.id}-seats-per-table`} className="label-eventuz">
+              <label htmlFor={`${ticketType.id}-seats-per-table`} className="text-[11px] font-medium uppercase tracking-[0.15em] text-[#7A6E68]">
                 Seats/table
               </label>
               <input
@@ -193,7 +183,7 @@ function LayoutDesigner({
                 min={1}
                 value={seatsPerTable}
                 onChange={(e) => setSeatsPerTable(Number(e.target.value))}
-                className="input-eventuz"
+                className="w-full rounded-[1px] border border-[#EDE8E3] bg-white px-4 py-3 text-sm font-light text-[#1A1512] outline-none transition-colors focus:border-[#C9A96E]"
                 suppressHydrationWarning
               />
             </div>
@@ -201,10 +191,10 @@ function LayoutDesigner({
         )}
 
         <div
-          className={`rounded-lg border px-3 py-2 text-xs ${
+          className={`rounded-[2px] border px-3 py-2 text-xs font-light ${
             countMatches
-              ? "border-success/30 bg-success-muted text-success"
-              : "border-warning/35 bg-warning/10 text-warning"
+              ? "border-[#2A6645]/30 bg-[#DFF0E6] text-[#2A6645]"
+              : "border-[#C9A030]/35 bg-[#F9F0DE] text-[#5A3D10]"
           }`}
         >
           Layout seats: <strong>{layoutCount}</strong> / required{" "}
@@ -214,17 +204,19 @@ function LayoutDesigner({
         <button
           type="submit"
           disabled={!countMatches}
-          className="btn-eventuz-primary w-full disabled:cursor-not-allowed disabled:opacity-45"
+          className="inline-flex w-full items-center justify-center rounded-[1px] bg-[#1A1512] px-5 py-3 text-xs font-medium uppercase tracking-[0.2em] text-[#FDFAF4] transition-colors hover:bg-[#C9A96E] hover:text-[#1A1512] disabled:cursor-not-allowed disabled:opacity-45"
         >
           Save layout
         </button>
       </aside>
 
-      <section className="min-w-0 rounded-xl border border-border bg-card p-4">
+      <section className="min-w-0 rounded-[2px] border border-[#EDE8E3] bg-white p-4">
         <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="font-serif text-lg font-semibold text-foreground">Preview</h3>
-          <p className="text-xs text-muted-foreground">
-            {mode === "rowed" ? "Squares represent seats." : "Circles represent tables; squares are seats."}
+          <h3 className="font-serif text-2xl font-light text-[#1A1512]">Preview</h3>
+          <p className="text-xs font-light text-[#7A6E68]">
+            {mode === "rowed"
+              ? "Squares represent seats."
+              : "Circles represent tables; squares are seats."}
           </p>
         </div>
         <div className="max-h-[28rem] overflow-auto pr-1">
@@ -239,63 +231,56 @@ function LayoutDesigner({
   );
 }
 
-export function OrganizerSeatInventoryPanel({
-  eventId,
-  ticketTypes,
-  seatsByTypeId,
-}: Props) {
-  const [pageByTicketType, setPageByTicketType] = useState<Record<string, number>>({});
-
-  const pageFor = useCallback(
-    (ticketTypeId: string) => pageByTicketType[ticketTypeId] ?? 1,
-    [pageByTicketType]
-  );
-
-  const setPageFor = useCallback((ticketTypeId: string, page: number) => {
-    setPageByTicketType((prev) => ({ ...prev, [ticketTypeId]: page }));
-  }, []);
-
+export function OrganizerSeatInventoryPanel({ eventId, ticketTypes, seatsByTypeId }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="section-title">Seat inventory</h2>
-        <p className="mt-1 max-w-prose text-sm leading-relaxed text-muted-foreground">
-          Seats are created from each ticket type&apos;s quantity. Edit labels for table-style
-          seating (e.g. display <span className="tabular-nums">Table 1 — Seat 2</span>) or keep
-          generic codes (e.g. <span className="tabular-nums">VIP-001</span>).
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.35em] text-[#C9A96E]">
+          Layout studio
+        </p>
+        <h2 className="font-serif text-4xl font-light leading-tight text-[#1A1512]">
+          Seat inventory
+        </h2>
+        <p className="mt-2 max-w-prose text-sm font-light leading-relaxed text-[#7A6E68]">
+          Build the visual layout for each ticket type. The layout must equal the ticket quantity
+          before it can be saved.
         </p>
       </div>
 
-      <div className="callout-eventuz">
-        <strong className="font-semibold text-foreground">Sync</strong>
-        <p className="mt-1 text-muted-foreground">
+      <div className="rounded-[2px] border-l-[3px] border-[#4A82CC] bg-[#EEF4FD] px-5 py-4 text-sm font-light leading-relaxed text-[#1A3660]">
+        <strong className="font-medium text-[#1A3660]">Sync</strong>
+        <p className="mt-1">
           Seat count stays aligned when you save a ticket type under{" "}
           <strong className="text-foreground">Event setup</strong>. If counts look wrong, open that
-          ticket type and click <strong>Save ticket type</strong> again (quantity can stay the same)
-          to fill missing rows or trim available seats.
+          ticket type and click <strong>Save ticket type</strong> again.
         </p>
       </div>
 
       {ticketTypes.length === 0 ? (
         <EmptyState
           title="No ticket types yet"
-          description="Add an active ticket type under Event setup. Seat rows are generated from each type’s quantity so you can label tables and seats here."
+          description="Add an active ticket type under Event setup. Seat rows are generated from each type's quantity."
         />
       ) : (
         <div className="space-y-8">
           {ticketTypes.map((tt) => {
             const list = seatsByTypeId[tt.id] ?? [];
             const mismatch = list.length !== tt.quantity;
-            const paginated = slicePage(list, pageFor(tt.id), SEAT_OVERVIEW_PAGE_SIZE);
 
             return (
-              <div className="panel-card p-4 sm:p-6" key={tt.id}>
-                <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2 border-b border-border pb-2">
-                  <p className="font-semibold text-foreground">{tt.name}</p>
-                  <p className="text-xs tabular-nums text-muted-foreground">
-                    {list.length} seat{list.length === 1 ? "" : "s"} · quantity {String(tt.quantity)}
+              <div className="rounded-[2px] border border-[#EDE8E3] bg-white p-4 sm:p-6" key={tt.id}>
+                <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2 border-b border-[#EDE8E3] pb-3">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#C9A96E]">
+                      Ticket group
+                    </p>
+                    <p className="font-serif text-2xl font-light text-[#1A1512]">{tt.name}</p>
+                  </div>
+                  <p className="text-xs font-light tabular-nums text-[#7A6E68]">
+                    {list.length} seat{list.length === 1 ? "" : "s"} / quantity{" "}
+                    {String(tt.quantity)}
                     {mismatch ? (
-                      <span className="ml-2 font-semibold text-warning">— out of sync</span>
+                      <span className="ml-2 font-medium text-[#5A3D10]">- out of sync</span>
                     ) : null}
                   </p>
                 </div>
@@ -311,82 +296,6 @@ export function OrganizerSeatInventoryPanel({
                   eventId={eventId}
                   ticketType={tt}
                 />
-                <div className="my-5 border-t border-border" />
-                {list.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    No seats yet. Save this ticket type (or change quantity and save) on Event setup
-                    to generate them.
-                  </p>
-                ) : (
-                  <>
-                    <ScrollableTableWrapper>
-                      <div className="min-w-[720px]">
-                        <div className="grid grid-cols-[minmax(8rem,1fr)_5.5rem_5.5rem_6.5rem_auto] items-center gap-2 border-b border-border bg-muted/40 px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                          <div>Display</div>
-                          <div>Table</div>
-                          <div>Seat</div>
-                          <div>Status</div>
-                          <div className="text-right" />
-                        </div>
-                        {paginated.slice.map((seat) => (
-                          <form
-                            key={seat.id}
-                            action={updateSeat}
-                            className="grid grid-cols-[minmax(8rem,1fr)_5.5rem_5.5rem_6.5rem_auto] items-center gap-2 border-b border-border/80 px-3 py-2 transition-colors duration-150 hover:bg-muted/25"
-                          >
-                            <input type="hidden" name="seat_id" value={seat.id} />
-                            <input type="hidden" name="event_id" value={eventId} />
-                            <input
-                              name="display_label"
-                              defaultValue={seat.display_label}
-                              className="input-eventuz py-2 text-xs"
-                              required
-                              aria-label="Display label"
-                              suppressHydrationWarning
-                            />
-                            <input
-                              name="table_label"
-                              defaultValue={seat.table_label ?? ""}
-                              placeholder="—"
-                              className="input-eventuz py-2 text-xs"
-                              aria-label="Table label"
-                              suppressHydrationWarning
-                            />
-                            <input
-                              name="seat_label"
-                              defaultValue={seat.seat_label}
-                              className="input-eventuz py-2 text-xs"
-                              aria-label="Seat label"
-                              suppressHydrationWarning
-                            />
-                            <span
-                              className={`inline-flex justify-self-start rounded-full px-2 py-0.5 text-[10px] font-semibold ${seatStatusBadge[seat.status] ?? seatStatusBadge.available}`}
-                            >
-                              {seat.status}
-                            </span>
-                            <button
-                              type="submit"
-                              suppressHydrationWarning
-                              className="btn-eventuz-secondary justify-self-end py-2 text-xs"
-                            >
-                              Save row
-                            </button>
-                          </form>
-                        ))}
-                      </div>
-                    </ScrollableTableWrapper>
-                    <ClientPaginationBar
-                      page={paginated.page}
-                      pageCount={paginated.pageCount}
-                      total={paginated.total}
-                      rangeStart={paginated.rangeStart}
-                      rangeEnd={paginated.rangeEnd}
-                      onPageChange={(p) => setPageFor(tt.id, p)}
-                      itemLabel="seat"
-                      listLabel={`${tt.name} — inventory`}
-                    />
-                  </>
-                )}
               </div>
             );
           })}

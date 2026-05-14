@@ -272,11 +272,23 @@ export async function createTicketType(eventId: string, formData: FormData) {
   const parsed = validateTicketTypeForm(formData);
   if (!parsed.ok) redirectEventError(eventId, parsed.message);
 
+  const { data: orderRows, error: orderErr } = await supabase
+    .from("ticket_types")
+    .select("seat_overview_order")
+    .eq("event_id", eventId)
+    .order("seat_overview_order", { ascending: false, nullsFirst: false })
+    .limit(1);
+
+  if (orderErr) redirectEventError(eventId, orderErr.message);
+
+  const nextOverviewOrder = Number(orderRows?.[0]?.seat_overview_order ?? 0) + 1;
+
   const { data: tt, error } = await supabase
     .from("ticket_types")
     .insert({
       event_id: eventId,
       ...parsed.data,
+      seat_overview_order: nextOverviewOrder,
     })
     .select("id, name")
     .single();
@@ -586,4 +598,131 @@ export async function saveSeatLayout(formData: FormData) {
   revalidatePath(`/organizer/events/${eventId}/seating`);
   revalidatePath("/attendee/event/seats");
   redirect(`/organizer/events/${eventId}/seating?tab=inventory&ok=1`);
+}
+
+type SeatOverviewOrderRow = {
+  id: string;
+  seat_overview_order: number | null;
+  created_at: string | null;
+};
+
+function sortTicketTypeOrder(rows: SeatOverviewOrderRow[]): SeatOverviewOrderRow[] {
+  return [...rows].sort((a, b) => {
+    const ao = a.seat_overview_order ?? Number.MAX_SAFE_INTEGER;
+    const bo = b.seat_overview_order ?? Number.MAX_SAFE_INTEGER;
+    if (ao !== bo) return ao - bo;
+    const ac = a.created_at ?? "";
+    const bc = b.created_at ?? "";
+    const byCreated = ac.localeCompare(bc);
+    if (byCreated !== 0) return byCreated;
+    return a.id.localeCompare(b.id);
+  });
+}
+
+async function normalizeSeatOverviewOrder(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  ordered: SeatOverviewOrderRow[]
+) {
+  for (let i = 0; i < ordered.length; i++) {
+    const nextOrder = i + 1;
+    if (ordered[i].seat_overview_order === nextOrder) continue;
+    const { error } = await supabase
+      .from("ticket_types")
+      .update({ seat_overview_order: nextOrder })
+      .eq("id", ordered[i].id);
+    if (error) return { ok: false as const, message: error.message };
+    ordered[i].seat_overview_order = nextOrder;
+  }
+  return { ok: true as const };
+}
+
+export async function moveSeatOverviewTicketGroup(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login?next=/organizer");
+
+  const eventId = String(formData.get("event_id") ?? "");
+  const ticketTypeId = String(formData.get("ticket_type_id") ?? "");
+  const direction = String(formData.get("direction") ?? "");
+  if (!eventId || !ticketTypeId || (direction !== "up" && direction !== "down")) {
+    redirect(`/organizer/events/${eventId || ""}/seating?tab=map&error=Missing reorder details.`);
+  }
+
+  const { data: eventRow, error: eventErr } = await supabase
+    .from("events")
+    .select("id, organizer_id")
+    .eq("id", eventId)
+    .maybeSingle();
+
+  if (eventErr || !eventRow || eventRow.organizer_id !== user.id) notFound();
+
+  const { data: ticketRows, error: ticketErr } = await supabase
+    .from("ticket_types")
+    .select("id, seat_overview_order, created_at")
+    .eq("event_id", eventId);
+
+  if (ticketErr || !ticketRows) {
+    redirect(
+      `/organizer/events/${eventId}/seating?tab=map&error=${encodeURIComponent(
+        ticketErr?.message ?? "Could not load ticket groups."
+      )}`
+    );
+  }
+
+  const ordered = sortTicketTypeOrder(ticketRows as SeatOverviewOrderRow[]);
+  const normalized = await normalizeSeatOverviewOrder(supabase, ordered);
+  if (!normalized.ok) {
+    redirect(
+      `/organizer/events/${eventId}/seating?tab=map&error=${encodeURIComponent(normalized.message)}`
+    );
+  }
+
+  const currentIndex = ordered.findIndex((row) => row.id === ticketTypeId);
+  const adjacentIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+  const current = ordered[currentIndex];
+  const adjacent = ordered[adjacentIndex];
+
+  if (!current || !adjacent) {
+    redirect(`/organizer/events/${eventId}/seating?tab=map`);
+  }
+
+  const currentOrder = current.seat_overview_order ?? currentIndex + 1;
+  const adjacentOrder = adjacent.seat_overview_order ?? adjacentIndex + 1;
+
+  const { error: firstErr } = await supabase
+    .from("ticket_types")
+    .update({ seat_overview_order: adjacentOrder })
+    .eq("id", current.id);
+
+  if (firstErr) {
+    redirect(
+      `/organizer/events/${eventId}/seating?tab=map&error=${encodeURIComponent(firstErr.message)}`
+    );
+  }
+
+  const { error: secondErr } = await supabase
+    .from("ticket_types")
+    .update({ seat_overview_order: currentOrder })
+    .eq("id", adjacent.id);
+
+  if (secondErr) {
+    redirect(
+      `/organizer/events/${eventId}/seating?tab=map&error=${encodeURIComponent(secondErr.message)}`
+    );
+  }
+
+  await writeAuditLogSafe(supabase, {
+    action: "seat.ticket_group_order_changed",
+    entityType: "event",
+    entityId: eventId,
+    metadata: {
+      ticket_type_id: ticketTypeId,
+      direction,
+    },
+  });
+
+  revalidatePath(`/organizer/events/${eventId}/seating`);
+  redirect(`/organizer/events/${eventId}/seating?tab=map&ok=1`);
 }
