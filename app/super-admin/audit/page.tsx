@@ -3,15 +3,23 @@ import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
 import { SuperAdminAuditLog } from "@/components/super-admin/SuperAdminAuditLog";
 import { DEFAULT_LIST_PAGE_SIZE, parsePageParam, slicePage } from "@/lib/ui/pagination";
 import type { SerializableSearchParams } from "@/lib/ui/paginationUrl";
+import {
+  filterAndSortAuditLogs,
+  getAuditLogFilterOptions,
+  parseAuditLogFilters,
+} from "@/lib/super-admin/auditLogFilters";
 
 type Props = { searchParams: Promise<SerializableSearchParams> };
 
 export default async function SuperAdminAuditPage({ searchParams }: Props) {
   const q = await searchParams;
   const auditRows = await loadRecentAuditLogs();
+  const filters = parseAuditLogFilters(q);
+  const filterOptions = getAuditLogFilterOptions(auditRows);
+  const filteredAuditRows = filterAndSortAuditLogs(auditRows, filters);
   
   const pgAu = parsePageParam(q.lp_au);
-  const auditPage = slicePage(auditRows, pgAu, DEFAULT_LIST_PAGE_SIZE);
+  const auditPage = slicePage(filteredAuditRows, pgAu, DEFAULT_LIST_PAGE_SIZE);
 
   return (
     <RoleAreaShell
@@ -28,10 +36,13 @@ export default async function SuperAdminAuditPage({ searchParams }: Props) {
           <p className="text-xs text-muted-foreground">Recent activity</p>
         </div>
         <SuperAdminAuditLog 
-          auditRows={auditRows} 
+          auditRows={filteredAuditRows} 
           pageData={auditPage} 
           pathname="/super-admin/audit" 
           searchParams={q} 
+          filterState={filters}
+          filterOptions={filterOptions}
+          showControls
         />
       </section>
     </RoleAreaShell>
