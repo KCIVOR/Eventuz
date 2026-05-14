@@ -45,19 +45,14 @@ export async function RoleAreaShell({
 
   // If organizer/staff and no eventId, try to find the "active" one to populate sidebar
   if ((role === "organizer" || role === "staff") && !navContext.eventId) {
+    const { getActiveEventId } = await import("@/lib/auth/getDashboardUser");
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: event } = await supabase
-          .from("events")
-          .select("id")
-          .eq("organizer_id", user.id)
-          .order("updated_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-      if (event) {
-        navContext = { ...navContext, eventId: event.id };
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    
+    if (authUser) {
+      const activeId = await getActiveEventId(role, authUser.id);
+      if (activeId) {
+        navContext = { ...navContext, eventId: activeId };
       }
     }
   }
@@ -67,6 +62,10 @@ export async function RoleAreaShell({
   const maxW = mainWidth === "wide" ? "max-w-7xl" : "max-w-5xl";
 
   const topBarTitle = showPageHeader ? compactTitle : (compactTitle ?? title);
+
+  // Fetch user profile for the top bar dropdown
+  const { getDashboardUser } = await import("@/lib/auth/getDashboardUser");
+  const user = await getDashboardUser();
 
   const inner = (
     <>
@@ -109,6 +108,7 @@ export async function RoleAreaShell({
       homeHref={homeHref}
       navSections={sections}
       compactTitle={topBarTitle}
+      user={user!}
     >
       {content}
     </DashboardFrame>

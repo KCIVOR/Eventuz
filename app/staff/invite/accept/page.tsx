@@ -1,4 +1,4 @@
-import { acceptStaffInviteFormAction } from "@/app/staff/invite/accept/actions";
+import { acceptStaffInviteFormAction, setupStaffAccountAndAcceptAction } from "@/app/staff/invite/accept/actions";
 import { PublicShell } from "@/components/layout/PublicShell";
 import { loadStaffInviteByRawToken } from "@/lib/staff/loadStaffInvite";
 import { createClient } from "@/lib/supabase/server";
@@ -104,27 +104,72 @@ export default async function StaffInviteAcceptPage({ searchParams }: Props) {
             </button>
           </form>
         ) : (
-          <div className="space-y-5">
+          <form action={setupStaffAccountAndAcceptAction} className="flex flex-col gap-4">
+            <input type="hidden" name="token" value={token} />
             <div className="rounded-xl border border-border bg-card px-4 py-4 text-sm text-muted-foreground">
               <p>
-                This invitation was sent to <span className="font-medium text-foreground">{invite.maskedEmail}</span>.
+                Complete your account setup for <span className="font-medium text-foreground">{invite.maskedEmail}</span>.
               </p>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+            
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Full Name
+              </label>
+              <input
+                name="full_name"
+                type="text"
+                required
+                placeholder="John Doe"
+                className="rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground shadow-none transition-colors placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Create Password
+              </label>
+              <input
+                name="password"
+                type="password"
+                required
+                minLength={6}
+                placeholder="••••••••"
+                className="rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground shadow-none transition-colors placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Confirm Password
+              </label>
+              <input
+                name="confirm_password"
+                type="password"
+                required
+                minLength={6}
+                placeholder="••••••••"
+                className="rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground shadow-none transition-colors placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="mt-2 rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
+            >
+              Set password & Accept invitation
+            </button>
+
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              Already have an account?{" "}
               <Link
                 href={`/login?next=${encodeURIComponent(nextPath)}`}
-                className="rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
+                className="font-semibold text-primary underline-offset-4 hover:underline"
               >
-                Sign in to accept
+                Sign in instead
               </Link>
-              <Link
-                href={`/register?next=${encodeURIComponent(nextPath)}`}
-                className="rounded-xl border border-border bg-card px-4 py-2.5 text-center text-sm font-semibold text-foreground transition-colors hover:bg-muted/50"
-              >
-                Create account
-              </Link>
-            </div>
-          </div>
+            </p>
+          </form>
         )}
       </InviteCard>
     </PublicShell>

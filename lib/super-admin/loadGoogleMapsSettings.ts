@@ -62,7 +62,12 @@ export async function loadActiveGoogleMapsApiKey(): Promise<string> {
 
     return decryptSecret(row.encrypted_api_key as string).trim();
   } catch (e) {
-    console.error("[eventuz:google-maps]", e instanceof Error ? e.message : e);
+    console.warn(
+      "[eventuz:google-maps] Failed to decrypt Google Maps API key from database. " +
+      "This usually happens if SMTP_SETTINGS_ENCRYPTION_KEY has changed. " +
+      "Falling back to NEXT_PUBLIC_GOOGLE_MAPS_API_KEY.",
+      e instanceof Error ? e.message : e
+    );
     return envFallback;
   }
 }

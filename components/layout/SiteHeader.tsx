@@ -1,13 +1,28 @@
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { UserDropdown } from "./UserDropdown";
 
-const primaryNav = [
+const publicNav = [
   { href: "/", label: "Home" },
   { href: "/login", label: "Log in" },
   { href: "/register", label: "Register" },
 ];
 
 // Public site header — DS .nav style (dark obsidian)
-export function SiteHeader() {
+export async function SiteHeader() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  let profile = null;
+  if (user) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("full_name, avatar_url")
+      .eq("id", user.id)
+      .single();
+    profile = data;
+  }
+
   return (
     <header
       className="no-print"
@@ -38,26 +53,49 @@ export function SiteHeader() {
 
         {/* DS .nav-links — Jost 500, uppercase, spaced */}
         <nav aria-label="Public" className="flex flex-wrap items-center justify-end gap-x-1 sm:gap-x-2">
-          {primaryNav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="hover-gold-text"
-              style={{
-                fontFamily: "'Jost', sans-serif",
-                fontSize: "11px",
-                fontWeight: 500,
-                letterSpacing: "0.2em",
-                textTransform: "uppercase",
-                color: "#AEA89F",
-                textDecoration: "none",
-                padding: "6px 12px",
-                transition: "color 0.2s",
-              }}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {!user ? (
+            publicNav.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="hover-gold-text"
+                style={{
+                  fontFamily: "'Jost', sans-serif",
+                  fontSize: "11px",
+                  fontWeight: 500,
+                  letterSpacing: "0.2em",
+                  textTransform: "uppercase",
+                  color: "#AEA89F",
+                  textDecoration: "none",
+                  padding: "6px 12px",
+                  transition: "color 0.2s",
+                }}
+              >
+                {item.label}
+              </Link>
+            ))
+          ) : (
+            <div className="flex items-center gap-4">
+              <Link
+                href="/"
+                className="hover-gold-text hidden sm:block"
+                style={{
+                  fontFamily: "'Jost', sans-serif",
+                  fontSize: "11px",
+                  fontWeight: 500,
+                  letterSpacing: "0.2em",
+                  textTransform: "uppercase",
+                  color: "#AEA89F",
+                  textDecoration: "none",
+                  padding: "6px 12px",
+                  transition: "color 0.2s",
+                }}
+              >
+                Home
+              </Link>
+              <UserDropdown user={profile || { full_name: user.email || "User" }} />
+            </div>
+          )}
         </nav>
       </div>
     </header>

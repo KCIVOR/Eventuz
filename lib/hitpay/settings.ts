@@ -34,6 +34,9 @@ export async function loadHitPaySettings(organizerId: string): Promise<HitPayDec
   }
 
   try {
+    if (!data.encrypted_api_key || !data.encrypted_salt) {
+      throw new Error("Missing encrypted HitPay secrets in database.");
+    }
     const apiKey = decryptSecret(data.encrypted_api_key);
     const salt = decryptSecret(data.encrypted_salt);
     
@@ -45,7 +48,7 @@ export async function loadHitPaySettings(organizerId: string): Promise<HitPayDec
       allowSimulation: data.allow_simulation,
     };
   } catch (e) {
-    console.error(`[HitPay Config] Failed to decrypt HitPay secrets for organizer ${organizerId}.`, e);
+    console.warn(`[HitPay Config] Failed to decrypt HitPay secrets for organizer ${organizerId}. This usually means SMTP_SETTINGS_ENCRYPTION_KEY has changed.`, e instanceof Error ? e.message : e);
     return null;
   }
 }
@@ -73,6 +76,9 @@ export async function loadHitPaySettingsFull(organizerId?: string): Promise<(Hit
   if (error || !data) return null;
 
   try {
+    if (!data.encrypted_api_key || !data.encrypted_salt) {
+      throw new Error("Missing encrypted HitPay secrets in database.");
+    }
     return {
       id: data.id,
       apiKey: decryptSecret(data.encrypted_api_key),
@@ -86,7 +92,7 @@ export async function loadHitPaySettingsFull(organizerId?: string): Promise<(Hit
       updatedAt: data.updated_at
     };
   } catch (e) {
-    console.error("Failed to decrypt HitPay settings:", e);
+    console.warn("[HitPay Config] Failed to decrypt HitPay settings:", e instanceof Error ? e.message : e);
     return null;
   }
 }

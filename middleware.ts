@@ -16,8 +16,9 @@ export async function middleware(request: NextRequest) {
   const { response, supabase } = await updateSession(request);
   const pathname = request.nextUrl.pathname;
   const requiredRole = getRequiredRoleForPathname(pathname);
+  const isProfilePage = pathname.startsWith("/profile");
 
-  if (!requiredRole) {
+  if (!requiredRole && !isProfilePage) {
     return response;
   }
 
@@ -89,7 +90,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(out);
   }
 
-  if (!roleMatchesProfile(profile.role as EventuzRole, requiredRole)) {
+  if (requiredRole && !roleMatchesProfile(profile.role as EventuzRole, requiredRole)) {
     authDebug("middleware.role_mismatch", {
       pathname,
       profileRole: profile.role,
@@ -112,5 +113,7 @@ export const config = {
     "/staff/:path*",
     "/super-admin",
     "/super-admin/:path*",
+    "/profile",
+    "/profile/:path*",
   ],
 };

@@ -7,8 +7,8 @@ const VERSION = "v1";
  * This avoids needing a second env var and keeps management simple.
  */
 function encryptionKey(): Buffer {
-  const raw = process.env.SMTP_SETTINGS_ENCRYPTION_KEY;
-  if (!raw || raw.length < 32) {
+  const raw = (process.env.SMTP_SETTINGS_ENCRYPTION_KEY || "").trim();
+  if (raw.length < 32) {
     throw new Error(
       "SMTP_SETTINGS_ENCRYPTION_KEY is missing or too short (use at least 32 characters in production)."
     );

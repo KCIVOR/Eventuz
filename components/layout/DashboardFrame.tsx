@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { SidebarNav } from "./SidebarNav";
 import { SiteFooter } from "./SiteFooter";
+import { UserDropdown } from "./UserDropdown";
 
 const roleShort: Record<EventuzRole, string> = {
   attendee: "Guest",
@@ -19,6 +20,10 @@ type Props = {
   homeHref: string;
   navSections: NavSection[];
   compactTitle?: string;
+  user: {
+    full_name: string;
+    avatar_url?: string | null;
+  };
   children: React.ReactNode;
 };
 
@@ -27,6 +32,7 @@ export function DashboardFrame({
   homeHref,
   navSections,
   compactTitle,
+  user,
   children,
 }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -131,26 +137,7 @@ export function DashboardFrame({
               </span>
               <span style={{ width: 1, height: 16, background: "rgba(201,169,110,0.2)" }} aria-hidden />
             </div>
-            <Link
-              href="/auth/sign-out"
-              prefetch={false}
-              className="hover-gold-text"
-              style={{
-                fontFamily: "'Jost', sans-serif",
-                fontSize: "11px",
-                fontWeight: 500,
-                letterSpacing: "0.2em",
-                textTransform: "uppercase",
-                color: "#AEA89F",
-                textDecoration: "none",
-                transition: "color 0.2s",
-                padding: "6px 12px",
-                border: "1px solid rgba(201,169,110,0.2)",
-                borderRadius: "1px",
-              }}
-            >
-              Sign out
-            </Link>
+            <UserDropdown user={user} />
           </div>
         </div>
       </header>

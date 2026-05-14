@@ -158,16 +158,53 @@ body {
   padding: 20px 24px;
 }
 
-/* ─── Callout / Alert ────────────────────────────────────────────────────── */
-@utility callout-eventuz {
-  padding: 14px 18px;
-  border-radius: 2px;
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  font-size: 13px;
-  font-weight: 300;
-  line-height: 1.6;
+/* ─── Callout / Alert — DS .alert ─────────────────────────────────────────── */
+.alert {
+  padding: 14px 18px !important;
+  border-radius: 2px !important;
+  display: flex !important;
+  gap: 12px !important;
+  align-items: flex-start !important;
+  margin-bottom: 12px !important;
+  font-size: 13px !important;
+  font-weight: 300 !important;
+  line-height: 1.6 !important;
+}
+
+.alert-icon {
+  font-size: 16px !important;
+  flex-shrink: 0 !important;
+  margin-top: 1px !important;
+}
+
+.alert-title {
+  font-weight: 500 !important;
+  font-size: 13px !important;
+  margin-bottom: 2px !important;
+}
+
+.a-success {
+  background: #DFF0E6 !important;
+  color: #1F4D32 !important;
+  border-left: 3px solid #2A6645 !important;
+}
+
+.a-info {
+  background: #EEF4FD !important;
+  color: #1A3660 !important;
+  border-left: 3px solid #4A82CC !important;
+}
+
+.a-warning {
+  background: #F9F0DE !important;
+  color: #5A3D10 !important;
+  border-left: 3px solid #C9A030 !important;
+}
+
+.a-error {
+  background: #FCEAEA !important;
+  color: #5A1515 !important;
+  border-left: 3px solid #C0534B !important;
 }
 
 /* ─── Buttons (base) ─────────────────────────────────────────────────────── */
