@@ -6,3 +6,4 @@ export default async function StaffEventSegmentLayout({ children, params }: Prop
   await params;
   return children;
 }
+

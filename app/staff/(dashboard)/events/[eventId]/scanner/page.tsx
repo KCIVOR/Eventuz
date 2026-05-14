@@ -29,9 +29,7 @@ export default async function StaffEventScannerPage({ params }: Props) {
   if (!row) notFound();
 
   if (row.status !== "active") {
-    redirect(
-      `/staff?error=${encodeURIComponent("Scanner access for this event has been revoked.")}`
-    );
+    redirect(`/staff?error=${encodeURIComponent("Scanner access for this event has been revoked.")}`);
   }
 
   const ev = nestedOne(
@@ -64,12 +62,9 @@ export default async function StaffEventScannerPage({ params }: Props) {
       ]}
     >
       <div className="mx-auto w-full max-w-lg px-0 sm:px-2">
-        <EventCheckInScanner
-          eventId={eventId}
-          backHref="/staff"
-          backLabel="All events"
-        />
+        <EventCheckInScanner eventId={eventId} backHref="/staff" backLabel="All events" />
       </div>
     </RoleAreaShell>
   );
 }
+
