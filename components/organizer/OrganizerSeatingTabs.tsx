@@ -3,16 +3,15 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
 
-export type SeatingTabId = "map" | "inventory" | "tables";
+export type SeatingTabId = "map" | "inventory";
 
 const TAB_DEFS: { id: SeatingTabId; label: string }[] = [
   { id: "map", label: "Overview" },
   { id: "inventory", label: "Seat inventory" },
-  { id: "tables", label: "Tables" },
 ];
 
 function isTabId(v: string | null): v is SeatingTabId {
-  return v === "map" || v === "inventory" || v === "tables";
+  return v === "map" || v === "inventory";
 }
 
 type Props = {
@@ -20,7 +19,6 @@ type Props = {
   defaultTab: SeatingTabId;
   mapContent: React.ReactNode;
   inventoryContent: React.ReactNode;
-  tablesContent: React.ReactNode;
 };
 
 export function OrganizerSeatingTabs({
@@ -28,7 +26,6 @@ export function OrganizerSeatingTabs({
   defaultTab,
   mapContent,
   inventoryContent,
-  tablesContent,
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -52,7 +49,6 @@ export function OrganizerSeatingTabs({
   const panels: Record<SeatingTabId, React.ReactNode> = {
     map: mapContent,
     inventory: inventoryContent,
-    tables: tablesContent,
   };
 
   return (
@@ -60,7 +56,7 @@ export function OrganizerSeatingTabs({
       <div
         role="tablist"
         aria-label="Seat page sections"
-        className="flex flex-wrap gap-2 border-b border-border pb-3"
+        className="flex flex-wrap border-b border-[#EDE8E3]"
       >
         {TAB_DEFS.map((t) => {
           const selected = activeTab === t.id;
@@ -74,10 +70,10 @@ export function OrganizerSeatingTabs({
               id={`seating-tab-${t.id}`}
               aria-controls={`seating-panel-${t.id}`}
               className={
-                "rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] " +
+                "mb-[-1px] border-b-2 px-5 py-3 text-xs font-medium uppercase tracking-[0.12em] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A96E]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-[#FDFAF4] " +
                 (selected
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground")
+                  ? "border-[#C9A96E] text-[#C9A96E]"
+                  : "border-transparent text-[#7A6E68] hover:text-[#C9A96E]")
               }
               onClick={() => setTab(t.id)}
             >
