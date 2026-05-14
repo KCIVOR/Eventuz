@@ -124,6 +124,20 @@ export default async function OrganizerEventDashboardPage({ params, searchParams
                 paramKey="db_o"
               />
             </section>
+
+            {/* Scan Activity Section - Moved to main column for more space */}
+            <section className="space-y-6 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+              <div className="flex items-center gap-4">
+                <h3 className="font-serif text-xl font-light text-foreground text-foreground font-bold">Recent Arrivals</h3>
+                <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
+              </div>
+              <DashboardScanActivity 
+                scans={d.recent_check_ins} 
+                pageData={scansPage} 
+                dashPath={dashPath} 
+                searchParams={q} 
+              />
+            </section>
           </div>
 
           {/* SIDEBAR: Controls & Activity */}
@@ -158,22 +172,6 @@ export default async function OrganizerEventDashboardPage({ params, searchParams
                 </p>
               </div>
             )}
-
-            {/* Scan Activity Section */}
-            <div className="panel-card p-0 overflow-hidden">
-              <div className="p-6 bg-muted/30 border-b border-border/50">
-                <h3 className="text-[10px] uppercase tracking-widest text-foreground font-bold">Recent Arrivals</h3>
-              </div>
-              <div className="p-6">
-                <DashboardScanActivity 
-                  scans={d.recent_check_ins} 
-                  pageData={scansPage} 
-                  dashPath={dashPath} 
-                  searchParams={q} 
-                />
-              </div>
-            </div>
-
           </aside>
         </div>
       </div>

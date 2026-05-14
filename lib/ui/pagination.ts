@@ -42,3 +42,8 @@ export function slicePage<T>(items: readonly T[], page: number, pageSize: number
     rangeEnd,
   };
 }
+export function getPaginationRange(page: number, pageSize: number) {
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  return { from, to };
+}

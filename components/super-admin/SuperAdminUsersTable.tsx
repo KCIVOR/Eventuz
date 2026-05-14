@@ -48,7 +48,22 @@ export function SuperAdminUsersTable({
   showCreated = true,
 }: Props) {
   return (
-    <ScrollableTableWrapper>
+    <ScrollableTableWrapper
+      footer={pageData.total > 0 ? (
+        <ListPagination
+          pathname={pathname}
+          searchParams={searchParams}
+          paramKey={paramKey}
+          page={pageData.page}
+          pageSize={DEFAULT_LIST_PAGE_SIZE}
+          total={pageData.total}
+          pageCount={pageData.pageCount}
+          rangeStart={pageData.rangeStart}
+          rangeEnd={pageData.rangeEnd}
+          listLabel={listLabel}
+        />
+      ) : null}
+    >
       <table className="w-full min-w-[800px] text-left text-sm">
         <caption className="sr-only">{listLabel}</caption>
         <thead className="bg-muted/50 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -111,20 +126,6 @@ export function SuperAdminUsersTable({
       </table>
       {!pageData.slice.length && (
         <p className="border-t border-border p-6 text-center text-muted-foreground">No matching users.</p>
-      )}
-      {pageData.total > 0 && (
-        <ListPagination
-          pathname={pathname}
-          searchParams={searchParams}
-          paramKey={paramKey}
-          page={pageData.page}
-          pageSize={DEFAULT_LIST_PAGE_SIZE}
-          total={pageData.total}
-          pageCount={pageData.pageCount}
-          rangeStart={pageData.rangeStart}
-          rangeEnd={pageData.rangeEnd}
-          listLabel={listLabel}
-        />
       )}
     </ScrollableTableWrapper>
   );

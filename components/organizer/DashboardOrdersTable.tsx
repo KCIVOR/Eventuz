@@ -38,7 +38,24 @@ type Props = {
 
 export function DashboardOrdersTable({ orders: _orders, pageData, dashPath, searchParams, paramKey }: Props) {
   return (
-    <ScrollableTableWrapper>
+    <ScrollableTableWrapper
+      footer={
+        pageData.total > 0 ? (
+          <ListPagination
+            pathname={dashPath}
+            searchParams={searchParams}
+            paramKey={paramKey}
+            page={pageData.page}
+            pageSize={DEFAULT_LIST_PAGE_SIZE}
+            total={pageData.total}
+            pageCount={pageData.pageCount}
+            rangeStart={pageData.rangeStart}
+            rangeEnd={pageData.rangeEnd}
+            listLabel="All orders"
+          />
+        ) : null
+      }
+    >
       <table className="w-full min-w-[800px] text-left text-sm">
         <thead>
           <tr className="border-b border-border bg-muted/40 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -97,20 +114,6 @@ export function DashboardOrdersTable({ orders: _orders, pageData, dashPath, sear
           )}
         </tbody>
       </table>
-      {pageData.total > 0 ? (
-        <ListPagination
-          pathname={dashPath}
-          searchParams={searchParams}
-          paramKey={paramKey}
-          page={pageData.page}
-          pageSize={DEFAULT_LIST_PAGE_SIZE}
-          total={pageData.total}
-          pageCount={pageData.pageCount}
-          rangeStart={pageData.rangeStart}
-          rangeEnd={pageData.rangeEnd}
-          listLabel="All orders"
-        />
-      ) : null}
     </ScrollableTableWrapper>
   );
 }

@@ -1,6 +1,7 @@
 import React from "react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { ListPagination } from "@/components/ui/ListPagination";
+import { ScrollableTableWrapper } from "@/components/ui/ScrollableTableWrapper";
 import type { SerializableSearchParams } from "@/lib/ui/paginationUrl";
 import { DEFAULT_LIST_PAGE_SIZE } from "@/lib/ui/pagination";
 
@@ -27,7 +28,22 @@ type Props = {
 
 export function DashboardScanActivity({ scans: _scans, pageData, dashPath, searchParams }: Props) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-border">
+    <ScrollableTableWrapper
+      footer={pageData.total > 0 ? (
+        <ListPagination
+          pathname={dashPath}
+          searchParams={searchParams}
+          paramKey="db_s"
+          page={pageData.page}
+          pageSize={DEFAULT_LIST_PAGE_SIZE}
+          total={pageData.total}
+          pageCount={pageData.pageCount}
+          rangeStart={pageData.rangeStart}
+          rangeEnd={pageData.rangeEnd}
+          listLabel="Recent scan activity"
+        />
+      ) : null}
+    >
       <table className="w-full min-w-[520px] text-left text-sm">
         <thead>
           <tr className="border-b border-border bg-muted/40 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -62,20 +78,6 @@ export function DashboardScanActivity({ scans: _scans, pageData, dashPath, searc
           )}
         </tbody>
       </table>
-      {pageData.total > 0 ? (
-        <ListPagination
-          pathname={dashPath}
-          searchParams={searchParams}
-          paramKey="db_s"
-          page={pageData.page}
-          pageSize={DEFAULT_LIST_PAGE_SIZE}
-          total={pageData.total}
-          pageCount={pageData.pageCount}
-          rangeStart={pageData.rangeStart}
-          rangeEnd={pageData.rangeEnd}
-          listLabel="Recent scan activity"
-        />
-      ) : null}
-    </div>
+    </ScrollableTableWrapper>
   );
 }
