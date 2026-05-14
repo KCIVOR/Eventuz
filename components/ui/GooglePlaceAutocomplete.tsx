@@ -6,6 +6,7 @@ import { useJsApiLoader, Autocomplete, GoogleMap, Marker } from "@react-google-m
 const libraries: "places"[] = ["places"];
 
 type Props = {
+  apiKey?: string | null;
   defaultValue?: string;
   defaultFormattedAddress?: string;
   defaultLat?: number;
@@ -34,17 +35,18 @@ const defaultCenter = {
 };
 
 export function GooglePlaceAutocomplete({
+  apiKey,
   defaultValue = "",
   defaultFormattedAddress = "",
   defaultLat,
   defaultLng,
   placeholder = "Search for a location or venue...",
 }: Props) {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+  const effectiveApiKey = apiKey?.trim() ?? "";
 
   const { isLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
-    googleMapsApiKey: apiKey,
+    googleMapsApiKey: effectiveApiKey,
     libraries,
   });
 
@@ -112,7 +114,7 @@ export function GooglePlaceAutocomplete({
     }
   }, [inputValue]);
 
-  if (!apiKey || loadError) {
+  if (!effectiveApiKey || loadError) {
     return (
       <div className="flex flex-col gap-1">
         <input
@@ -123,6 +125,9 @@ export function GooglePlaceAutocomplete({
           className="input-eventuz"
           required
         />
+        <input type="hidden" name="formatted_address" value={defaultFormattedAddress ?? ""} />
+        <input type="hidden" name="lat" value={defaultLat ?? ""} />
+        <input type="hidden" name="lng" value={defaultLng ?? ""} />
         <p 
           className="px-1 text-[10px] italic"
           style={{ color: "var(--destructive)", fontWeight: 300 }}

@@ -4,6 +4,7 @@ import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
 import { loadAttendeeEventContext } from "@/lib/attendee/eventContext";
 import { isHitPayDevSimulationAllowed } from "@/lib/payments/hitpayDevSimulation";
 import { EventMapPreview } from "@/components/ui/EventMapPreview";
+import { loadActiveGoogleMapsApiKey } from "@/lib/super-admin/loadGoogleMapsSettings";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -65,6 +66,7 @@ export default async function AttendeeEventPage({ searchParams }: Props) {
   const formattedAddress = event.formatted_address as string | null;
   const lat = event.lat ? Number(event.lat) : null;
   const lng = event.lng ? Number(event.lng) : null;
+  const googleMapsApiKey = await loadActiveGoogleMapsApiKey();
 
   return (
     <RoleAreaShell
@@ -170,9 +172,10 @@ export default async function AttendeeEventPage({ searchParams }: Props) {
                     </div>
                   </div>
 
-                  {lat && lng && (
+                  {googleMapsApiKey && lat && lng && (
                     <div className="border-t border-border/50">
                       <EventMapPreview
+                        apiKey={googleMapsApiKey}
                         lat={lat}
                         lng={lng}
                         title={venue}

@@ -3,20 +3,21 @@
 import React from "react";
 
 type Props = {
+  apiKey?: string | null;
   lat: number;
   lng: number;
   title?: string;
   address?: string;
 };
 
-export function EventMapPreview({ lat, lng, address }: Props) {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+export function EventMapPreview({ apiKey, lat, lng, address }: Props) {
+  const effectiveApiKey = apiKey?.trim() ?? "";
   
   // Use Google Maps Embed API for the "Place Card" look
   const query = address ? encodeURIComponent(address) : `${lat},${lng}`;
-  const embedUrl = `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${query}`;
+  const embedUrl = `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(effectiveApiKey)}&q=${query}`;
 
-  if (!apiKey) {
+  if (!effectiveApiKey) {
     return (
       <div 
         className="flex h-[300px] w-full items-center justify-center text-xs"
@@ -27,7 +28,7 @@ export function EventMapPreview({ lat, lng, address }: Props) {
           borderRadius: "2px" 
         }}
       >
-        Google Maps API Key missing
+        Map preview unavailable
       </div>
     );
   }

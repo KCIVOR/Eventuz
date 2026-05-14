@@ -147,6 +147,11 @@ export function navSectionsForRole(role: EventuzRole, ctx: NavContext = {}): Nav
               label: "Email delivery",
               href: "/super-admin/smtp",
             },
+            {
+              id: "google-maps",
+              label: "Google Maps",
+              href: "/super-admin/google-maps",
+            },
           ],
         },
       ];
