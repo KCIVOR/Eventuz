@@ -120,7 +120,7 @@ export function GoogleMapsSettingsForm({ initial, loadError }: Props) {
       <section className="rounded-2xl border border-border bg-card p-6 text-sm sm:p-8">
         <h2 className="font-serif text-lg font-semibold text-foreground">Google Cloud setup</h2>
         <p className="mt-2 text-muted-foreground">
-          Enable Maps JavaScript API, Places API, Geocoding API, and Maps Embed API for this key.
+          Enable Maps JavaScript API, Places API (New), Geocoding API, and Maps Embed API for this key.
         </p>
         <p className="mt-3 text-muted-foreground">
           Restrict it by HTTP referrer, for example <span className="font-mono text-foreground">http://localhost:3000/*</span>{" "}

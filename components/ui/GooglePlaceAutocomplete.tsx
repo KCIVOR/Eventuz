@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
-import { useJsApiLoader, Autocomplete, GoogleMap, Marker } from "@react-google-maps/api";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 
 const libraries: "places"[] = ["places"];
 
@@ -41,6 +41,7 @@ export function GooglePlaceAutocomplete({
   defaultLat,
   defaultLng,
   placeholder = "Search for a location or venue...",
+  onPlaceSelected,
 }: Props) {
   const effectiveApiKey = apiKey?.trim() ?? "";
 
@@ -50,14 +51,14 @@ export function GooglePlaceAutocomplete({
     libraries,
   });
 
-  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
   const [inputValue, setInputValue] = useState(defaultValue);
-  
   const [formattedAddress, setFormattedAddress] = useState(defaultFormattedAddress);
   const [lat, setLat] = useState<number | null>(defaultLat ?? null);
   const [lng, setLng] = useState<number | null>(defaultLng ?? null);
-  
   const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [suggestions, setSuggestions] = useState<google.maps.places.AutocompleteSuggestion[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
 
   const mapOptions = React.useMemo(() => ({
     disableDefaultUI: true,
@@ -71,30 +72,86 @@ export function GooglePlaceAutocomplete({
     setMap(m);
   }, []);
 
-  const onAutocompleteLoad = (auto: google.maps.places.Autocomplete) => {
-    setAutocomplete(auto);
-  };
+  useEffect(() => {
+    if (!isLoaded || !effectiveApiKey || inputValue.trim().length < 3) {
+      return;
+    }
 
-  const onPlaceChanged = () => {
-    if (autocomplete !== null) {
-      const place = autocomplete.getPlace();
-      if (place.geometry && place.geometry.location) {
-        const venue = place.name || place.formatted_address || "";
-        const addr = place.formatted_address || "";
-        const latitude = place.geometry.location.lat();
-        const longitude = place.geometry.location.lng();
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        setIsSearching(true);
+        const placesLibrary = await google.maps.importLibrary("places");
+        const { AutocompleteSuggestion, AutocompleteSessionToken } = placesLibrary as google.maps.PlacesLibrary;
+        sessionTokenRef.current ??= new AutocompleteSessionToken();
+        const { suggestions: nextSuggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
+          input: inputValue.trim(),
+          sessionToken: sessionTokenRef.current,
+        });
 
-        setInputValue(venue);
-        setFormattedAddress(addr);
-        setLat(latitude);
-        setLng(longitude);
-
-        if (map) {
-          map.panTo({ lat: latitude, lng: longitude });
-          map.setZoom(17);
+        if (!cancelled) {
+          setSuggestions(nextSuggestions ?? []);
+        }
+      } catch (e) {
+        console.error("[eventuz:places-autocomplete]", e instanceof Error ? e.message : e);
+        if (!cancelled) {
+          setSuggestions([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsSearching(false);
         }
       }
-    }
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [effectiveApiKey, inputValue, isLoaded]);
+
+  const applyLocation = useCallback(
+    (venue: string, addr: string, latitude: number, longitude: number) => {
+      setInputValue(venue);
+      setFormattedAddress(addr);
+      setLat(latitude);
+      setLng(longitude);
+      setSuggestions([]);
+
+      if (map) {
+        map.panTo({ lat: latitude, lng: longitude });
+        map.setZoom(17);
+      }
+
+      onPlaceSelected?.({
+        venue,
+        formatted_address: addr,
+        lat: latitude,
+        lng: longitude,
+      });
+    },
+    [map, onPlaceSelected]
+  );
+
+  const onSuggestionSelected = async (suggestion: google.maps.places.AutocompleteSuggestion) => {
+    const prediction = suggestion.placePrediction;
+    if (!prediction) return;
+
+    const placesLibrary = await google.maps.importLibrary("places");
+    const { AutocompleteSessionToken } = placesLibrary as google.maps.PlacesLibrary;
+    const place = prediction.toPlace();
+    await place.fetchFields({ fields: ["displayName", "formattedAddress", "location"] });
+
+    const location = place.location;
+    if (!location) return;
+
+    const latitude = location.lat();
+    const longitude = location.lng();
+    const addr = place.formattedAddress ?? "";
+    const venue = place.displayName ?? addr ?? prediction.text.toString();
+
+    applyLocation(venue, addr, latitude, longitude);
+    sessionTokenRef.current = new AutocompleteSessionToken();
   };
 
   const onMapClick = useCallback((e: google.maps.MapMouseEvent) => {
@@ -107,12 +164,19 @@ export function GooglePlaceAutocomplete({
       const geocoder = new google.maps.Geocoder();
       geocoder.geocode({ location: { lat: newLat, lng: newLng } }, (results, status) => {
         if (status === "OK" && results?.[0]) {
-          setFormattedAddress(results[0].formatted_address);
-          if (!inputValue) setInputValue(results[0].formatted_address);
+          const addr = results[0].formatted_address;
+          setFormattedAddress(addr);
+          if (!inputValue) setInputValue(addr);
+          onPlaceSelected?.({
+            venue: inputValue || addr,
+            formatted_address: addr,
+            lat: newLat,
+            lng: newLng,
+          });
         }
       });
     }
-  }, [inputValue]);
+  }, [inputValue, onPlaceSelected]);
 
   if (!effectiveApiKey || loadError) {
     return (
@@ -152,23 +216,53 @@ export function GooglePlaceAutocomplete({
   return (
     <div className="flex flex-col">
       <div className="relative">
-        <Autocomplete onLoad={onAutocompleteLoad} onPlaceChanged={onPlaceChanged}>
-          <input
-            type="text"
-            name="venue"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder={placeholder}
-            className="input-eventuz pr-10"
-            required
-          />
-        </Autocomplete>
+        <input
+          type="text"
+          name="venue"
+          value={inputValue}
+          onChange={(e) => {
+            setInputValue(e.target.value);
+            if (e.target.value.trim().length < 3) {
+              setSuggestions([]);
+            }
+          }}
+          onBlur={() => window.setTimeout(() => setSuggestions([]), 150)}
+          placeholder={placeholder}
+          className="input-eventuz pr-10"
+          autoComplete="off"
+          required
+        />
         <div 
           className="absolute right-3 top-1/2 -translate-y-1/2"
           style={{ color: "var(--champagne)" }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         </div>
+        {(suggestions.length > 0 || isSearching) && (
+          <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-border bg-card shadow-lg">
+            {isSearching && suggestions.length === 0 ? (
+              <p className="px-3 py-2 text-xs text-muted-foreground">Searching...</p>
+            ) : null}
+            {suggestions.map((suggestion) => {
+              const prediction = suggestion.placePrediction;
+              if (!prediction) return null;
+              return (
+                <button
+                  key={prediction.placeId}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => void onSuggestionSelected(suggestion)}
+                  className="block w-full border-b border-border/70 px-3 py-2 text-left text-sm transition-colors last:border-b-0 hover:bg-muted/50"
+                >
+                  <span className="block font-medium text-foreground">{prediction.mainText?.toString() ?? prediction.text.toString()}</span>
+                  {prediction.secondaryText ? (
+                    <span className="block text-xs text-muted-foreground">{prediction.secondaryText.toString()}</span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="group relative">
