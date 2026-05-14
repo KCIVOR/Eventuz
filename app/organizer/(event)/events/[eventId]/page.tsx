@@ -17,6 +17,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Input } from "@/components/ui/Input";
 import { GooglePlaceAutocomplete } from "@/components/ui/GooglePlaceAutocomplete";
+import { loadActiveGoogleMapsApiKey } from "@/lib/super-admin/loadGoogleMapsSettings";
 
 type Props = {
   params: Promise<{ eventId: string }>;
@@ -40,6 +41,8 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
 
   if (error || !event) notFound();
   if (!user || event.organizer_id !== user.id) notFound();
+
+  const googleMapsApiKey = await loadActiveGoogleMapsApiKey();
 
   const { data: ticketTypes } = await supabase
     .from("ticket_types")
@@ -164,6 +167,7 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
                   <div className="space-y-1.5">
                     <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Location</label>
                     <GooglePlaceAutocomplete
+                      apiKey={googleMapsApiKey}
                       defaultValue={event.venue as string}
                       defaultFormattedAddress={event.formatted_address as string}
                       defaultLat={event.lat ? Number(event.lat) : undefined}

@@ -40,7 +40,7 @@ export default async function StaffHomePage({ searchParams }: Props) {
     <RoleAreaShell
       role="staff"
       title="Check-in scanner"
-      description="Scan QR tickets at the venue for events you’re assigned to."
+      description="Scan QR tickets at the venue for events you're assigned to."
       layout="flush"
       mainWidth="wide"
       withoutFrame
@@ -62,60 +62,54 @@ export default async function StaffHomePage({ searchParams }: Props) {
 
       {active.length === 0 ? (
         <p className="mb-6 text-center text-sm text-muted-foreground">
-          You don’t have active scanner access yet. Ask an organizer to send you an invitation email.
+          You don&apos;t have active scanner access yet. Ask an organizer to send you an invitation email.
         </p>
       ) : (
         <>
-          <ul
-            id="event-scanners"
-            className="mx-auto mb-4 max-w-lg scroll-mt-28 space-y-3"
-          >
+          <ul id="event-scanners" className="mx-auto mb-4 max-w-lg scroll-mt-28 space-y-3">
             {activePage.slice.map((r) => {
-            const ev = nestedOne(
-              r.events as
-                | {
-                    name: string;
-                    venue: string;
-                    event_date: string;
-                    event_time: string;
-                    status: string;
-                  }
-                | null
-                | Array<{
-                    name: string;
-                    venue: string;
-                    event_date: string;
-                    event_time: string;
-                    status: string;
-                  }>
-            );
-            const name = ev?.name ?? "Event";
-            return (
-              <li
-                key={r.id as string}
-                className="rounded-xl border border-border bg-card px-4 py-4 shadow-sm"
-              >
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="font-semibold text-foreground">{name}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {(ev?.event_date as string) ?? ""} · {String(ev?.event_time ?? "")}{" "}
-                      {ev?.venue ? `· ${ev.venue}` : ""}
-                    </p>
-                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      Role: {(r.role as string) ?? "scanner"} · {ev?.status ?? ""}
-                    </p>
+              const ev = nestedOne(
+                r.events as
+                  | {
+                      name: string;
+                      venue: string;
+                      event_date: string;
+                      event_time: string;
+                      status: string;
+                    }
+                  | null
+                  | Array<{
+                      name: string;
+                      venue: string;
+                      event_date: string;
+                      event_time: string;
+                      status: string;
+                    }>
+              );
+              const name = ev?.name ?? "Event";
+              return (
+                <li key={r.id as string} className="rounded-xl border border-border bg-card px-4 py-4 shadow-sm">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="font-semibold text-foreground">{name}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {(ev?.event_date as string) ?? ""} · {String(ev?.event_time ?? "")}{" "}
+                        {ev?.venue ? `· ${ev.venue}` : ""}
+                      </p>
+                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        Role: {(r.role as string) ?? "scanner"} · {ev?.status ?? ""}
+                      </p>
+                    </div>
+                    <Link
+                      href={`/staff/events/${r.event_id as string}/scanner`}
+                      className="inline-flex justify-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
+                    >
+                      Open scanner
+                    </Link>
                   </div>
-                  <Link
-                    href={`/staff/events/${r.event_id as string}/scanner`}
-                    className="inline-flex justify-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
-                  >
-                    Open scanner
-                  </Link>
-                </div>
-              </li>
-            );
-          })}
+                </li>
+              );
+            })}
           </ul>
           <ListPagination
             pathname={staffPath}
@@ -134,17 +128,11 @@ export default async function StaffHomePage({ searchParams }: Props) {
 
       {revoked.length > 0 ? (
         <div className="mx-auto mb-8 max-w-lg rounded-xl border border-border/80 bg-muted/30 px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Revoked access
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Revoked access</p>
           <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
             {revoked.map((r) => {
-              const ev = nestedOne(
-                r.events as { name: string } | { name: string }[] | null
-              );
-              return (
-                <li key={r.id as string}>{ev?.name ?? "Event"} — no longer available</li>
-              );
+              const ev = nestedOne(r.events as { name: string } | { name: string }[] | null);
+              return <li key={r.id as string}>{ev?.name ?? "Event"} - no longer available</li>;
             })}
           </ul>
         </div>

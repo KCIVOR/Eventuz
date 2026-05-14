@@ -156,7 +156,9 @@ export async function updateEvent(eventId: string, formData: FormData) {
 
   const { data: gate, error: gateErr } = await supabase
     .from("events")
-    .select("id, organizer_id, status")
+    .select(
+      "id, organizer_id, status, venue, formatted_address, lat, lng, capacity_hold_minutes, payment_hold_minutes, early_bird_hold_minutes"
+    )
     .eq("id", eventId)
     .maybeSingle();
 
@@ -170,10 +172,23 @@ export async function updateEvent(eventId: string, formData: FormData) {
   const public_slug = String(formData.get("public_slug") ?? "").trim();
   if (!public_slug) redirectEventError(eventId, "Public slug is required");
 
-  const cap = parseHoldMinutesRequired(formData.get("capacity_hold_minutes"));
-  const pay = parseHoldMinutesRequired(formData.get("payment_hold_minutes"));
-  const eb = parseHoldMinutesRequired(formData.get("early_bird_hold_minutes"));
-  if (cap === null || pay === null || eb === null) {
+  const cap = formData.has("capacity_hold_minutes")
+    ? parseHoldMinutesRequired(formData.get("capacity_hold_minutes"))
+    : Number(gate.capacity_hold_minutes);
+  const pay = formData.has("payment_hold_minutes")
+    ? parseHoldMinutesRequired(formData.get("payment_hold_minutes"))
+    : Number(gate.payment_hold_minutes);
+  const eb = formData.has("early_bird_hold_minutes")
+    ? parseHoldMinutesRequired(formData.get("early_bird_hold_minutes"))
+    : Number(gate.early_bird_hold_minutes);
+  if (
+    cap === null ||
+    pay === null ||
+    eb === null ||
+    !Number.isFinite(cap) ||
+    !Number.isFinite(pay) ||
+    !Number.isFinite(eb)
+  ) {
     redirectEventError(
       eventId,
       "Each hold duration must be a whole number from 1 to 525600 (minutes)."
@@ -183,18 +198,23 @@ export async function updateEvent(eventId: string, formData: FormData) {
   const prevStatus = (gate.status as string) || "";
   const nextStatus = parseEventStatus(formData.get("status"));
 
-  const formatted_address = emptyToNull(formData.get("formatted_address"));
+  const venue = formData.has("venue")
+    ? String(formData.get("venue") ?? "").trim()
+    : String(gate.venue ?? "").trim();
+  const formatted_address = formData.has("formatted_address")
+    ? emptyToNull(formData.get("formatted_address"))
+    : ((gate.formatted_address as string | null) ?? null);
   const latRaw = formData.get("lat");
   const lngRaw = formData.get("lng");
-  const lat = latRaw ? Number(latRaw) : null;
-  const lng = lngRaw ? Number(lngRaw) : null;
+  const lat = formData.has("lat") ? (latRaw ? Number(latRaw) : null) : Number(gate.lat ?? NaN);
+  const lng = formData.has("lng") ? (lngRaw ? Number(lngRaw) : null) : Number(gate.lng ?? NaN);
 
   const { error } = await supabase
     .from("events")
     .update({
       name,
       description: String(formData.get("description") ?? "").trim(),
-      venue: String(formData.get("venue") ?? "").trim(),
+      venue,
       event_date: String(formData.get("event_date") ?? "").trim(),
       event_time: String(formData.get("event_time") ?? "").trim(),
       status: nextStatus,
@@ -229,6 +249,7 @@ export async function updateEvent(eventId: string, formData: FormData) {
   }
   revalidatePath("/organizer");
   revalidatePath(`/organizer/events/${eventId}`);
+  revalidatePath("/attendee/event");
   redirect(`/organizer/events/${eventId}?ok=1`);
 }
 

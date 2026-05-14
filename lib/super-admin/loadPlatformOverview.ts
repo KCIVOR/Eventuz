@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { loadGoogleMapsSettingsPublic } from "@/lib/super-admin/loadGoogleMapsSettings";
 import { loadSmtpSettingsPublic } from "@/lib/super-admin/loadSmtpSettings";
 
 export type PlatformCounts = {
@@ -52,6 +53,11 @@ export type PlatformOverview = {
     fromEmail: string;
     lastTestError: string | null;
   } | null;
+  googleMaps: {
+    configured: boolean;
+    isActive: boolean;
+    lastTestError: string | null;
+  } | null;
   loadError: string | null;
 };
 
@@ -91,6 +97,7 @@ export async function loadPlatformOverview(): Promise<PlatformOverview> {
     profilesRes,
     eventsRes,
     smtpRes,
+    googleMapsRes,
   ] = await Promise.all([
     rowCount(supabase, "profiles", {}),
     rowCount(supabase, "profiles", { status: "disabled" }),
@@ -125,6 +132,7 @@ export async function loadPlatformOverview(): Promise<PlatformOverview> {
       .order("created_at", { ascending: false })
       .limit(500),
     loadSmtpSettingsPublic(),
+    loadGoogleMapsSettingsPublic(),
   ]);
 
   const ordersOpenHolds = ordersOpenHoldsRes.error ? 0 : (ordersOpenHoldsRes.count ?? 0);
@@ -153,6 +161,13 @@ export async function loadPlatformOverview(): Promise<PlatformOverview> {
       }
     : null;
 
+  const googleMaps = googleMapsRes.settings
+    ? {
+        configured: googleMapsRes.settings.keySaved,
+        isActive: googleMapsRes.settings.is_active,
+        lastTestError: googleMapsRes.settings.last_test_error,
+      }
+    : null;
 
   const organizerNameById: Record<string, string> = {};
   const orgIds = [...new Set(events.map((e) => e.organizer_id))];
@@ -167,6 +182,7 @@ export async function loadPlatformOverview(): Promise<PlatformOverview> {
     profilesRes.error?.message ??
     eventsRes.error?.message ??
     smtpRes.error ??
+    googleMapsRes.error ??
     null;
 
   return {
@@ -193,6 +209,7 @@ export async function loadPlatformOverview(): Promise<PlatformOverview> {
     events,
     organizerNameById,
     smtp,
+    googleMaps,
     loadError,
   };
 }

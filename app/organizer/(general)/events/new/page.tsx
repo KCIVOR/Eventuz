@@ -5,6 +5,7 @@ import { EVENT_STATUSES } from "@/lib/organizer/eventForm";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { GooglePlaceAutocomplete } from "@/components/ui/GooglePlaceAutocomplete";
+import { loadActiveGoogleMapsApiKey } from "@/lib/super-admin/loadGoogleMapsSettings";
 
 type Props = {
   searchParams: Promise<{ error?: string }>;
@@ -26,6 +27,7 @@ export default async function NewEventPage({ searchParams }: Props) {
       redirect(`/organizer/events/${existing.id}/dashboard`);
     }
   }
+  const googleMapsApiKey = await loadActiveGoogleMapsApiKey();
 
   return (
     <RoleAreaShell
@@ -86,7 +88,7 @@ export default async function NewEventPage({ searchParams }: Props) {
               <h2 className="section-title">Schedule & location</h2>
               <div className="flex flex-col gap-1.5">
                 <label className="label-eventuz">Venue</label>
-                <GooglePlaceAutocomplete placeholder="City or venue name..." />
+                <GooglePlaceAutocomplete apiKey={googleMapsApiKey} placeholder="City or venue name..." />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Event date" name="event_date" type="date" required />

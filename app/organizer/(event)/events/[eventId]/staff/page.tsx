@@ -1,24 +1,83 @@
 import {
   inviteEventStaff,
+  resendStaffInvitation,
   revokeEventStaffMember,
   revokeStaffInvitation,
 } from "@/app/organizer/events/staffActions";
-import { StatusBadge } from "@/components/ui/StatusBadge";
-import { Button } from "@/components/ui/Button";
-import { ListPagination } from "@/components/ui/ListPagination";
 import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
-import { DEFAULT_LIST_PAGE_SIZE, parsePageParam, slicePage } from "@/lib/ui/pagination";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { createClient } from "@/lib/supabase/server";
 import type { SerializableSearchParams } from "@/lib/ui/paginationUrl";
-import { nestedOne } from "@/lib/supabase/nestedOne";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { Input } from "@/components/ui/Input";
 
 type Props = {
   params: Promise<{ eventId: string }>;
   searchParams: Promise<SerializableSearchParams>;
 };
+
+type StaffInvitationRow = {
+  id: string;
+  email: string;
+  status: string;
+  expires_at: string;
+  created_at: string;
+  accepted_user_id: string | null;
+};
+
+type EventStaffRow = {
+  id: string;
+  user_id: string;
+  role: string;
+  status: string;
+  created_at: string;
+  profile: { full_name: string | null; email: string | null } | null;
+};
+
+function decodeParam(value: unknown): string {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (typeof raw !== "string" || !raw) return "";
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
+
+function formatDateTime(value: string): string {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "Unknown";
+  return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+}
+
+function inviteDisplayStatus(invite: StaffInvitationRow, nowMs: number): "pending" | "expired" | "accepted" | "revoked" {
+  if (invite.status === "pending" && new Date(invite.expires_at).getTime() <= nowMs) return "expired";
+  if (invite.status === "accepted") return "accepted";
+  if (invite.status === "revoked") return "revoked";
+  return "pending";
+}
+
+function okMessage(ok: unknown): string {
+  const value = Array.isArray(ok) ? ok[0] : ok;
+  switch (value) {
+    case "invited":
+      return "Invitation sent. The staff member can accept it from their email.";
+    case "resent":
+      return "Invitation refreshed and resent. The previous link is no longer valid.";
+    case "revoked":
+      return "Access has been revoked.";
+    case "1":
+      return "Update successful. Access permissions have been synchronized.";
+    default:
+      return "";
+  }
+}
+
+async function loadServerNowMs(): Promise<number> {
+  return Date.now();
+}
 
 export default async function OrganizerEventStaffPage({ params, searchParams }: Props) {
   const { eventId } = await params;
@@ -46,15 +105,37 @@ export default async function OrganizerEventStaffPage({ params, searchParams }: 
 
   const { data: eventStaffRows } = await supabase
     .from("event_staff")
-    .select("id, user_id, role, status, created_at, profiles ( full_name, email )")
+    .select("id, user_id, role, status, created_at")
     .eq("event_id", eventId)
     .order("created_at", { ascending: false });
 
-  const pgInv = parsePageParam(q.lp_inv);
-  const pgStf = parsePageParam(q.lp_stf);
-  const invitesPage = slicePage(staffInvites ?? [], pgInv, DEFAULT_LIST_PAGE_SIZE);
-  const scannersPage = slicePage(eventStaffRows ?? [], pgStf, DEFAULT_LIST_PAGE_SIZE);
-  const staffPagePath = `/organizer/events/${eventId}/staff`;
+  const rawStaffRows = (eventStaffRows ?? []) as Array<Omit<EventStaffRow, "profile">>;
+  const staffUserIds = [...new Set(rawStaffRows.map((row) => row.user_id).filter(Boolean))];
+  const { data: staffProfiles } =
+    staffUserIds.length > 0
+      ? await supabase.from("profiles").select("id, full_name, email").in("id", staffUserIds)
+      : { data: [] as Array<{ id: string; full_name: string | null; email: string | null }> };
+  const profileById = new Map(
+    ((staffProfiles ?? []) as Array<{ id: string; full_name: string | null; email: string | null }>).map((profile) => [
+      profile.id,
+      { full_name: profile.full_name, email: profile.email },
+    ])
+  );
+  const staffRows: EventStaffRow[] = rawStaffRows.map((row) => ({
+    ...row,
+    profile: profileById.get(row.user_id) ?? null,
+  }));
+  const inviteRows = ((staffInvites ?? []) as StaffInvitationRow[]);
+  const nowMs = await loadServerNowMs();
+
+  const activeStaff = staffRows.filter((row) => row.status === "active");
+  const revokedStaff = staffRows.filter((row) => row.status === "revoked");
+  const pendingInvites = inviteRows.filter((row) => inviteDisplayStatus(row, nowMs) === "pending");
+  const expiredInvites = inviteRows.filter((row) => inviteDisplayStatus(row, nowMs) === "expired");
+  const acceptedInvites = inviteRows.filter((row) => inviteDisplayStatus(row, nowMs) === "accepted");
+  const revokedInvites = inviteRows.filter((row) => inviteDisplayStatus(row, nowMs) === "revoked");
+  const ok = okMessage(q.ok);
+  const errorMessage = decodeParam(q.error);
 
   return (
     <RoleAreaShell
@@ -63,242 +144,359 @@ export default async function OrganizerEventStaffPage({ params, searchParams }: 
       layout="flush"
       mainWidth="wide"
       withoutFrame
-      title="Staff Access"
-      description={`Manage team members and scanner invitations for: ${event.name as string}`}
+      title="Staff Management"
+      description={`Invite and manage scanner access for ${event.name as string}`}
       breadcrumbs={[
         { label: "Home", href: "/organizer" },
         { label: event.name as string, href: `/organizer/events/${eventId}` },
-        { label: "Staff Access" },
+        { label: "Staff Management" },
       ]}
+      actions={
+        <Button variant="outline" className="btn-eventuz-secondary py-2" asChild>
+          <Link href={`/organizer/events/${eventId}/scan`}>Preview Scanner</Link>
+        </Button>
+      }
     >
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-10 px-4 sm:px-8">
-        
-        {/* Status Messaging */}
-        {(q.error || q.ok) && (
-          <div className="animate-fade-in-up">
-            {q.error && (
-              <p className="rounded-xl border border-destructive/25 bg-destructive-muted px-6 py-4 text-sm text-destructive shadow-sm">
-                {q.error}
-              </p>
-            )}
-            {q.ok && (
-              <p className="rounded-xl border border-success/25 bg-success-muted px-6 py-4 text-sm text-success shadow-sm">
-                Update successful. Access permissions have been synchronized.
-              </p>
-            )}
-          </div>
-        )}
+      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8 px-4 sm:px-8">
+        {errorMessage ? (
+          <p className="rounded-xl border border-destructive/25 bg-destructive-muted px-6 py-4 text-sm text-destructive shadow-sm">
+            {errorMessage}
+          </p>
+        ) : null}
+        {ok ? (
+          <p className="rounded-xl border border-success/25 bg-success-muted px-6 py-4 text-sm text-success shadow-sm">
+            {ok}
+          </p>
+        ) : null}
 
-        <div className="lg:grid lg:grid-cols-12 lg:gap-12 lg:items-start">
-          
-          {/* MAIN COLUMN: Active Team & History */}
-          <div className="lg:col-span-7 space-y-12">
-            
-            {/* Active Staff Registry */}
-            <section className="space-y-6 animate-fade-in-up">
-              <div className="flex items-center gap-4">
-                <h2 className="font-serif text-2xl font-light text-foreground">Active Team</h2>
-                <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
-              </div>
-              
-              <div className="panel-card p-0 overflow-hidden">
-                <div className="p-8 space-y-6">
-                  {(eventStaffRows ?? []).length === 0 ? (
-                    <div className="py-10 text-center">
-                      <p className="text-sm font-light text-muted-foreground italic">No staff members have been linked to this event yet.</p>
-                    </div>
-                  ) : (
-                    <ul className="divide-y divide-border/50">
-                      {scannersPage.slice.map((es) => {
-                        const prof = nestedOne(es.profiles);
-                        return (
-                          <li key={es.id as string} className="py-6 first:pt-0 last:pb-0 group">
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                              <div className="space-y-1">
-                                <p className="text-base font-medium text-foreground">
-                                  {prof?.full_name?.trim() ? prof.full_name : (prof?.email ?? "Staff Member")}
-                                </p>
-                                <div className="flex items-center gap-3 text-xs text-muted-foreground font-light">
-                                  <StatusBadge status={es.status as string} />
-                                  <span className="h-1 w-1 rounded-full bg-border" />
-                                  <span className="capitalize">{(es.role as string) ?? "scanner"}</span>
-                                  {prof?.email && (
-                                    <>
-                                      <span className="h-1 w-1 rounded-full bg-border" />
-                                      <span>{prof.email}</span>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                              {es.status === "active" && (
-                                <form action={revokeEventStaffMember}>
-                                  <input type="hidden" name="event_id" value={eventId} />
-                                  <input type="hidden" name="event_staff_id" value={es.id as string} />
-                                  <Button type="submit" variant="ghost" size="sm" className="text-destructive hover:bg-destructive/5 text-[10px] uppercase tracking-widest font-bold">
-                                    Revoke Access
-                                  </Button>
-                                </form>
-                              )}
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </div>
-                {(eventStaffRows ?? []).length > 0 && (
-                  <div className="bg-muted/30 px-8 py-4 border-t border-border/50">
-                    <ListPagination
-                      pathname={staffPagePath}
-                      searchParams={q}
-                      paramKey="lp_stf"
-                      page={scannersPage.page}
-                      pageSize={DEFAULT_LIST_PAGE_SIZE}
-                      total={scannersPage.total}
-                      pageCount={scannersPage.pageCount}
-                      rangeStart={scannersPage.rangeStart}
-                      rangeEnd={scannersPage.rangeEnd}
-                      listLabel="Scanners on this event"
-                    />
-                  </div>
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Staff access summary">
+          <SummaryCard label="Active staff" value={activeStaff.length} tone="success" />
+          <SummaryCard label="Pending invites" value={pendingInvites.length} tone="warning" />
+          <SummaryCard label="Expired invites" value={expiredInvites.length} tone="muted" />
+          <SummaryCard label="Revoked access" value={revokedStaff.length + revokedInvites.length} tone="danger" />
+        </section>
+
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_25rem] xl:items-start">
+          <div className="space-y-8">
+            <section className="panel-card overflow-hidden p-0">
+              <SectionHeader
+                eyebrow="Current access"
+                title="Active scanner team"
+                description="These staff members can open the staff scanner for this event."
+              />
+              <div className="divide-y divide-border/60">
+                {activeStaff.length === 0 ? (
+                  <EmptyState label="No active staff yet." />
+                ) : (
+                  activeStaff.map((row) => <ActiveStaffItem key={row.id} row={row} eventId={eventId} />)
                 )}
               </div>
             </section>
 
-            {/* Pending Invitations */}
-            <section className="space-y-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-              <div className="flex items-center gap-4">
-                <h2 className="font-serif text-2xl font-light text-foreground">Pending Invitations</h2>
-                <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
-              </div>
-
-              <div className="panel-card p-0 overflow-hidden border-border/40">
-                <div className="p-8 space-y-6">
-                  {(staffInvites ?? []).length === 0 ? (
-                    <div className="py-6 text-center">
-                       <p className="text-sm font-light text-muted-foreground italic">No invitations currently pending.</p>
-                    </div>
-                  ) : (
-                    <ul className="divide-y divide-border/50">
-                      {invitesPage.slice.map((inv) => {
-                        const exp = new Date(inv.expires_at as string);
-                        const isPast = exp.getTime() < Date.now();
-                        const st = inv.status as string;
-                        const badgeLabel = st === "pending" && isPast ? "expired" : st;
-                        return (
-                          <li key={inv.id as string} className="py-5 first:pt-0 last:pb-0">
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                              <div className="space-y-1">
-                                <p className="text-sm font-medium text-foreground">{inv.email as string}</p>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground font-light">
-                                  <StatusBadge status={badgeLabel} />
-                                  <span className="h-1 w-1 rounded-full bg-border" />
-                                  <span>Expires {exp.toLocaleDateString()} at {exp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                </div>
-                              </div>
-                              {st === "pending" && !isPast && (
-                                <form action={revokeStaffInvitation}>
-                                  <input type="hidden" name="event_id" value={eventId} />
-                                  <input type="hidden" name="invitation_id" value={inv.id as string} />
-                                  <Button type="submit" variant="outline" size="sm" className="text-xs border-border/60">
-                                    Revoke
-                                  </Button>
-                                </form>
-                              )}
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </div>
-                {(staffInvites ?? []).length > 0 && (
-                  <div className="bg-muted/30 px-8 py-4 border-t border-border/50">
-                    <ListPagination
-                      pathname={staffPagePath}
-                      searchParams={q}
-                      paramKey="lp_inv"
-                      page={invitesPage.page}
-                      pageSize={DEFAULT_LIST_PAGE_SIZE}
-                      total={invitesPage.total}
-                      pageCount={invitesPage.pageCount}
-                      rangeStart={invitesPage.rangeStart}
-                      rangeEnd={invitesPage.rangeEnd}
-                      listLabel="Staff invitations"
-                    />
-                  </div>
-                )}
-              </div>
+            <section className="panel-card overflow-hidden p-0">
+              <SectionHeader
+                eyebrow="Invitation pipeline"
+                title="Staff invitations"
+                description="Pending and expired invitations can be resent with a fresh secure link."
+              />
+              <InvitationGroup
+                title="Pending"
+                emptyLabel="No pending invitations."
+                rows={pendingInvites}
+                eventId={eventId}
+                nowMs={nowMs}
+                allowResend
+                allowRevoke
+              />
+              <InvitationGroup
+                title="Expired"
+                emptyLabel="No expired invitations."
+                rows={expiredInvites}
+                eventId={eventId}
+                nowMs={nowMs}
+                allowResend
+                allowRevoke
+              />
+              <InvitationGroup
+                title="Accepted"
+                emptyLabel="No accepted invitation history yet."
+                rows={acceptedInvites}
+                eventId={eventId}
+                nowMs={nowMs}
+              />
+              <InvitationGroup
+                title="Revoked"
+                emptyLabel="No revoked invitations."
+                rows={revokedInvites}
+                eventId={eventId}
+                nowMs={nowMs}
+              />
             </section>
+
+            {revokedStaff.length > 0 ? (
+              <section className="panel-card overflow-hidden p-0">
+                <SectionHeader
+                  eyebrow="Past access"
+                  title="Revoked staff"
+                  description="Revoked staff must receive a new email invitation before they can scan again."
+                />
+                <div className="divide-y divide-border/60">
+                  {revokedStaff.map((row) => <RevokedStaffItem key={row.id} row={row} />)}
+                </div>
+              </section>
+            ) : null}
           </div>
 
-          {/* SIDEBAR: Actions & Guidance */}
-          <aside className="lg:col-span-5 space-y-8 lg:sticky lg:top-32">
-            
-            {/* Invitation Form */}
-            <div className="panel-card p-8 border-accent-gold/20 bg-accent-gold/[0.02] shadow-lg shadow-accent-gold/[0.03]">
-              <div className="space-y-2 mb-8">
-                <p className="text-[10px] uppercase tracking-widest text-accent-gold font-bold">New Member</p>
-                <h3 className="font-serif text-2xl font-light text-foreground">Invite Staff</h3>
+          <aside className="space-y-6 xl:sticky xl:top-28">
+            <section className="panel-card border-accent-gold/20 bg-accent-gold/[0.02] p-8 shadow-lg shadow-accent-gold/[0.03]">
+              <div className="mb-6 space-y-2">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-accent-gold">New staff</p>
+                <h2 className="font-serif text-2xl font-light text-foreground">Invite by email</h2>
+                <p className="text-xs font-light leading-relaxed text-muted-foreground">
+                  Staff must accept the invitation using this email address before scanner access is granted.
+                </p>
               </div>
-              
-              <form action={inviteEventStaff.bind(null, eventId)} className="space-y-6">
-                <div className="space-y-1.5">
-                  <label htmlFor="staff-invite-email" className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
-                    Email Address
-                  </label>
-                  <Input
-                    id="staff-invite-email"
-                    name="email"
-                    type="email"
-                    required
-                    autoComplete="off"
-                    placeholder="colleague@venue.com"
-                    className="bg-card border-border/60 focus:border-accent-gold/50"
-                  />
-                </div>
+              <form action={inviteEventStaff.bind(null, eventId)} className="space-y-5">
+                <Input
+                  id="staff-invite-email"
+                  label="Email address"
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="off"
+                  placeholder="colleague@venue.com"
+                  className="bg-card"
+                />
                 <Button type="submit" className="w-full btn-eventuz-gold py-4 shadow-lg shadow-accent-gold/10">
                   Send Invitation Link
                 </Button>
               </form>
-            </div>
+            </section>
 
-            {/* Guidance Panel */}
-            <div className="panel-card p-8 space-y-6">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-foreground">Role Permissions</h4>
-              <ul className="space-y-4">
-                <li className="flex gap-4">
-                   <div className="h-5 w-5 rounded-full bg-accent-gold/10 flex items-center justify-center shrink-0 mt-0.5">
-                     <span className="text-[10px] text-accent-gold font-bold">1</span>
-                   </div>
-                   <div className="space-y-1">
-                      <p className="text-sm font-medium text-foreground">Check-in Only</p>
-                      <p className="text-xs text-muted-foreground font-light leading-relaxed">Staff members can only access the scanning interface to validate tickets.</p>
-                   </div>
-                </li>
-                <li className="flex gap-4">
-                   <div className="h-5 w-5 rounded-full bg-accent-gold/10 flex items-center justify-center shrink-0 mt-0.5">
-                     <span className="text-[10px] text-accent-gold font-bold">2</span>
-                   </div>
-                   <div className="space-y-1">
-                      <p className="text-sm font-medium text-foreground">Secure Access</p>
-                      <p className="text-xs text-muted-foreground font-light leading-relaxed">Invitations are unique to each email and require an Eventuz account for secure check-in.</p>
-                   </div>
-                </li>
-              </ul>
-
-              <div className="pt-6 border-t border-border/50">
-                <Button variant="outline" className="w-full btn-eventuz-secondary py-3 text-xs" asChild>
-                  <Link href={`/organizer/events/${eventId}/scan`}>
-                    Preview Scanner Interface
-                  </Link>
-                </Button>
+            <section className="panel-card p-8">
+              <h2 className="text-xs font-bold uppercase tracking-widest text-foreground">Scanner role</h2>
+              <div className="mt-5 space-y-5 text-sm">
+                <GuidanceItem
+                  index={1}
+                  title="Check-in only"
+                  body="Staff can validate ticket QR codes for this event. They do not receive organizer settings or ticket inventory access."
+                />
+                <GuidanceItem
+                  index={2}
+                  title="Secure acceptance"
+                  body="Every invite uses a unique link and must be accepted by an account with the invited email."
+                />
+                <GuidanceItem
+                  index={3}
+                  title="Recover by invite"
+                  body="Revoked staff are restored by sending a new invitation, keeping the access history clear."
+                />
               </div>
-            </div>
-
+            </section>
           </aside>
         </div>
       </div>
     </RoleAreaShell>
+  );
+}
+
+function SummaryCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "success" | "warning" | "muted" | "danger";
+}) {
+  const toneClass = {
+    success: "border-success/30 bg-success-muted text-success",
+    warning: "border-warning/30 bg-warning/10 text-warning",
+    muted: "border-border bg-muted/30 text-muted-foreground",
+    danger: "border-destructive/25 bg-destructive-muted text-destructive",
+  }[tone];
+
+  return (
+    <div className={`rounded-2xl border px-5 py-5 ${toneClass}`}>
+      <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">{label}</p>
+      <p className="mt-2 font-serif text-4xl font-semibold leading-none">{value}</p>
+    </div>
+  );
+}
+
+function SectionHeader({
+  eyebrow,
+  title,
+  description,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <header className="border-b border-border/60 px-6 py-6 sm:px-8">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-accent-gold">{eyebrow}</p>
+      <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <h2 className="font-serif text-2xl font-light text-foreground">{title}</h2>
+        <p className="max-w-lg text-xs font-light leading-relaxed text-muted-foreground">{description}</p>
+      </div>
+    </header>
+  );
+}
+
+function EmptyState({ label }: { label: string }) {
+  return (
+    <div className="px-6 py-10 text-center sm:px-8">
+      <p className="text-sm font-light italic text-muted-foreground">{label}</p>
+    </div>
+  );
+}
+
+function ActiveStaffItem({ row, eventId }: { row: EventStaffRow; eventId: string }) {
+  const profile = row.profile;
+  const displayName = profile?.full_name?.trim() || profile?.email || "Staff member";
+
+  return (
+    <div className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+      <div className="min-w-0 space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="truncate text-base font-medium text-foreground">{displayName}</p>
+          <StatusBadge status={row.status} />
+        </div>
+        <p className="text-xs font-light text-muted-foreground">
+          {profile?.email ?? "Email unavailable"} · Role: {row.role || "scanner"} · Assigned {formatDateTime(row.created_at)}
+        </p>
+      </div>
+      <form action={revokeEventStaffMember}>
+        <input type="hidden" name="event_id" value={eventId} />
+        <input type="hidden" name="event_staff_id" value={row.id} />
+        <Button type="submit" variant="ghost" size="sm" className="text-[10px] font-bold uppercase tracking-widest text-destructive hover:bg-destructive/5">
+          Revoke Access
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+function RevokedStaffItem({ row }: { row: EventStaffRow }) {
+  const profile = row.profile;
+  return (
+    <div className="px-6 py-4 sm:px-8">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-sm font-medium text-foreground">{profile?.full_name?.trim() || profile?.email || "Staff member"}</p>
+        <StatusBadge status="revoked" />
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {profile?.email ?? "Email unavailable"} · Revoked access remains in history.
+      </p>
+    </div>
+  );
+}
+
+function InvitationGroup({
+  title,
+  emptyLabel,
+  rows,
+  eventId,
+  nowMs,
+  allowResend = false,
+  allowRevoke = false,
+}: {
+  title: string;
+  emptyLabel: string;
+  rows: StaffInvitationRow[];
+  eventId: string;
+  nowMs: number;
+  allowResend?: boolean;
+  allowRevoke?: boolean;
+}) {
+  return (
+    <section className="border-b border-border/60 last:border-b-0">
+      <div className="bg-muted/20 px-6 py-3 sm:px-8">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">{title}</h3>
+      </div>
+      {rows.length === 0 ? (
+        <EmptyState label={emptyLabel} />
+      ) : (
+        <div className="divide-y divide-border/60">
+          {rows.map((row) => (
+            <InvitationItem
+              key={row.id}
+              row={row}
+              eventId={eventId}
+              nowMs={nowMs}
+              allowResend={allowResend}
+              allowRevoke={allowRevoke}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function InvitationItem({
+  row,
+  eventId,
+  nowMs,
+  allowResend,
+  allowRevoke,
+}: {
+  row: StaffInvitationRow;
+  eventId: string;
+  nowMs: number;
+  allowResend: boolean;
+  allowRevoke: boolean;
+}) {
+  const displayStatus = inviteDisplayStatus(row, nowMs);
+
+  return (
+    <div className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+      <div className="min-w-0 space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="break-all text-sm font-medium text-foreground">{row.email}</p>
+          <StatusBadge status={displayStatus} />
+        </div>
+        <p className="text-xs font-light text-muted-foreground">
+          Created {formatDateTime(row.created_at)} · Expires {formatDateTime(row.expires_at)}
+        </p>
+      </div>
+      {(allowResend || allowRevoke) && (
+        <div className="flex flex-wrap gap-2">
+          {allowResend ? (
+            <form action={resendStaffInvitation}>
+              <input type="hidden" name="event_id" value={eventId} />
+              <input type="hidden" name="invitation_id" value={row.id} />
+              <Button type="submit" variant="outline" size="sm" className="text-xs">
+                Resend
+              </Button>
+            </form>
+          ) : null}
+          {allowRevoke ? (
+            <form action={revokeStaffInvitation}>
+              <input type="hidden" name="event_id" value={eventId} />
+              <input type="hidden" name="invitation_id" value={row.id} />
+              <Button type="submit" variant="ghost" size="sm" className="text-xs text-destructive hover:bg-destructive/5">
+                Revoke
+              </Button>
+            </form>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GuidanceItem({ index, title, body }: { index: number; title: string; body: string }) {
+  return (
+    <div className="flex gap-4">
+      <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent-gold/10">
+        <span className="text-[10px] font-bold text-accent-gold">{index}</span>
+      </div>
+      <div className="space-y-1">
+        <p className="font-medium text-foreground">{title}</p>
+        <p className="text-xs font-light leading-relaxed text-muted-foreground">{body}</p>
+      </div>
+    </div>
   );
 }

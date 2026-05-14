@@ -4,6 +4,7 @@ import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
 import { loadAttendeeEventContext } from "@/lib/attendee/eventContext";
 import { isHitPayDevSimulationAllowed } from "@/lib/payments/hitpayDevSimulation";
 import { EventMapPreview } from "@/components/ui/EventMapPreview";
+import { loadActiveGoogleMapsApiKey } from "@/lib/super-admin/loadGoogleMapsSettings";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -63,8 +64,10 @@ export default async function AttendeeEventPage({ searchParams }: Props) {
   const hasPasses = qrTickets.length > 0 || ordersNeedingQrIssue.length > 0;
 
   const formattedAddress = event.formatted_address as string | null;
-  const lat = event.lat ? Number(event.lat) : null;
-  const lng = event.lng ? Number(event.lng) : null;
+  const latValue = Number(event.lat);
+  const lngValue = Number(event.lng);
+  const hasCoordinates = Number.isFinite(latValue) && Number.isFinite(lngValue);
+  const googleMapsApiKey = await loadActiveGoogleMapsApiKey();
 
   return (
     <RoleAreaShell
@@ -133,7 +136,7 @@ export default async function AttendeeEventPage({ searchParams }: Props) {
               </section>
             ) : null}
 
-            {(formattedAddress || (lat && lng)) && (
+            {(formattedAddress || hasCoordinates) && (
               <section className="animate-fade-in-up space-y-6" aria-labelledby="location-heading">
                 <div className="flex items-center gap-4">
                   <h2 id="location-heading" className="font-serif text-2xl font-light text-foreground">
@@ -170,11 +173,12 @@ export default async function AttendeeEventPage({ searchParams }: Props) {
                     </div>
                   </div>
 
-                  {lat && lng && (
+                  {googleMapsApiKey && hasCoordinates && (
                     <div className="border-t border-border/50">
                       <EventMapPreview
-                        lat={lat}
-                        lng={lng}
+                        apiKey={googleMapsApiKey}
+                        lat={latValue}
+                        lng={lngValue}
                         title={venue}
                         address={formattedAddress || venue}
                       />
