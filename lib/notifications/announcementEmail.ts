@@ -65,7 +65,7 @@ export async function sendAnnouncementEmails(opts: {
   // Get Buyer Emails via their Profile
   const { data: orders } = await admin
     .from("orders")
-    .select("buyer_user_id")
+    .select("id, buyer_user_id")
     .eq("event_id", opts.eventId)
     .in("status", ["paid", "completed"]);
 

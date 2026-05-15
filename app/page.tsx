@@ -1,4 +1,6 @@
 import { PublicShell } from "@/components/layout/PublicShell";
+import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
+import { type EventuzRole } from "@/lib/auth/roles";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolvePublishedEventForAttendee } from "@/lib/event/attendeeEvent";
@@ -15,6 +17,18 @@ interface EventData {
 
 export default async function HomePage() {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let role: EventuzRole | null = null;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    role = profile?.role as EventuzRole | null;
+  }
+
   const { event: rawEvent, message } = await resolvePublishedEventForAttendee(supabase);
   const event = rawEvent as unknown as EventData | null;
 
@@ -24,29 +38,41 @@ export default async function HomePage() {
     const placeholderDate = new Date();
     placeholderDate.setDate(placeholderDate.getDate() + 30);
 
-    return (
-      <PublicShell>
-        <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-4 py-20 text-center">
-          <div className="animate-fade-in-up max-w-3xl">
-            <p className="eyebrow mb-6">Weddings &amp; Celebrations</p>
-            <h1 className="font-serif text-5xl md:text-7xl font-light mb-8 text-foreground leading-[1.1]">
-              A new chapter <br /> 
-              <span className="italic font-normal text-accent-gold">is coming</span>
-            </h1>
-            
-            <CountdownTimer targetDate={placeholderDate} label="Launch anticipated in" />
+    const comingSoonContent = (
+      <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-4 py-20 text-center">
+        <div className="animate-fade-in-up max-w-3xl">
+          <p className="eyebrow mb-6">Weddings &amp; Celebrations</p>
+          <h1 className="font-serif text-5xl md:text-7xl font-light mb-8 text-foreground leading-[1.1]">
+            A new chapter <br /> 
+            <span className="italic font-normal text-accent-gold">is coming</span>
+          </h1>
+          
+          <CountdownTimer targetDate={placeholderDate} label="Launch anticipated in" />
 
-            <p className="max-w-xl mx-auto text-base text-muted-foreground leading-relaxed mb-12 font-light mt-8">
-              We are currently crafting an extraordinary event experience. 
-              Check back soon for tickets and registration details.
-            </p>
-            <div className="flex justify-center gap-4">
-              <Link href="/login" className="btn-eventuz-secondary min-w-[200px]">
-                Organizer Login
-              </Link>
-            </div>
+          <p className="max-w-xl mx-auto text-base text-muted-foreground leading-relaxed mb-12 font-light mt-8">
+            We are currently crafting an extraordinary event experience. 
+            Check back soon for tickets and registration details.
+          </p>
+          <div className="flex justify-center gap-4">
+            <Link href="/login" className="btn-eventuz-secondary min-w-[200px]">
+              Organizer Login
+            </Link>
           </div>
         </div>
+      </div>
+    );
+
+    if (user && role) {
+      return (
+        <RoleAreaShell role={role} title="Coming Soon" showPageHeader={false} layout="flush" mainWidth="wide">
+          {comingSoonContent}
+        </RoleAreaShell>
+      );
+    }
+
+    return (
+      <PublicShell>
+        {comingSoonContent}
       </PublicShell>
     );
   }
