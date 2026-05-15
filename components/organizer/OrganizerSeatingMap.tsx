@@ -244,6 +244,7 @@ export function OrganizerSeatingMap({ eventId, rows, ticketTypes }: Props) {
   const [occupancy, setOccupancy] = useState<OccupancyFilter>("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<SeatOverviewRow | null>(null);
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
   const filtered = useMemo(
     () =>
@@ -270,6 +271,13 @@ export function OrganizerSeatingMap({ eventId, rows, ticketTypes }: Props) {
   const openCount = rows.filter((row) => !isSeatTaken(row) && row.seatStatus !== "disabled").length;
   const disabledCount = rows.filter((row) => row.seatStatus === "disabled").length;
   const reorderLocked = Boolean(ticketTypeId);
+
+  function toggleGroup(ticketTypeId: string) {
+    setCollapsedGroups((current) => ({
+      ...current,
+      [ticketTypeId]: !current[ticketTypeId],
+    }));
+  }
 
   return (
     <div className="space-y-8">
@@ -378,6 +386,8 @@ export function OrganizerSeatingMap({ eventId, rows, ticketTypes }: Props) {
             const first = group.originalIndex === 0;
             const last = group.originalIndex === ticketTypes.length - 1;
             const taken = group.allRows.filter(isSeatTaken).length;
+            const collapsed = Boolean(collapsedGroups[group.ticketType.id]);
+            const panelId = `seat-group-${group.ticketType.id}`;
 
             return (
               <section key={group.ticketType.id} className="rounded-[2px] border border-[#EDE8E3] bg-white p-4 sm:p-6">
@@ -393,6 +403,15 @@ export function OrganizerSeatingMap({ eventId, rows, ticketTypes }: Props) {
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      aria-expanded={!collapsed}
+                      aria-controls={panelId}
+                      onClick={() => toggleGroup(group.ticketType.id)}
+                      className="rounded-[1px] border border-[#C9A96E] px-4 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-[#8B6914] transition-colors hover:bg-[#C9A96E] hover:text-[#1A1512]"
+                    >
+                      {collapsed ? "Expand" : "Collapse"}
+                    </button>
                     <form action={moveSeatOverviewTicketGroup}>
                       <input type="hidden" name="event_id" value={eventId} />
                       <input type="hidden" name="ticket_type_id" value={group.ticketType.id} />
@@ -424,11 +443,18 @@ export function OrganizerSeatingMap({ eventId, rows, ticketTypes }: Props) {
                     Clear the ticket type filter to reorder groups.
                   </p>
                 ) : null}
-                {group.ticketType.seatLayoutMode === "tables" ? (
-                  <TablesLayout group={group} onSelect={setSelected} />
-                ) : (
-                  <RowedLayout group={group} onSelect={setSelected} />
-                )}
+                <div id={panelId} hidden={collapsed}>
+                  {group.ticketType.seatLayoutMode === "tables" ? (
+                    <TablesLayout group={group} onSelect={setSelected} />
+                  ) : (
+                    <RowedLayout group={group} onSelect={setSelected} />
+                  )}
+                </div>
+                {collapsed ? (
+                  <p className="rounded-[2px] border border-[#EDE8E3] bg-[#FDFAF4] px-4 py-3 text-sm font-light text-[#7A6E68]">
+                    {group.ticketType.name} is collapsed. Expand to view and open individual seats.
+                  </p>
+                ) : null}
               </section>
             );
           })}
