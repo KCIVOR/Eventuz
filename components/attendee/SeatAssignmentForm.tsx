@@ -219,8 +219,8 @@ export function SeatAssignmentForm({
           occupied
             ? "cursor-not-allowed border-border bg-muted/70 text-muted-foreground opacity-55"
             : selected
-            ? "border-primary bg-primary text-primary-foreground"
-            : "border-border bg-background text-foreground hover:border-primary/50 hover:bg-muted/40",
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border bg-background text-foreground hover:border-primary/50 hover:bg-muted/40",
           atCapacity ? "cursor-not-allowed opacity-45 hover:border-border hover:bg-background" : "",
           pending ? "opacity-60" : "",
         ].join(" ")}
@@ -250,7 +250,7 @@ export function SeatAssignmentForm({
       </header>
 
       <div className="lg:grid lg:grid-cols-12 lg:gap-10 lg:items-start">
-        
+
         {/* MAIN: Seating Map & Forms */}
         <div className="lg:col-span-7 space-y-8">
           <section
@@ -398,7 +398,7 @@ export function SeatAssignmentForm({
               </ul>
             </section>
           )}
-          
+
           <div className="panel-card p-0 overflow-hidden shadow-lg shadow-accent-gold/[0.03]">
             <div className="bg-accent-gold/[0.03] p-8 border-b border-accent-gold/10">
               <h2 className="font-serif text-2xl font-light text-foreground mb-1">Your Selection</h2>
@@ -423,12 +423,12 @@ export function SeatAssignmentForm({
 
               <div className="pt-6 border-t border-border/60">
                 <div className="flex items-center justify-between mb-4">
-                   <span className="text-xs font-medium text-foreground">Selection Progress</span>
-                   <span className="text-xs text-muted-foreground">{selectedSeatIds.length} / {qty}</span>
+                  <span className="text-xs font-medium text-foreground">Selection Progress</span>
+                  <span className="text-xs text-muted-foreground">{selectedSeatIds.length} / {qty}</span>
                 </div>
                 <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-accent-gold transition-all duration-500 ease-out" 
+                  <div
+                    className="h-full bg-accent-gold transition-all duration-500 ease-out"
                     style={{ width: `${(selectedSeatIds.length / qty) * 100}%` }}
                   />
                 </div>

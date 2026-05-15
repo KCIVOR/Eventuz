@@ -223,13 +223,13 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
             {/* Existing Ticket Types Section */}
             <section className="space-y-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
               <div className="flex items-center gap-4">
-                <h2 className="font-serif text-2xl font-light text-foreground">Active Packages</h2>
+                <h2 className="font-serif text-2xl font-light text-foreground">Ticket Inventory</h2>
                 <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
               </div>
               
               {(ticketTypes ?? []).length === 0 ? (
                 <div className="panel-card py-16 text-center border-dashed border-border/60 bg-muted/5">
-                   <p className="text-sm font-light text-muted-foreground">No ticket types defined yet. Use the sidebar to create your first package.</p>
+                   <p className="text-sm font-light text-muted-foreground">No ticket types defined yet. Use the sidebar to create your first ticket type.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -254,7 +254,7 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Package Description</label>
+                          <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Ticket Description</label>
                           <textarea
                             name="description"
                             rows={3}
@@ -284,7 +284,7 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Package Status</label>
+                          <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Ticket Status</label>
                           <select name="status" className="input-eventuz" defaultValue={tt.status as string}>
                             {TICKET_TYPE_STATUSES.map((s) => (
                               <option key={s} value={s}>{ticketStatusLabels[s] ?? s}</option>
@@ -293,9 +293,9 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
                         </div>
 
                         <div className="pt-4 flex justify-end">
-                          <Button type="submit" className="btn-eventuz-gold px-8 py-3 text-xs">
-                            Update Package
-                          </Button>
+                          <button type="submit" className="btn-eventuz-gold px-8 py-3 text-xs">
+                            Update Ticket Type
+                          </button>
                         </div>
                       </form>
                     </CollapsibleTicketTypeCard>
@@ -362,15 +362,15 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
               </form>
             </div>
 
-            {/* Add New Package Portal */}
+            {/* Add New Ticket Type Portal */}
             <div className="panel-card p-8 border-accent-gold/20 bg-accent-gold/[0.02]">
               <div className="space-y-2 mb-8">
                 <p className="text-[10px] uppercase tracking-widest text-accent-gold font-bold">Inventory Management</p>
-                <h3 className="font-serif text-2xl font-light text-foreground">New Package</h3>
+                <h3 className="font-serif text-2xl font-light text-foreground">Ticket Management</h3>
               </div>
               
               <form action={createTicketType.bind(null, eventId)} className="space-y-6">
-                <Input label="Package Name" name="name" required placeholder="e.g. VIP Gala" />
+                <Input label="Ticket Name" name="name" required placeholder="e.g. VIP Gala" />
                 <Input label="Initial Quantity" name="quantity" type="number" required min={1} defaultValue="10" />
                 
                 <div className="grid grid-cols-2 gap-4">
@@ -388,7 +388,7 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
                 </div>
 
                 <Button type="submit" className="w-full btn-eventuz-gold py-4 shadow-lg shadow-accent-gold/10">
-                  Create Package Type
+                  Create Ticket Type
                 </Button>
               </form>
             </div>

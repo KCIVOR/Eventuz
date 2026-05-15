@@ -32,7 +32,7 @@ export default async function OrganizerEventDashboardPage({ params, searchParams
 
   const d = loaded.data;
   const dashPath = `/organizer/events/${eventId}/dashboard`;
-  
+
   // Data slicing for tables
   const paidPage = slicePage(d.paid_unassigned, pgPu, DEFAULT_LIST_PAGE_SIZE);
   const ordersPage = slicePage(d.orders, pgOrd, DEFAULT_LIST_PAGE_SIZE);
@@ -55,7 +55,7 @@ export default async function OrganizerEventDashboardPage({ params, searchParams
       ]}
     >
       <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-10 px-4 sm:px-8">
-        
+
         {/* TOP: Metric Hero */}
         <section className="space-y-6 animate-fade-in-up">
           <div className="flex items-center justify-between">
@@ -66,10 +66,10 @@ export default async function OrganizerEventDashboardPage({ params, searchParams
         </section>
 
         <div className="lg:grid lg:grid-cols-12 lg:gap-12 lg:items-start">
-          
+
           {/* MAIN COLUMN: Core Data Tables */}
           <div className="lg:col-span-8 space-y-12">
-            
+
             {/* Availability Section */}
             <section className="space-y-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
               <div className="flex items-center gap-4">
@@ -86,11 +86,11 @@ export default async function OrganizerEventDashboardPage({ params, searchParams
                   <h3 className="font-serif text-xl font-light text-foreground">Awaiting Assignment</h3>
                   <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
                 </div>
-                <DashboardOrdersTable 
-                  orders={d.paid_unassigned} 
-                  pageData={paidPage} 
-                  dashPath={dashPath} 
-                  searchParams={q} 
+                <DashboardOrdersTable
+                  orders={d.paid_unassigned}
+                  pageData={paidPage}
+                  dashPath={dashPath}
+                  searchParams={q}
                   paramKey="db_p"
                 />
               </section>
@@ -102,11 +102,11 @@ export default async function OrganizerEventDashboardPage({ params, searchParams
                 <h3 className="font-serif text-xl font-light text-foreground">Attendee Registry</h3>
                 <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
               </div>
-              <DashboardTicketsTable 
-                tickets={d.tickets} 
-                pageData={ticketsPage} 
-                dashPath={dashPath} 
-                searchParams={q} 
+              <DashboardTicketsTable
+                tickets={d.tickets}
+                pageData={ticketsPage}
+                dashPath={dashPath}
+                searchParams={q}
               />
             </section>
 
@@ -116,11 +116,11 @@ export default async function OrganizerEventDashboardPage({ params, searchParams
                 <h3 className="font-serif text-xl font-light text-foreground">Financial Ledger</h3>
                 <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
               </div>
-              <DashboardOrdersTable 
-                orders={d.orders} 
-                pageData={ordersPage} 
-                dashPath={dashPath} 
-                searchParams={q} 
+              <DashboardOrdersTable
+                orders={d.orders}
+                pageData={ordersPage}
+                dashPath={dashPath}
+                searchParams={q}
                 paramKey="db_o"
               />
             </section>
@@ -131,18 +131,87 @@ export default async function OrganizerEventDashboardPage({ params, searchParams
                 <h3 className="font-serif text-xl font-light text-foreground text-foreground font-bold">Recent Arrivals</h3>
                 <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
               </div>
-              <DashboardScanActivity 
-                scans={d.recent_check_ins} 
-                pageData={scansPage} 
-                dashPath={dashPath} 
-                searchParams={q} 
+              <DashboardScanActivity
+                scans={d.recent_check_ins}
+                pageData={scansPage}
+                dashPath={dashPath}
+                searchParams={q}
               />
             </section>
           </div>
 
           {/* SIDEBAR: Controls & Activity */}
           <aside className="lg:col-span-4 space-y-8 lg:sticky lg:top-32">
-            
+
+            {/* Announcements Section */}
+            <div className="panel-card p-8 border-accent-gold/20 bg-accent-gold/[0.02]">
+              <h3 className="text-[10px] uppercase tracking-widest text-accent-gold font-bold mb-6">Announcements</h3>
+              
+              <div className="space-y-6">
+                <form action={async (formData) => {
+                  "use server";
+                  const { createAnnouncement } = await import("@/app/organizer/events/announcementActions");
+                  await createAnnouncement(eventId, formData);
+                }} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <input
+                      name="title"
+                      placeholder="Announcement Title"
+                      className="w-full rounded-[1px] border border-[#EDE8E3] bg-white px-3 py-2 text-xs font-light text-[#1A1512] outline-none transition-colors placeholder:text-[#AEA89F] focus:border-[#C9A96E]"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <textarea
+                      name="content"
+                      placeholder="Write your message here..."
+                      rows={3}
+                      className="w-full rounded-[1px] border border-[#EDE8E3] bg-white px-3 py-2 text-xs font-light text-[#1A1512] outline-none transition-colors placeholder:text-[#AEA89F] focus:border-[#C9A96E]"
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full btn-eventuz-gold py-3 text-[10px] shadow-sm">
+                    Publish Announcement
+                  </Button>
+                </form>
+
+                {/* List of recent announcements */}
+                <div className="pt-4 border-t border-border/50 space-y-3">
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Active Announcements</p>
+                  {/* We fetch these inline for simplicity or they could be passed from the loader */}
+                  {(async () => {
+                    const { createClient } = await import("@/lib/supabase/server");
+                    const supabase = await createClient();
+                    const { data: announcements } = await supabase
+                      .from("event_announcements")
+                      .select("id, title, created_at")
+                      .eq("event_id", eventId)
+                      .order("created_at", { ascending: false });
+
+                    if (!announcements || announcements.length === 0) {
+                      return <p className="text-[10px] italic text-muted-foreground">No announcements published yet.</p>;
+                    }
+
+                    return announcements.map((ann) => (
+                      <div key={ann.id} className="flex items-center justify-between gap-2 p-2 rounded-[1px] bg-white border border-[#EDE8E3]">
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-medium text-foreground truncate">{ann.title}</p>
+                          <p className="text-[9px] text-muted-foreground">{new Date(ann.created_at).toLocaleDateString()}</p>
+                        </div>
+                        <form action={async () => {
+                          "use server";
+                          const { deleteAnnouncement } = await import("@/app/organizer/events/announcementActions");
+                          await deleteAnnouncement(eventId, ann.id);
+                        }}>
+                          <button type="submit" className="text-[10px] text-destructive hover:underline">Delete</button>
+                        </form>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
+            </div>
+
             {/* Quick Controls */}
             <div className="panel-card p-8 border-accent-gold/20 bg-accent-gold/[0.02]">
               <h3 className="text-[10px] uppercase tracking-widest text-accent-gold font-bold mb-6">Operations</h3>

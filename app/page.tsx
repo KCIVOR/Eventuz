@@ -2,6 +2,7 @@ import { PublicShell } from "@/components/layout/PublicShell";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { resolvePublishedEventForAttendee } from "@/lib/event/attendeeEvent";
+import { CountdownTimer } from "@/components/ui/CountdownTimer";
 
 interface EventData {
   id: string;
@@ -19,6 +20,10 @@ export default async function HomePage() {
 
   // If no event is published, show a graceful "Coming Soon" hero
   if (!event) {
+    // For "Coming Soon", we'll mock a date 30 days from now
+    const placeholderDate = new Date();
+    placeholderDate.setDate(placeholderDate.getDate() + 30);
+
     return (
       <PublicShell>
         <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-4 py-20 text-center">
@@ -28,7 +33,10 @@ export default async function HomePage() {
               A new chapter <br /> 
               <span className="italic font-normal text-accent-gold">is coming</span>
             </h1>
-            <p className="max-w-xl mx-auto text-base text-muted-foreground leading-relaxed mb-12 font-light">
+            
+            <CountdownTimer targetDate={placeholderDate} label="Launch anticipated in" />
+
+            <p className="max-w-xl mx-auto text-base text-muted-foreground leading-relaxed mb-12 font-light mt-8">
               We are currently crafting an extraordinary event experience. 
               Check back soon for tickets and registration details.
             </p>
@@ -90,11 +98,16 @@ export default async function HomePage() {
                 {event.name}
               </h1>
 
+              {event.event_date && (
+                <div className="mb-12 border-y border-border/40 py-4 inline-block">
+                  <CountdownTimer targetDate={event.event_date} label="Event countdown" />
+                </div>
+              )}
+
               <p className="max-w-2xl text-xl md:text-2xl text-muted-foreground leading-relaxed font-light italic border-l-2 border-accent-gold/20 pl-8 py-2">
                 &ldquo;{event.description || "A celebration of love, commitment, and new beginnings."}&rdquo;
               </p>
             </div>
-
             {/* Informational Cards - Grid within Left Column */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full pt-8">
               <div className="panel-card p-8 flex flex-col justify-between min-h-[220px]">

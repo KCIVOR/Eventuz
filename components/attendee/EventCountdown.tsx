@@ -37,8 +37,10 @@ function pad(value: number): string {
 export function EventCountdown({ eventDate, eventTime }: Props) {
   const target = useMemo(() => new Date(`${eventDate}T${eventTime || "00:00"}`), [eventDate, eventTime]);
   const [timeLeft, setTimeLeft] = useState<TimeLeft>(() => calculateTimeLeft(target));
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     const interval = window.setInterval(() => {
       setTimeLeft(calculateTimeLeft(target));
     }, 1_000);
@@ -63,14 +65,14 @@ export function EventCountdown({ eventDate, eventTime }: Props) {
           Countdown
         </h2>
         <p className="text-[10px] font-semibold uppercase tracking-widest text-accent-gold">
-          {timeLeft.isPast ? "Event day" : "Until the celebration"}
+          {!isMounted ? "..." : timeLeft.isPast ? "Event day" : "Until the celebration"}
         </p>
       </div>
       <div className="grid grid-cols-4 gap-px bg-border/60">
         {units.map((unit) => (
           <div key={unit.label} className="bg-card px-2 py-5 text-center">
             <p className="font-serif text-3xl font-light tabular-nums text-foreground sm:text-4xl">
-              {unit.value}
+              {isMounted ? unit.value : "--"}
             </p>
             <p className="mt-1 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
               {unit.label}

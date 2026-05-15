@@ -4,10 +4,16 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 /**
- * Updates the user's full name in the profiles table.
+ * Updates the user's profile details in the profiles table.
  */
-export async function updateProfileName(formData: FormData) {
+export async function updateProfileDetails(formData: FormData) {
   const fullName = String(formData.get("full_name") ?? "").trim();
+  const organizationName = String(formData.get("organization_name") ?? "").trim();
+  const address = String(formData.get("address") ?? "").trim();
+  const birthday = String(formData.get("birthday") ?? "").trim();
+  const phoneNumber = String(formData.get("phone_number") ?? "").trim();
+  const bio = String(formData.get("bio") ?? "").trim();
+
   if (!fullName) return { error: "Full name is required." };
 
   const supabase = await createClient();
@@ -19,7 +25,14 @@ export async function updateProfileName(formData: FormData) {
 
   const { error } = await supabase
     .from("profiles")
-    .update({ full_name: fullName })
+    .update({ 
+      full_name: fullName,
+      organization_name: organizationName || null,
+      address: address || null,
+      birthday: birthday || null,
+      phone_number: phoneNumber || null,
+      bio: bio || null
+    })
     .eq("id", user.id);
 
   if (error) return { error: error.message };

@@ -3,19 +3,21 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
+import type { EventuzRole } from "@/lib/auth/roles";
 
 interface UserDropdownProps {
   user: {
     full_name: string;
     avatar_url?: string | null;
   };
+  role?: EventuzRole;
 }
 
 /**
  * User Profile Dropdown for the authenticated header.
  * Replaces the static Sign Out button with a name + avatar trigger.
  */
-export function UserDropdown({ user }: UserDropdownProps) {
+export function UserDropdown({ user, role }: UserDropdownProps) {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -83,6 +85,19 @@ export function UserDropdown({ user }: UserDropdownProps) {
             </svg>
             Manage Profile
           </Link>
+
+          {role === "attendee" && (
+            <Link
+              href="/attendee/transactions"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 px-4 py-3 text-[11px] font-medium uppercase tracking-[0.1em] text-[#AEA89F] hover:bg-[#C9A96E] hover:text-[#1A1512] transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+              </svg>
+              Transaction History
+            </Link>
+          )}
 
           <div className="h-px bg-white/10 mx-2" />
 

@@ -81,7 +81,7 @@ export default async function AttendeeEventPage({ searchParams }: Props) {
     >
       <div className="mx-auto max-w-7xl px-4 pb-12 lg:px-8">
         <div className="lg:grid lg:grid-cols-12 lg:gap-12 lg:items-start">
-          
+
           {/* MAIN COLUMN: Narrative & Venue */}
           <div className="lg:col-span-7 space-y-10">
             <header className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_2px_16px_rgba(28,25,23,0.07)]">
@@ -126,7 +126,7 @@ export default async function AttendeeEventPage({ searchParams }: Props) {
                   <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
                 </div>
                 <div className="relative rounded-2xl border border-border/80 bg-card p-8 sm:p-10 shadow-sm overflow-hidden">
-                   {/* Luxury Quote Ornament */}
+                  {/* Luxury Quote Ornament */}
                   <div className="absolute -top-4 -left-2 opacity-[0.05] pointer-events-none">
                     <span className="font-serif text-[120px] text-accent-gold leading-none">&ldquo;</span>
                   </div>
@@ -145,7 +145,7 @@ export default async function AttendeeEventPage({ searchParams }: Props) {
                   </h2>
                   <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
                 </div>
-                
+
                 <div className="rounded-2xl border border-border/90 bg-card overflow-hidden shadow-sm">
                   <div className="p-8 flex items-start gap-5">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent-gold/10 text-accent-gold">
@@ -193,7 +193,7 @@ export default async function AttendeeEventPage({ searchParams }: Props) {
           {/* STICKY SIDEBAR: Actions & Status */}
           <div className="lg:col-span-5 space-y-8 mt-12 lg:mt-0 lg:sticky lg:top-32">
             <EventCountdown eventDate={eventDate} eventTime={eventTime} />
-            
+
             {/* Status Notifications */}
             <div className="space-y-4">
               {!registrationOpen && (
@@ -223,8 +223,8 @@ export default async function AttendeeEventPage({ searchParams }: Props) {
                 <div className="rounded-2xl border border-success/30 bg-success-muted px-5 py-5 text-sm text-success" role="status">
                   <p className="font-semibold">{seatsDone ? "Seats Secured" : "Tickets Ready"}</p>
                   <p className="mt-2 text-xs leading-relaxed">
-                    {seatsDone 
-                      ? "Guest details are confirmed. You can now access your digital passes." 
+                    {seatsDone
+                      ? "Guest details are confirmed. You can now access your digital passes."
                       : "QR passes have been issued and sent to your email."}
                   </p>
                 </div>
@@ -240,7 +240,7 @@ export default async function AttendeeEventPage({ searchParams }: Props) {
 
             {/* Main Action Hub */}
             <div className="panel-card p-1 shadow-xl shadow-accent-gold/[0.03]">
-              
+
               {/* RSVP Section */}
               <section className="p-8 border-b border-border/50" id="rsvp-tickets">
                 <div className="flex items-center justify-between mb-8">
@@ -270,8 +270,8 @@ export default async function AttendeeEventPage({ searchParams }: Props) {
               {/* Next Steps / Post-Purchase */}
               {(needsSeatChoice || hasPasses || activeOrder) && (
                 <section className="p-8 bg-accent-gold/[0.02]" aria-labelledby="next-steps-heading">
-                   <p className="text-[10px] uppercase tracking-widest text-accent-gold font-semibold mb-6">Manage Your Invitation</p>
-                   <div className="grid grid-cols-1 gap-3">
+                  <p className="text-[10px] uppercase tracking-widest text-accent-gold font-semibold mb-6">Manage Your Invitation</p>
+                  <div className="grid grid-cols-1 gap-3">
                     <Link
                       href="/attendee/event/tickets"
                       className="btn-eventuz-secondary w-full py-4 text-center text-sm"

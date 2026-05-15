@@ -7,6 +7,7 @@ import { useState } from "react";
 import { SidebarNav } from "./SidebarNav";
 import { SiteFooter } from "./SiteFooter";
 import { UserDropdown } from "./UserDropdown";
+import { AnnouncementDropdown } from "./AnnouncementDropdown";
 
 const roleShort: Record<EventuzRole, string> = {
   attendee: "Guest",
@@ -117,9 +118,9 @@ export function DashboardFrame({
             <span className="flex-1" />
           )}
 
-          {/* Role badge + sign out — DS .nav-link pattern */}
-          <div className="flex shrink-0 items-center gap-3">
-            <div className="hidden items-center gap-2 sm:flex" aria-label="Account">
+            <div className="flex shrink-0 items-center gap-3">
+              <AnnouncementDropdown />
+              <div className="hidden items-center gap-2 sm:flex" aria-label="Account">
               <span
                 className="hidden sm:inline-block"
                 style={{
@@ -137,7 +138,7 @@ export function DashboardFrame({
               </span>
               <span style={{ width: 1, height: 16, background: "rgba(201,169,110,0.2)" }} aria-hidden />
             </div>
-            <UserDropdown user={user} />
+            <UserDropdown user={user} role={role} />
           </div>
         </div>
       </header>

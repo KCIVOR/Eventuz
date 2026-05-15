@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { UserDropdown } from "./UserDropdown";
+import { AnnouncementDropdown } from "./AnnouncementDropdown";
 
 const publicNav = [
   { href: "/", label: "Home" },
@@ -17,7 +18,7 @@ export async function SiteHeader() {
   if (user) {
     const { data } = await supabase
       .from("profiles")
-      .select("full_name, avatar_url")
+      .select("full_name, avatar_url, role")
       .eq("id", user.id)
       .single();
     profile = data;
@@ -93,7 +94,8 @@ export async function SiteHeader() {
               >
                 Home
               </Link>
-              <UserDropdown user={profile || { full_name: user.email || "User" }} />
+              <AnnouncementDropdown />
+              <UserDropdown user={profile || { full_name: user.email || "User" }} role={profile?.role} />
             </div>
           )}
         </nav>

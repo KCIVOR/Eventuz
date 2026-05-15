@@ -55,9 +55,9 @@ export function CapacityHoldForm({
     }
   }, [activeHold]);
 
-  const selectedTicket = useMemo(() => 
+  const selectedTicket = useMemo(() =>
     ticketTypes.find(t => t.id === selectedTypeId),
-  [selectedTypeId, ticketTypes]);
+    [selectedTypeId, ticketTypes]);
 
   const ticketNameById = useMemo(() => {
     const m = new Map<string, string>();
@@ -105,13 +105,13 @@ export function CapacityHoldForm({
           <h3 className="font-serif text-2xl font-light text-foreground">Select Package</h3>
           <span className="text-[10px] uppercase tracking-widest text-accent-gold font-semibold">Step 01</span>
         </div>
-        
+
         <div className="grid grid-cols-1 gap-4">
           {ticketTypes.map((tt) => {
             const isSelected = selectedTypeId === tt.id;
             const cap = tt.slotsLeft ?? 0;
             const isSoldOut = cap <= 0;
-            
+
             const regular = Number(tt.regular_price);
             const early = Number(tt.early_bird_price);
             const { unitPrice, pricingType } = resolveUnitPrice({
@@ -130,8 +130,8 @@ export function CapacityHoldForm({
                 onClick={() => setSelectedTypeId(tt.id as string)}
                 className={cn(
                   "relative text-left transition-all duration-300 rounded-lg overflow-hidden group border",
-                  isSelected 
-                    ? "border-accent-gold bg-accent-gold/[0.03] ring-1 ring-accent-gold shadow-lg" 
+                  isSelected
+                    ? "border-accent-gold bg-accent-gold/[0.03] ring-1 ring-accent-gold shadow-lg"
                     : "border-border bg-card hover:border-accent-gold/40 hover:bg-muted/30",
                   isSoldOut && "opacity-60 grayscale cursor-not-allowed border-dashed"
                 )}
@@ -173,7 +173,7 @@ export function CapacityHoldForm({
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Subtle Ornamentation */}
                   <div className={cn(
                     "h-[1px] w-full transition-all duration-500 bg-gradient-to-r from-transparent via-accent-gold/20 to-transparent",
@@ -198,7 +198,7 @@ export function CapacityHoldForm({
             <form action={placeAction} className="flex flex-col">
               <input type="hidden" name="event_id" value={eventId} />
               <input type="hidden" name="ticket_type_id" value={selectedTypeId} />
-              
+
               <div className="p-6 sm:p-8 space-y-8">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                   <div className="space-y-3">
@@ -206,7 +206,7 @@ export function CapacityHoldForm({
                       Number of Guests
                     </label>
                     <div className="flex items-center">
-                      <button 
+                      <button
                         type="button"
                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
                         className="h-12 w-12 border border-border bg-card flex items-center justify-center hover:bg-muted transition-colors rounded-l"
@@ -221,7 +221,7 @@ export function CapacityHoldForm({
                         readOnly
                         className="h-12 w-16 text-center border-y border-border bg-card font-serif text-xl focus:outline-none"
                       />
-                      <button 
+                      <button
                         type="button"
                         onClick={() => setQuantity(Math.min(selectedTicket.slotsLeft || 1, quantity + 1))}
                         className="h-12 w-12 border border-border bg-card flex items-center justify-center hover:bg-muted transition-colors rounded-r"

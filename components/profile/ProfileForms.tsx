@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { updateProfileName, updateProfilePassword, updateProfileAvatar } from "@/app/actions/profileActions";
+import { updateProfileDetails, updateProfilePassword, updateProfileAvatar } from "@/app/actions/profileActions";
 import { Avatar } from "@/components/ui/Avatar";
 
 interface ProfileFormsProps {
@@ -9,24 +9,29 @@ interface ProfileFormsProps {
     email: string;
     full_name: string;
     avatar_url?: string | null;
+    organization_name?: string;
+    address?: string;
+    birthday?: string;
+    phone_number?: string;
+    bio?: string;
   };
 }
 
 export function ProfileForms({ user }: ProfileFormsProps) {
-  const [nameLoading, setNameLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [passLoading, setPassLoading] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  async function handleNameUpdate(e: React.FormEvent<HTMLFormElement>) {
+  async function handleProfileUpdate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setNameLoading(true);
+    setProfileLoading(true);
     setMessage(null);
     const formData = new FormData(e.currentTarget);
-    const res = await updateProfileName(formData);
-    setNameLoading(false);
+    const res = await updateProfileDetails(formData);
+    setProfileLoading(false);
     if (res.error) setMessage({ type: "error", text: res.error });
-    else setMessage({ type: "success", text: "Name updated successfully." });
+    else setMessage({ type: "success", text: "Profile updated successfully." });
   }
 
   async function handlePasswordUpdate(e: React.FormEvent<HTMLFormElement>) {
@@ -51,7 +56,7 @@ export function ProfileForms({ user }: ProfileFormsProps) {
     setMessage(null);
     const formData = new FormData();
     formData.append("avatar", file);
-    
+
     const res = await updateProfileAvatar(formData);
     setAvatarLoading(false);
     if (res.error) setMessage({ type: "error", text: res.error });
@@ -61,7 +66,7 @@ export function ProfileForms({ user }: ProfileFormsProps) {
   return (
     <div className="space-y-12">
       {message && (
-        <div 
+        <div
           className={`alert animate-fade-in-up ${message.type === "success" ? "a-success" : "a-error"}`}
         >
           <span className="alert-icon">{message.type === "success" ? "✦" : "✕"}</span>
@@ -76,17 +81,17 @@ export function ProfileForms({ user }: ProfileFormsProps) {
       <section className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
         <div className="relative group">
           <Avatar src={user.avatar_url} name={user.full_name} size="lg" className="h-24 w-24 sm:h-32 sm:w-32" />
-          <label 
+          <label
             className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"
             htmlFor="avatar-upload"
           >
             <span className="text-[10px] font-semibold uppercase tracking-widest text-white">Change</span>
           </label>
-          <input 
+          <input
             id="avatar-upload"
-            type="file" 
-            accept="image/*" 
-            className="hidden" 
+            type="file"
+            accept="image/*"
+            className="hidden"
             onChange={handleAvatarUpdate}
             disabled={avatarLoading}
           />
@@ -103,37 +108,82 @@ export function ProfileForms({ user }: ProfileFormsProps) {
         </div>
       </section>
 
-      <div className="grid gap-12 lg:grid-cols-2">
+      <div className="flex flex-col gap-12">
         {/* Personal Info Form */}
         <section className="panel-card p-6 sm:p-8">
-          <h3 className="eyebrow mb-6">Personal Details</h3>
-          <form onSubmit={handleNameUpdate} className="space-y-6">
-            <div className="fg">
-              <label className="label-eventuz">Email Address</label>
-              <input 
-                className="input-eventuz opacity-60 cursor-not-allowed" 
-                type="email" 
-                defaultValue={user.email} 
-                disabled 
-              />
-              <span className="fh">Email cannot be changed.</span>
+          <h3 className="eyebrow mb-6">Personal & Professional Details</h3>
+          <form onSubmit={handleProfileUpdate} className="space-y-6">
+            <div className="grid gap-6 sm:grid-cols-2">
+              <div className="fg">
+                <label className="label-eventuz">Full Name</label>
+                <input
+                  name="full_name"
+                  className="input-eventuz"
+                  type="text"
+                  defaultValue={user.full_name}
+                  required
+                />
+              </div>
+              <div className="fg">
+                <label className="label-eventuz">Phone Number</label>
+                <input
+                  name="phone_number"
+                  className="input-eventuz"
+                  type="tel"
+                  defaultValue={user.phone_number}
+                  placeholder="+1 234 567 890"
+                />
+              </div>
             </div>
+
+            <div className="grid gap-6 sm:grid-cols-2">
+              <div className="fg">
+                <label className="label-eventuz">Organization Name</label>
+                <input
+                  name="organization_name"
+                  className="input-eventuz"
+                  type="text"
+                  defaultValue={user.organization_name}
+                  placeholder="Company or Group"
+                />
+              </div>
+              <div className="fg">
+                <label className="label-eventuz">Birthday</label>
+                <input
+                  name="birthday"
+                  className="input-eventuz"
+                  type="date"
+                  defaultValue={user.birthday}
+                />
+              </div>
+            </div>
+
             <div className="fg">
-              <label className="label-eventuz">Full Name</label>
-              <input 
-                name="full_name"
-                className="input-eventuz" 
-                type="text" 
-                defaultValue={user.full_name} 
-                required 
+              <label className="label-eventuz">Address</label>
+              <textarea
+                name="address"
+                className="input-eventuz min-h-[80px] py-3"
+                defaultValue={user.address}
+                placeholder="Full address"
               />
             </div>
-            <button 
-              type="submit" 
-              disabled={nameLoading}
+
+            <div className="fg">
+              <label className="label-eventuz">Bio / About Me</label>
+              <textarea
+                name="bio"
+                className="input-eventuz min-h-[100px] py-3"
+                defaultValue={user.bio}
+                placeholder="Brief introduction..."
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={profileLoading}
               className="btn-eventuz-gold w-full sm:w-auto"
             >
-              {nameLoading ? "Updating..." : "Save Changes"}
+              {profileLoading ? "Updating..." : "Save Changes"}
             </button>
           </form>
         </section>
@@ -144,40 +194,40 @@ export function ProfileForms({ user }: ProfileFormsProps) {
           <form onSubmit={handlePasswordUpdate} className="space-y-6">
             <div className="fg">
               <label className="label-eventuz">Current Password</label>
-              <input 
+              <input
                 name="current_password"
-                className="input-eventuz" 
-                type="password" 
+                className="input-eventuz"
+                type="password"
                 placeholder="••••••••"
-                required 
+                required
               />
               <span className="fh">Verify your identity to change password.</span>
             </div>
             <div className="h-px bg-border/40" />
             <div className="fg">
               <label className="label-eventuz">New Password</label>
-              <input 
+              <input
                 name="password"
-                className="input-eventuz" 
-                type="password" 
+                className="input-eventuz"
+                type="password"
                 placeholder="••••••••"
-                required 
+                required
                 minLength={6}
               />
             </div>
             <div className="fg">
               <label className="label-eventuz">Confirm New Password</label>
-              <input 
+              <input
                 name="confirm_password"
-                className="input-eventuz" 
-                type="password" 
+                className="input-eventuz"
+                type="password"
                 placeholder="••••••••"
-                required 
+                required
                 minLength={6}
               />
             </div>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={passLoading}
               className="btn-eventuz-primary w-full sm:w-auto"
             >

@@ -35,7 +35,7 @@ export function AttendeeTransactionHistory({
           <p className="text-[10px] uppercase tracking-[0.3em] text-accent-gold font-semibold">History</p>
           <h1 className="font-serif text-4xl text-foreground">Transactions</h1>
         </div>
-        
+
         <form action={pathname} className="flex items-center gap-3">
           <div className="min-w-[180px]">
             <select

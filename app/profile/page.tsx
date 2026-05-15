@@ -11,10 +11,10 @@ export default async function ProfilePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Load the profile record to get the full name and avatar URL
+  // Load the profile record to get more details
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, avatar_url")
+    .select("full_name, avatar_url, organization_name, address, birthday, phone_number, bio")
     .eq("id", user!.id)
     .single();
 
@@ -22,6 +22,11 @@ export default async function ProfilePage() {
     email: user!.email || "",
     full_name: profile?.full_name || "",
     avatar_url: profile?.avatar_url || null,
+    organization_name: profile?.organization_name || "",
+    address: profile?.address || "",
+    birthday: profile?.birthday || "",
+    phone_number: profile?.phone_number || "",
+    bio: profile?.bio || "",
   };
 
   return (
@@ -32,7 +37,7 @@ export default async function ProfilePage() {
           <h1 className="section-title">My Account</h1>
         </div>
       </div>
-      
+
       <ProfileForms user={userData} />
     </div>
   );
