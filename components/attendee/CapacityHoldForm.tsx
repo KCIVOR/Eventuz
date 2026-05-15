@@ -13,6 +13,7 @@ import type { TicketTypeWithSlots } from "@/lib/attendee/eventContext";
 import { formatPhp } from "@/lib/utils/money";
 import { resolveUnitPrice } from "@/lib/orders/pricing";
 import { useActionState, useMemo, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -54,6 +55,13 @@ export function CapacityHoldForm({
       setQuantity(Number(activeHold.quantity));
     }
   }, [activeHold]);
+
+  const router = useRouter();
+  useEffect(() => {
+    if (simState.ok) {
+      router.push("/attendee/event/seats");
+    }
+  }, [simState.ok, router]);
 
   const selectedTicket = useMemo(() =>
     ticketTypes.find(t => t.id === selectedTypeId),

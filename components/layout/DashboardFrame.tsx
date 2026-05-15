@@ -84,7 +84,7 @@ export function DashboardFrame({
 
           {/* Brand — DS .nav-brand */}
           <Link
-            href={homeHref}
+            href="/"
             prefetch={false}
             className="shrink-0 focus-visible:outline-none hover-gold-text"
             style={{

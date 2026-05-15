@@ -6,7 +6,7 @@ export default function AttendeeEventLoading() {
   return (
     <RoleAreaShell
       role="attendee"
-      title="Your invitation"
+      title="My Event"
       showPageHeader={false}
       compactTitle="Eventuz"
       layout="flush"

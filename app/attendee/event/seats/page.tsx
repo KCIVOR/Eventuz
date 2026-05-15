@@ -21,7 +21,7 @@ function Shell(props: {
       title={props.title}
       description={props.description}
       breadcrumbs={[
-        { label: "Your invitation", href: "/attendee/event" },
+        { label: "My Event", href: "/attendee/event" },
         { label: "Choose seats" },
       ]}
     >
@@ -70,7 +70,7 @@ export default async function AttendeeSeatAssignmentPage({ searchParams }: Props
                 href="/attendee/event"
                 className="font-medium text-primary underline-offset-4 hover:text-primary-hover hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               >
-                Back to your invitation
+                Back to dashboard
               </Link>
             </p>
           </div>
@@ -93,7 +93,7 @@ export default async function AttendeeSeatAssignmentPage({ searchParams }: Props
                 href="/attendee/event"
                 className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               >
-                View invitation &amp; tickets
+                View dashboard &amp; tickets
               </Link>
               <Link
                 href="/attendee/event/tickets"
@@ -123,7 +123,7 @@ export default async function AttendeeSeatAssignmentPage({ searchParams }: Props
               href="/attendee/event"
               className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
-              Your invitation
+              My Event
             </Link>
             <Link
               href="/attendee/event/tickets"
@@ -145,7 +145,7 @@ export default async function AttendeeSeatAssignmentPage({ searchParams }: Props
       title="Choose seats"
       description={`${ctx.eventName} · ${ctx.ticketTypeName}`}
       breadcrumbs={[
-        { label: "Your invitation", href: "/attendee/event" },
+        { label: "My Event", href: "/attendee/event" },
         { label: "Choose seats" },
       ]}
     >

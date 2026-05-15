@@ -4,7 +4,6 @@ import { UserDropdown } from "./UserDropdown";
 import { AnnouncementDropdown } from "./AnnouncementDropdown";
 
 const publicNav = [
-  { href: "/", label: "Home" },
   { href: "/login", label: "Log in" },
   { href: "/register", label: "Register" },
 ];
@@ -17,7 +16,7 @@ const roleShort: Record<string, string> = {
 };
 
 // Public site header — DS .nav style (dark obsidian)
-export async function SiteHeader() {
+export async function SiteHeader({ layout = "default" }: { layout?: "default" | "flush" }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
@@ -40,7 +39,7 @@ export async function SiteHeader() {
       }}
     >
       <div
-        className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:h-16 sm:px-6"
+        className={`mx-auto flex h-14 items-center justify-between gap-4 px-4 sm:h-16 sm:px-6 sm:px-8 ${layout === "flush" ? "w-full" : "max-w-6xl"}`}
       >
         {/* DS .nav-brand — Cormorant Garamond */}
         <Link
@@ -84,23 +83,6 @@ export async function SiteHeader() {
             ))
           ) : (
             <div className="flex items-center gap-3">
-              <Link
-                href="/"
-                className="hover-gold-text hidden sm:block"
-                style={{
-                  fontFamily: "'Jost', sans-serif",
-                  fontSize: "11px",
-                  fontWeight: 500,
-                  letterSpacing: "0.2em",
-                  textTransform: "uppercase",
-                  color: "#AEA89F",
-                  textDecoration: "none",
-                  padding: "6px 12px",
-                  transition: "color 0.2s",
-                }}
-              >
-                Home
-              </Link>
               <AnnouncementDropdown />
               {profile?.role && (
                 <div className="hidden items-center gap-2 sm:flex" aria-label="Account">

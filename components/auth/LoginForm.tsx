@@ -150,7 +150,7 @@ export function LoginForm() {
         </div>
         
         <Link
-          href="/register"
+          href={`/register${next ? `?next=${encodeURIComponent(next)}` : ''}`}
           className="btn-eventuz-secondary w-full text-center"
         >
           Create account

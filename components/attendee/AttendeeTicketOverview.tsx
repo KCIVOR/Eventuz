@@ -91,7 +91,7 @@ export function AttendeeTicketOverview({
                   href="/attendee/event#rsvp-tickets"
                   className="btn-eventuz-secondary px-8 py-3 text-sm"
                 >
-                  Review Order Details
+                  Review dashboard
                 </Link>
               </div>
             </div>
@@ -119,7 +119,7 @@ export function AttendeeTicketOverview({
               href="/attendee/event"
               className="mt-10 btn-eventuz-gold px-10 py-4 text-sm"
             >
-              Go to Invitation
+              Go to dashboard
             </Link>
           </section>
         )}
@@ -258,7 +258,7 @@ export function AttendeeTicketOverview({
                   href="/attendee/event"
                   className="btn-eventuz-secondary w-full py-3 text-sm justify-center"
                 >
-                  Return to Invitation
+                  Return to dashboard
                 </Link>
                 {orderIdsNeedingEmailRetry.length > 0 && (
                    <div className="space-y-2 pt-2">

@@ -32,7 +32,7 @@ export default async function AttendeeTicketsIndexPage() {
       layout="flush"
       mainWidth="wide"
       breadcrumbs={[
-        { label: "Your invitation", href: "/attendee/event" },
+        { label: "My Event", href: "/attendee/event" },
         { label: "Your tickets" },
       ]}
     >

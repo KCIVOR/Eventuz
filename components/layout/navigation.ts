@@ -43,9 +43,9 @@ export function navSectionsForRole(role: EventuzRole, ctx: NavContext = {}): Nav
           id: "guest",
           label: "Guest experience",
           items: [
-            { id: "invite", label: "Home", href: "/attendee/event" },
-            { id: "tickets", label: "Your tickets", href: "/attendee/event/tickets" },
+            { id: "dashboard", label: "Dashboard", href: "/attendee/event" },
             { id: "seats", label: "Choose seats", href: "/attendee/event/seats" },
+            { id: "tickets", label: "Your tickets", href: "/attendee/event/tickets" },
           ],
         },
       ];

@@ -65,7 +65,7 @@ export async function submitSeatAssignments(
   revalidatePath("/attendee/event/tickets");
 
   if (ord?.status === "completed") {
-    redirect("/attendee/event?ticketsOk=1");
+    redirect("/attendee/event/tickets");
   }
 
   return { ok: true as const, partial: true };

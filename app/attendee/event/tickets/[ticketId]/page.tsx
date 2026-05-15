@@ -60,7 +60,7 @@ export default async function AttendeeTicketPassPage({ params }: Props) {
       showPageHeader={false}
       compactTitle="Your ticket"
       breadcrumbs={[
-        { label: "Your invitation", href: "/attendee/event" },
+        { label: "My Event", href: "/attendee/event" },
         { label: "Your tickets", href: "/attendee/event/tickets" },
         { label: "Ticket" },
       ]}
