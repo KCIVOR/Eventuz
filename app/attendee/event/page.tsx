@@ -4,6 +4,7 @@ import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
 import { loadAttendeeEventContext } from "@/lib/attendee/eventContext";
 import { isHitPayDevSimulationAllowed } from "@/lib/payments/hitpayDevSimulation";
 import { EventMapPreview } from "@/components/ui/EventMapPreview";
+import { EventCountdown } from "@/components/attendee/EventCountdown";
 import { loadActiveGoogleMapsApiKey } from "@/lib/super-admin/loadGoogleMapsSettings";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -191,6 +192,7 @@ export default async function AttendeeEventPage({ searchParams }: Props) {
 
           {/* STICKY SIDEBAR: Actions & Status */}
           <div className="lg:col-span-5 space-y-8 mt-12 lg:mt-0 lg:sticky lg:top-32">
+            <EventCountdown eventDate={eventDate} eventTime={eventTime} />
             
             {/* Status Notifications */}
             <div className="space-y-4">

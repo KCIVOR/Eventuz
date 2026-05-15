@@ -12,6 +12,15 @@ declare
   n int;
   rem int;
 begin
+  create temporary table if not exists pg_temp.seat_label_backfill (
+    seat_id uuid primary key,
+    table_label text,
+    seat_label text not null,
+    display_label text not null
+  ) on commit drop;
+
+  truncate table pg_temp.seat_label_backfill;
+
   for tt in
     select
       id,
@@ -55,13 +64,18 @@ begin
         table_num := ((seat_idx - 1) / tt.seat_layout_seats_per_table) + 1;
         seat_num := ((seat_idx - 1) % tt.seat_layout_seats_per_table) + 1;
 
-        update public.seats
-        set
-          table_label = 'T' || table_num::text,
-          seat_label = seat_num::text,
-          display_label = 'T' || table_num::text || '-' || seat_num::text,
-          updated_at = now()
-        where id = seat_rec.id;
+        insert into pg_temp.seat_label_backfill (
+          seat_id,
+          table_label,
+          seat_label,
+          display_label
+        )
+        values (
+          seat_rec.id,
+          'T' || table_num::text,
+          seat_num::text,
+          'T' || table_num::text || '-' || seat_num::text
+        );
       else
         row_zero := (seat_idx - 1) / tt.seat_layout_columns;
         col_num := ((seat_idx - 1) % tt.seat_layout_columns) + 1;
@@ -74,14 +88,36 @@ begin
           n := (n - 1) / 26;
         end loop;
 
-        update public.seats
-        set
-          table_label = 'Row ' || row_label,
-          seat_label = col_num::text,
-          display_label = row_label || col_num::text,
-          updated_at = now()
-        where id = seat_rec.id;
+        insert into pg_temp.seat_label_backfill (
+          seat_id,
+          table_label,
+          seat_label,
+          display_label
+        )
+        values (
+          seat_rec.id,
+          'Row ' || row_label,
+          col_num::text,
+          row_label || col_num::text
+        );
       end if;
     end loop;
   end loop;
+
+  -- Avoid transient collisions with seats_ticket_display_unique while labels are swapped.
+  update public.seats s
+  set
+    display_label = '__seat_label_backfill__' || s.id::text,
+    updated_at = now()
+  from pg_temp.seat_label_backfill b
+  where s.id = b.seat_id;
+
+  update public.seats s
+  set
+    table_label = b.table_label,
+    seat_label = b.seat_label,
+    display_label = b.display_label,
+    updated_at = now()
+  from pg_temp.seat_label_backfill b
+  where s.id = b.seat_id;
 end $$;
