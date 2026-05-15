@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { loadGoogleMapsSettingsPublic } from "@/lib/super-admin/loadGoogleMapsSettings";
 import { loadSmtpSettingsPublic } from "@/lib/super-admin/loadSmtpSettings";
+import { loadTermsSettingsForSuperAdmin } from "@/lib/super-admin/loadTermsSettings";
 
 export type PlatformCounts = {
   profilesTotal: number;
@@ -58,6 +59,11 @@ export type PlatformOverview = {
     isActive: boolean;
     lastTestError: string | null;
   } | null;
+  terms: {
+    configured: boolean;
+    isActive: boolean;
+    version: number | null;
+  } | null;
   loadError: string | null;
 };
 
@@ -98,6 +104,7 @@ export async function loadPlatformOverview(): Promise<PlatformOverview> {
     eventsRes,
     smtpRes,
     googleMapsRes,
+    termsRes,
   ] = await Promise.all([
     rowCount(supabase, "profiles", {}),
     rowCount(supabase, "profiles", { status: "disabled" }),
@@ -133,6 +140,7 @@ export async function loadPlatformOverview(): Promise<PlatformOverview> {
       .limit(500),
     loadSmtpSettingsPublic(),
     loadGoogleMapsSettingsPublic(),
+    loadTermsSettingsForSuperAdmin(),
   ]);
 
   const ordersOpenHolds = ordersOpenHoldsRes.error ? 0 : (ordersOpenHoldsRes.count ?? 0);
@@ -169,6 +177,14 @@ export async function loadPlatformOverview(): Promise<PlatformOverview> {
       }
     : null;
 
+  const terms = termsRes.settings
+    ? {
+        configured: termsRes.settings.content.trim().length > 0,
+        isActive: termsRes.settings.is_active,
+        version: termsRes.settings.version,
+      }
+    : null;
+
   const organizerNameById: Record<string, string> = {};
   const orgIds = [...new Set(events.map((e) => e.organizer_id))];
   if (orgIds.length > 0) {
@@ -183,6 +199,7 @@ export async function loadPlatformOverview(): Promise<PlatformOverview> {
     eventsRes.error?.message ??
     smtpRes.error ??
     googleMapsRes.error ??
+    termsRes.error ??
     null;
 
   return {
@@ -210,6 +227,7 @@ export async function loadPlatformOverview(): Promise<PlatformOverview> {
     organizerNameById,
     smtp,
     googleMaps,
+    terms,
     loadError,
   };
 }

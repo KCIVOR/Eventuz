@@ -32,7 +32,7 @@ export default async function SuperAdminHomePage({ searchParams }: Props) {
   const pgEv = parsePageParam(q.lp_ev);
   const pgAu = parsePageParam(q.lp_au);
   
-  const { counts, revenuePhp, profiles, events, organizerNameById, smtp, googleMaps, loadError } = overview;
+  const { counts, revenuePhp, profiles, events, organizerNameById, smtp, googleMaps, terms, loadError } = overview;
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -86,7 +86,11 @@ export default async function SuperAdminHomePage({ searchParams }: Props) {
             <Link href="/super-admin/google-maps" className="font-medium text-primary underline-offset-4 hover:text-primary-hover hover:underline">
               Google Maps settings
             </Link>{" "}
-            · Venue search and map previews.
+            · Venue search and map previews.{" "}
+            <Link href="/super-admin/terms" className="font-medium text-primary underline-offset-4 hover:text-primary-hover hover:underline">
+              Terms and Conditions
+            </Link>{" "}
+            · Required account creation terms.
           </p>
 
           <div className="mt-5 flex flex-wrap gap-4">
@@ -123,6 +127,27 @@ export default async function SuperAdminHomePage({ searchParams }: Props) {
                 <Link href="/super-admin/google-maps" className="font-medium text-foreground underline-offset-4 hover:text-primary hover:underline">
                   Configure venue search and previews
                 </Link>
+              </div>
+            </div>
+
+            <div className="flex min-w-[200px] flex-1 flex-col gap-2 rounded-xl border border-border/80 bg-muted/20 px-4 py-3 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-foreground uppercase tracking-tight opacity-70">Terms</span>
+                <span
+                  className={`rounded-full border px-2 py-0.5 font-bold uppercase tracking-wide text-[10px] ${
+                    terms?.configured && terms.isActive
+                      ? "border-success/35 bg-success-muted text-success"
+                      : "border-border bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {terms?.configured ? (terms.isActive ? "Active" : "Inactive") : "Missing"}
+                </span>
+              </div>
+              <div className="truncate text-muted-foreground">
+                <Link href="/super-admin/terms" className="font-medium text-foreground underline-offset-4 hover:text-primary hover:underline">
+                  Configure registration terms
+                </Link>
+                {terms?.version ? <span className="ml-2">v{terms.version}</span> : null}
               </div>
             </div>
 
