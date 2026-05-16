@@ -1,7 +1,4 @@
 import type { Metadata } from "next";
-import { AuthDebugConsoleBoot } from "@/components/debug/AuthDebugConsoleBoot";
-import { AuthDebugErrorBoundary } from "@/components/debug/AuthDebugErrorBoundary";
-import { AuthDebugPanel } from "@/components/debug/AuthDebugPanel";
 import { Cormorant_Garamond, Jost } from "next/font/google";
 import "./globals.css";
 
@@ -40,13 +37,9 @@ export default function RootLayout({
     >
       <body
         suppressHydrationWarning
-        className="min-h-full flex flex-col bg-background font-sans text-foreground"
+        className="min-h-screen flex flex-col bg-background font-sans text-foreground"
       >
         {children}
-        <AuthDebugConsoleBoot />
-        <AuthDebugErrorBoundary>
-          <AuthDebugPanel />
-        </AuthDebugErrorBoundary>
       </body>
     </html>
   );

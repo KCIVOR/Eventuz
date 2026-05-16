@@ -11,17 +11,19 @@ export function PublicShell({ children, layout = "default" }: Props) {
   const isFlush = layout === "flush";
 
   return (
-    <div className="flex min-h-full flex-col" style={{ background: "var(--background)" }}>
+    <div className="flex flex-1 flex-col" style={{ background: "var(--background)" }}>
       <SiteHeader layout={layout} />
       <main 
-        className={
+        className="flex flex-1 flex-col"
+        style={!isFlush ? { background: "var(--alt-surface)" } : {}}
+      >
+        <div className={
           isFlush 
             ? "flex w-full flex-1 flex-col" 
             : "mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-10 sm:px-6 sm:py-16"
-        }
-        style={!isFlush ? { background: "var(--alt-surface)" } : {}}
-      >
-        {children}
+        }>
+          {children}
+        </div>
       </main>
       <SiteFooter />
     </div>

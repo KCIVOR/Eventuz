@@ -110,7 +110,7 @@ export function CapacityHoldForm({
       {/* 1. Ticket Type Selection Grid */}
       <section className="space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="font-serif text-2xl font-light text-foreground">Select Package</h3>
+          <h3 className="font-serif text-2xl font-light text-foreground">Select Ticket Type</h3>
           <span className="text-[10px] uppercase tracking-widest text-accent-gold font-semibold">Step 01</span>
         </div>
 
@@ -287,7 +287,7 @@ export function CapacityHoldForm({
               <div>
                 <h4 className="font-serif text-2xl mb-2 text-foreground">Reservation Secured</h4>
                 <p className="text-sm text-muted-foreground font-light italic">
-                  &ldquo;{holdTicketName}&rdquo; &times; {String(activeHold.quantity)} package held for your arrival.
+                  &ldquo;{holdTicketName}&rdquo; &times; {String(activeHold.quantity)} tickets held for your arrival.
                 </p>
               </div>
               <div className="text-right">

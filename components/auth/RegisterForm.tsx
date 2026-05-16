@@ -72,7 +72,7 @@ function RegisterFormInner({ terms, loadError }: Props) {
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="full_name" className={labelClass}>
-            Full name
+            Full name <span className="text-destructive">*</span>
           </label>
           <input
             id="full_name"
@@ -88,7 +88,7 @@ function RegisterFormInner({ terms, loadError }: Props) {
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="email" className={labelClass}>
-            Email address
+            Email address <span className="text-destructive">*</span>
           </label>
           <input
             id="email"
@@ -105,7 +105,7 @@ function RegisterFormInner({ terms, loadError }: Props) {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
             <label htmlFor="phone_number" className={labelClass}>
-              Phone number
+              Phone number <span className="text-destructive">*</span>
             </label>
             <input
               id="phone_number"
@@ -120,7 +120,7 @@ function RegisterFormInner({ terms, loadError }: Props) {
           </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="birthday" className={labelClass}>
-              Birthday
+              Birthday <span className="text-destructive">*</span>
             </label>
             <input
               id="birthday"
@@ -135,7 +135,7 @@ function RegisterFormInner({ terms, loadError }: Props) {
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="password" className={labelClass}>
-            Password
+            Password <span className="text-destructive">*</span>
           </label>
           <div className="relative">
             <input
@@ -172,7 +172,7 @@ function RegisterFormInner({ terms, loadError }: Props) {
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="organization_name" className={labelClass}>
-            Organization / Company
+            Organization / Company <span className="text-destructive">*</span>
           </label>
           <input
             id="organization_name"
@@ -181,13 +181,13 @@ function RegisterFormInner({ terms, loadError }: Props) {
             required
             disabled={disabled}
             className={inputClass}
-            placeholder="Eternal Affair Events"
+            placeholder="Your Organization or Company"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="address" className={labelClass}>
-            Complete Address
+            Complete Address <span className="text-destructive">*</span>
           </label>
           <input
             id="address"
@@ -222,11 +222,6 @@ function RegisterFormInner({ terms, loadError }: Props) {
               .
             </span>
           </label>
-          {terms ? (
-            <p className="mt-2 text-xs text-muted-foreground">
-              Version {terms.version}. Review before creating your account.
-            </p>
-          ) : null}
         </section>
 
         <button

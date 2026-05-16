@@ -271,7 +271,7 @@ export function SeatAssignmentForm({
               {seatInventoryTotal === 0 ? (
                 <div className="rounded-xl border border-dashed border-border bg-muted/5 py-16 text-center">
                   <p className="text-sm italic text-muted-foreground">
-                    No seating layout defined for this package.
+                    No seating layout defined for this ticket type.
                   </p>
                 </div>
               ) : (

@@ -59,9 +59,9 @@ export function DashboardOrdersTable({ orders: _orders, pageData, dashPath, sear
       <table className="w-full min-w-[800px] text-left text-sm">
         <thead>
           <tr className="border-b border-border bg-muted/40 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            <th className="px-4 py-3">Created</th>
+            <th className="px-4 py-3">Purchase Date</th>
             <th className="px-4 py-3">Buyer</th>
-            <th className="px-4 py-3">Type</th>
+            <th className="px-4 py-3">Ticket Category</th>
             <th className="px-4 py-3 text-right">Qty</th>
             <th className="px-4 py-3 text-right">Total</th>
             <th className="px-4 py-3">Order</th>

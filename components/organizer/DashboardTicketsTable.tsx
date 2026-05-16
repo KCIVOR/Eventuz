@@ -28,12 +28,13 @@ type Props = {
   };
   dashPath: string;
   searchParams: SerializableSearchParams;
+  withoutPagination?: boolean;
 };
 
-export function DashboardTicketsTable({ tickets: _tickets, pageData, dashPath, searchParams }: Props) {
+export function DashboardTicketsTable({ tickets: _tickets, pageData, dashPath, searchParams, withoutPagination }: Props) {
   return (
     <ScrollableTableWrapper
-      footer={pageData.total > 0 ? (
+      footer={!withoutPagination && pageData.total > 0 ? (
         <ListPagination
           pathname={dashPath}
           searchParams={searchParams}

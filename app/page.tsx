@@ -272,7 +272,7 @@ export default async function HomePage() {
                 <p className="reserve-panel-label">Invitation Access</p>
                 <h3 className="reserve-panel-title">Secure your place in one elegant step.</h3>
                 <p className="reserve-panel-text">
-                  Choose your ticket package, complete checkout, and continue to guest details when payment is confirmed.
+                  Choose your ticket category, complete checkout, and continue to guest details when payment is confirmed.
                 </p>
               </div>
               <div className="reserve-panel-meta" aria-label="Ticket availability summary">

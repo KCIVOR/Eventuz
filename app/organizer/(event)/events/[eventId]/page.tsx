@@ -381,9 +381,9 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
                  <input type="hidden" name="event_time" defaultValue={trimTimeForInput(event.event_time)} />
 
                  <div className="grid gap-4">
-                    <Input label="Capacity Hold (Mins)" name="capacity_hold_minutes" type="number" required min={1} defaultValue={String(event.capacity_hold_minutes)} />
-                    <Input label="Payment Hold (Mins)" name="payment_hold_minutes" type="number" required min={1} defaultValue={String(event.payment_hold_minutes)} />
-                    <Input label="Early Bird Price Hold (Mins)" name="early_bird_hold_minutes" type="number" required min={1} defaultValue={String(event.early_bird_hold_minutes)} />
+                    <Input label="Reservation Window (Mins)" name="capacity_hold_minutes" type="number" required min={1} defaultValue={String(event.capacity_hold_minutes)} />
+                    <Input label="Checkout Window (Mins)" name="payment_hold_minutes" type="number" required min={1} defaultValue={String(event.payment_hold_minutes)} />
+                    <Input label="Price Lock Duration (Mins)" name="early_bird_hold_minutes" type="number" required min={1} defaultValue={String(event.early_bird_hold_minutes)} />
                  </div>
                  
                  <Button type="submit" variant="outline" className="w-full btn-eventuz-secondary py-3 text-xs">

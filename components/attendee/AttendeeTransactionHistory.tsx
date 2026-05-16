@@ -45,7 +45,7 @@ export function AttendeeTransactionHistory({
               onChange={(e) => e.target.form?.requestSubmit()}
             >
               <option value="">All Statuses</option>
-              <option value="paid_unassigned">Paid (Unassigned)</option>
+              <option value="paid_unassigned">Paid (Needs Seat Assignment)</option>
               <option value="completed">Completed</option>
               <option value="payment_pending">Payment Pending</option>
               <option value="cancelled">Cancelled</option>
@@ -82,7 +82,7 @@ export function AttendeeTransactionHistory({
           <thead>
             <tr className="border-b border-border bg-accent-gold/[0.03] text-[10px] font-semibold uppercase tracking-[0.2em] text-accent-gold">
               <th className="px-6 py-5">Date</th>
-              <th className="px-6 py-5">Event & Package</th>
+              <th className="px-6 py-5">Event & Ticket Type</th>
               <th className="px-6 py-5">Amount</th>
               <th className="px-6 py-5">Status</th>
             </tr>
@@ -137,7 +137,7 @@ function StatusBadge({ status }: { status: string }) {
 
   const labels: Record<string, string> = {
     completed: "Completed",
-    paid_unassigned: "Paid (Unassigned)",
+    paid_unassigned: "Paid (Needs Seat Assignment)",
     partially_assigned: "Partially Assigned",
     payment_pending: "Payment Pending",
     cancelled: "Cancelled",

@@ -2,6 +2,8 @@ import { acceptStaffInviteFormAction, setupStaffAccountAndAcceptAction } from "@
 import { PublicShell } from "@/components/layout/PublicShell";
 import { loadStaffInviteByRawToken } from "@/lib/staff/loadStaffInvite";
 import { createClient } from "@/lib/supabase/server";
+import { Alert } from "@/components/ui/Alert";
+import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -23,9 +25,11 @@ export default async function StaffInviteAcceptPage({ searchParams }: Props) {
           title="Invalid link"
           description="This invitation link is missing details. Ask the organizer to send the invite again."
         >
-          <Link href="/login" className="text-sm font-semibold text-primary underline-offset-4 hover:underline">
-            Sign in
-          </Link>
+          <div className="pt-4 border-t border-border">
+            <Link href="/login" className="text-xs font-semibold uppercase tracking-widest text-accent-gold hover:text-accent-gold-dark transition-colors">
+              Return to Sign in
+            </Link>
+          </div>
         </InviteCard>
       </PublicShell>
     );
@@ -44,127 +48,115 @@ export default async function StaffInviteAcceptPage({ searchParams }: Props) {
   return (
     <PublicShell>
       <InviteCard
-        eyebrow="Eventuz"
+        eyebrow="Staff Access"
         title="Accept staff invitation"
-        description="Staff invitations grant scanner access only. Use the same email address the organizer invited."
+        description="Staff invitations grant scanner access for this event only. Please ensure you use the correct account."
       >
         {err ? (
-          <p className="rounded-xl border border-destructive/25 bg-destructive-muted px-4 py-3 text-sm text-destructive">
+          <Alert type="error" title="Access Error" className="mb-6">
             {err}
-          </p>
+          </Alert>
         ) : null}
 
         {!invite.found ? (
-          <TerminalState
-            title="Invitation not found"
-            body="This invitation link is invalid or has been replaced. Ask the organizer to send a fresh invitation."
-          />
+          <Alert type="error" title="Invitation Not Found">
+            This invitation link is invalid or has been replaced. Ask the organizer to send a fresh invitation.
+          </Alert>
         ) : invite.status !== "pending" ? (
-          <TerminalState
-            title={invite.status === "expired" ? "Invitation expired" : "Invitation unavailable"}
-            body={
-              invite.status === "accepted"
-                ? "This invitation has already been accepted."
-                : invite.status === "revoked"
-                  ? "This invitation was revoked by the organizer."
-                  : "This invitation expired. Ask the organizer to resend it."
-            }
-          />
+          <Alert 
+            type={invite.status === "accepted" ? "info" : "warning"} 
+            title={invite.status === "accepted" ? "Invitation Used" : "Invitation Unavailable"}
+          >
+            {invite.status === "accepted"
+              ? "This invitation has already been accepted and linked to an account."
+              : invite.status === "revoked"
+                ? "This invitation was revoked by the organizer."
+                : "This invitation has expired. Ask the organizer to resend it."}
+          </Alert>
         ) : user && !emailMatches ? (
-          <div className="space-y-5">
-            <div className="rounded-xl border border-warning/30 bg-warning/10 px-4 py-4 text-sm">
-              <p className="font-semibold text-foreground">Switch account to accept this invite</p>
-              <p className="mt-2 text-muted-foreground">
-                You are signed in as <span className="font-medium text-foreground">{user.email}</span>, but this
-                invitation was sent to <span className="font-medium text-foreground">{invite.maskedEmail}</span>.
-              </p>
-            </div>
-            <Link
-              href={`/auth/sign-out?next=${encodeURIComponent(nextPath)}&error=${encodeURIComponent("Sign in with the invited staff email to accept this invitation.")}`}
-              prefetch={false}
-              className="block rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
+          <div className="space-y-6">
+            <Alert type="warning" title="Account Mismatch">
+              You are signed in as <span className="font-medium">{user.email}</span>, but this
+              invitation was sent to <span className="font-medium">{invite.maskedEmail}</span>.
+            </Alert>
+            <Button
+              asChild
+              variant="primary"
+              className="w-full"
             >
-              Switch account
-            </Link>
+              <Link
+                href={`/auth/sign-out?next=${encodeURIComponent(nextPath)}&error=${encodeURIComponent("Sign in with the invited staff email to accept this invitation.")}`}
+              >
+                Switch Account
+              </Link>
+            </Button>
           </div>
         ) : user && emailMatches ? (
-          <form action={acceptStaffInviteFormAction} className="flex flex-col gap-4">
+          <form action={acceptStaffInviteFormAction} className="flex flex-col gap-6">
             <input type="hidden" name="token" value={token} />
-            <div className="rounded-xl border border-border bg-card px-4 py-4 text-sm text-muted-foreground">
+            <div className="inset-panel text-sm text-charcoal">
               <p>
-                Signed in as <span className="font-medium text-foreground">{user.email ?? "this account"}</span>.
+                Signed in as <span className="font-medium text-foreground">{user.email}</span>.
               </p>
-              <p className="mt-1">This matches the invited staff email.</p>
+              <p className="mt-1 text-xs text-muted-foreground">This matches the invited staff email address.</p>
             </div>
-            <button
-              type="submit"
-              className="rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
-            >
-              Accept invitation
-            </button>
+            <Button type="submit" variant="gold" className="w-full">
+              Accept Invitation
+            </Button>
           </form>
         ) : (
-          <form action={setupStaffAccountAndAcceptAction} className="flex flex-col gap-4">
+          <form action={setupStaffAccountAndAcceptAction} className="flex flex-col gap-6">
             <input type="hidden" name="token" value={token} />
-            <div className="rounded-xl border border-border bg-card px-4 py-4 text-sm text-muted-foreground">
+            <div className="inset-panel text-sm text-charcoal mb-2">
               <p>
                 Complete your account setup for <span className="font-medium text-foreground">{invite.maskedEmail}</span>.
               </p>
             </div>
             
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Full Name
-              </label>
+              <label className="label-eventuz">Full Name</label>
               <input
                 name="full_name"
                 type="text"
                 required
-                placeholder="John Doe"
-                className="rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground shadow-none transition-colors placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                placeholder="Your full name"
+                className="input-eventuz"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Create Password
-              </label>
+              <label className="label-eventuz">Create Password</label>
               <input
                 name="password"
                 type="password"
                 required
                 minLength={6}
                 placeholder="••••••••"
-                className="rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground shadow-none transition-colors placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                className="input-eventuz"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Confirm Password
-              </label>
+              <label className="label-eventuz">Confirm Password</label>
               <input
                 name="confirm_password"
                 type="password"
                 required
                 minLength={6}
                 placeholder="••••••••"
-                className="rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground shadow-none transition-colors placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                className="input-eventuz"
               />
             </div>
 
-            <button
-              type="submit"
-              className="mt-2 rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
-            >
-              Set password & Accept invitation
-            </button>
+            <Button type="submit" variant="primary" className="mt-2 w-full">
+              Set Password & Accept
+            </Button>
 
-            <p className="mt-2 text-center text-xs text-muted-foreground">
+            <p className="text-center text-xs text-muted-foreground font-light">
               Already have an account?{" "}
               <Link
                 href={`/login?next=${encodeURIComponent(nextPath)}`}
-                className="font-semibold text-primary underline-offset-4 hover:underline"
+                className="font-medium text-accent-gold hover:underline underline-offset-4"
               >
                 Sign in instead
               </Link>
@@ -188,20 +180,13 @@ function InviteCard({
   children: ReactNode;
 }) {
   return (
-    <div className="mx-auto w-full max-w-lg">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{eyebrow}</p>
-      <h1 className="mt-2 font-serif text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{description}</p>
-      <div className="mt-8 space-y-5">{children}</div>
-    </div>
-  );
-}
-
-function TerminalState({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="rounded-xl border border-border bg-card px-4 py-4 text-sm">
-      <p className="font-semibold text-foreground">{title}</p>
-      <p className="mt-2 leading-relaxed text-muted-foreground">{body}</p>
+    <div className="mx-auto w-full max-w-xl">
+      <div className="panel-card p-10 sm:p-14 shadow-xl">
+        <p className="eyebrow">{eyebrow}</p>
+        <h1 className="section-title mt-3">{title}</h1>
+        <p className="mt-4 text-[15px] font-light leading-relaxed text-warm-gray">{description}</p>
+        <div className="mt-10">{children}</div>
+      </div>
     </div>
   );
 }

@@ -39,7 +39,7 @@ export function DashboardFrame({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex min-h-full flex-col" style={{ background: "var(--surface-app)" }}>
+    <div className="flex flex-1 flex-col" style={{ background: "var(--surface-app)" }}>
       <a
         href="#dashboard-main"
         className="no-print sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:shadow-md"

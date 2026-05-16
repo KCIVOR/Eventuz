@@ -18,10 +18,10 @@ export function DashboardAvailabilityTable({ availability }: Props) {
       <table className="w-full min-w-[520px] text-left text-sm">
         <thead>
           <tr className="border-b border-border bg-muted/40 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            <th className="px-4 py-3">Type</th>
+            <th className="px-4 py-3">Ticket Category</th>
             <th className="px-4 py-3">Status</th>
-            <th className="px-4 py-3 text-right">Capacity</th>
-            <th className="px-4 py-3 text-right">Available to sell</th>
+            <th className="px-4 py-3 text-right">Total Quantity</th>
+            <th className="px-4 py-3 text-right">Remaining Availability</th>
           </tr>
         </thead>
         <tbody>

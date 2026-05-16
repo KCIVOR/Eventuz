@@ -41,9 +41,9 @@ function formatDate(date: string, time: string) {
 
 function statusLabel(status: string) {
   const labels: Record<string, string> = {
-    capacity_held: "Reservation held",
+    capacity_held: "Tickets Reserved",
     payment_pending: "Payment pending",
-    paid_unassigned: "Seats needed",
+    paid_unassigned: "Needs Seat Assignment",
     partially_assigned: "Seats in progress",
     completed: "Completed",
     payment_failed: "Payment failed",
@@ -76,7 +76,7 @@ export function AttendeeEventDashboard({
   const latestTransaction = recentTransactions[0];
 
   let actionTitle = "Reserve your tickets";
-  let actionBody = "Start from the public event page to select a ticket package and begin checkout.";
+  let actionBody = "Start from the public event page to select a ticket category and begin checkout.";
   let actionHref = "/?checkout=1";
   let actionLabel = "Reserve tickets";
   let actionExternal = false;
