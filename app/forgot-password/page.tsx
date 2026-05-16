@@ -5,6 +5,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/Input";
 import Link from "next/link";
+import { Button } from "@/components/ui/Button";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -80,13 +81,13 @@ export default function ForgotPasswordPage() {
         />
 
         <div className="flex flex-col gap-4 mt-2">
-          <button
+          <Button
             type="submit"
-            disabled={loading}
-            className="rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-50"
+            isLoading={loading}
+            className="w-full mt-2"
           >
             {loading ? "Sending link…" : "Send reset link"}
-          </button>
+          </Button>
 
           <p className="text-center">
             <Link

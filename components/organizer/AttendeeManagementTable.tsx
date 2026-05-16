@@ -268,7 +268,7 @@ export function AttendeeManagementTable({ eventId, initialAttendees }: Props) {
                       <Button 
                         size="sm" 
                         variant="gold"
-                        disabled={isPending}
+                        isLoading={isPending}
                         onClick={() => setConfirmingCode(a.ticket_code)}
                         className="h-8 px-4 text-[10px] uppercase font-bold tracking-wider"
                       >

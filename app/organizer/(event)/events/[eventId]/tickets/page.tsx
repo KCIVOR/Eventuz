@@ -1,6 +1,7 @@
 import { createTicketType, updateTicketType } from "@/app/organizer/events/actions";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/Button";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 import { CollapsibleTicketTypeCard } from "@/components/organizer/CollapsibleTicketTypeCard";
 import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
 import { TICKET_TYPE_STATUSES } from "@/lib/organizer/ticketTypeForm";
@@ -173,9 +174,9 @@ export default async function OrganizerTicketManagementPage({ params, searchPara
                       </div>
 
                       <div className="pt-4 flex justify-end">
-                        <button type="submit" className="btn-eventuz-gold px-8 py-3 text-xs shadow-lg shadow-accent-gold/10">
+                        <SubmitButton className="btn-eventuz-gold px-8 py-3 text-xs shadow-lg shadow-accent-gold/10">
                           Update Category
-                        </button>
+                        </SubmitButton>
                       </div>
                     </form>
                   </CollapsibleTicketTypeCard>
@@ -212,9 +213,9 @@ export default async function OrganizerTicketManagementPage({ params, searchPara
                 </div>
 
                 <div className="pt-4">
-                  <Button type="submit" className="w-full btn-eventuz-gold py-5 text-sm shadow-lg shadow-accent-gold/20">
+                  <SubmitButton className="w-full btn-eventuz-gold py-5 text-sm shadow-lg shadow-accent-gold/20">
                     Create Ticket Category
-                  </Button>
+                  </SubmitButton>
                 </div>
               </form>
             </div>

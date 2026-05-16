@@ -1,6 +1,7 @@
 import React from "react";
 import { ProfileAccountStatusChip, RoleStatusChip } from "./AdminStatusChip";
 import { Button } from "@/components/ui/Button";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 import { ListPagination } from "@/components/ui/ListPagination";
 import { DEFAULT_LIST_PAGE_SIZE } from "@/lib/ui/pagination";
 import type { SerializableSearchParams } from "@/lib/ui/paginationUrl";
@@ -105,17 +106,17 @@ export function SuperAdminUsersTable({
                     <form action={superAdminSetUserAccountStatusAction}>
                       <input type="hidden" name="user_id" value={p.id} />
                       <input type="hidden" name="status" value="active" />
-                      <Button type="submit" variant="secondary" size="sm">
+                      <SubmitButton variant="secondary" size="sm">
                         Re-enable
-                      </Button>
+                      </SubmitButton>
                     </form>
                   ) : (
                     <form action={superAdminSetUserAccountStatusAction}>
                       <input type="hidden" name="user_id" value={p.id} />
                       <input type="hidden" name="status" value="disabled" />
-                      <Button type="submit" variant="destructive" size="sm">
+                      <SubmitButton variant="destructive" size="sm">
                         Disable
-                      </Button>
+                      </SubmitButton>
                     </form>
                   )}
                 </div>

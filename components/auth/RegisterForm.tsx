@@ -8,6 +8,7 @@ import type { ActiveTermsForRegistration } from "@/lib/super-admin/loadTermsSett
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useActionState, useState } from "react";
+import { Button } from "@/components/ui/Button";
 
 const inputClass =
   "rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground shadow-none transition-colors placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60";
@@ -224,13 +225,14 @@ function RegisterFormInner({ terms, loadError }: Props) {
           </label>
         </section>
 
-        <button
+        <Button
           type="submit"
+          isLoading={pending}
           disabled={disabled}
-          className="mt-2 rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full mt-2"
         >
           {pending ? "Creating account..." : "Create account"}
-        </button>
+        </Button>
       </form>
 
       <p className="mt-4 text-center text-xs text-muted-foreground">

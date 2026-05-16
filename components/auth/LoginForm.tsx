@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 
 export function LoginForm() {
@@ -175,13 +176,13 @@ export function LoginForm() {
             </Link>
           </div>
         </div>
-        <button
+        <Button
           type="submit"
-          disabled={loading}
-          className="btn-eventuz-primary mt-2"
+          isLoading={loading}
+          className="w-full mt-2"
         >
           {loading ? "Signing in…" : "Sign in"}
-        </button>
+        </Button>
       </form>
 
       <div className="flex flex-col items-center gap-4">

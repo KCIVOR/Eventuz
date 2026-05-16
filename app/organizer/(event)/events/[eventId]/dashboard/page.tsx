@@ -1,6 +1,7 @@
 
 import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
 import { Button } from "@/components/ui/Button";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 import { loadOrganizerEventDashboard } from "@/lib/organizer/loadEventDashboard";
 import { DEFAULT_LIST_PAGE_SIZE, parsePageParam, slicePage } from "@/lib/ui/pagination";
 import type { SerializableSearchParams } from "@/lib/ui/paginationUrl";
@@ -185,9 +186,9 @@ export default async function OrganizerEventDashboardPage({ params, searchParams
                       required
                     />
                   </div>
-                  <Button type="submit" className="w-full btn-eventuz-gold py-3 text-[10px] shadow-sm">
+                  <SubmitButton className="w-full btn-eventuz-gold py-3 text-[10px] shadow-sm">
                     Publish Announcement
-                  </Button>
+                  </SubmitButton>
                 </form>
 
                 {/* List of recent announcements */}
@@ -218,7 +219,7 @@ export default async function OrganizerEventDashboardPage({ params, searchParams
                           const { deleteAnnouncement } = await import("@/app/organizer/events/announcementActions");
                           await deleteAnnouncement(eventId, ann.id);
                         }}>
-                          <button type="submit" className="text-[10px] text-destructive hover:underline">Delete</button>
+                          <SubmitButton variant="ghost" className="text-[10px] text-destructive hover:underline p-0 h-auto border-none lowercase tracking-normal font-normal">Delete</SubmitButton>
                         </form>
                       </div>
                     ));
