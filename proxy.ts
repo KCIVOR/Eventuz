@@ -18,6 +18,8 @@ export async function proxy(request: NextRequest) {
   const requiredRole = getRequiredRoleForPathname(pathname);
   const isProfilePage = pathname.startsWith("/profile");
 
+  console.log(`[AUTH_DEBUG] Proxy started for: ${pathname}, requiredRole: ${requiredRole}, isProfilePage: ${isProfilePage}`);
+  
   if (!requiredRole && !isProfilePage) {
     return response;
   }
@@ -36,6 +38,8 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  console.log(`[AUTH_DEBUG] getUser result: ${user ? `User found (ID: ${user.id})` : "No user found"}`);
+
   if (!user) {
     const all = request.cookies.getAll();
     authDebug("middleware.no_user", {
@@ -48,6 +52,7 @@ export async function proxy(request: NextRequest) {
       incomingCookieCount: all.length,
       incomingCookieNamesSample: all.slice(0, 20).map((c) => c.name),
     });
+    console.log(`[AUTH_DEBUG] Redirecting to login for: ${pathname}`);
     const url = new URL("/login", request.url);
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
@@ -58,6 +63,8 @@ export async function proxy(request: NextRequest) {
     .select("role, status")
     .eq("id", user.id)
     .single();
+
+  console.log(`[AUTH_DEBUG] Profile fetch result: ${profile ? `Profile found (Role: ${profile.role}, Status: ${profile.status})` : "No profile found"}, Error: ${error?.message || "none"}`);
 
   if (error || !profile?.role) {
     authDebug("middleware.guard", {
@@ -74,6 +81,7 @@ export async function proxy(request: NextRequest) {
           }
         : null,
     });
+    console.log(`[AUTH_DEBUG] Redirecting to home (Guard failed) for: ${pathname}`);
     return NextResponse.redirect(new URL("/", request.url));
   }
 

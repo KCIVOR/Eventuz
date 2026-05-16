@@ -19,6 +19,7 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
+          console.log(`[AUTH_DEBUG] setAll called with ${cookiesToSet.length} cookies:`, cookiesToSet.map(c => c.name));
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
