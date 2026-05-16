@@ -8,6 +8,7 @@ import Link from "next/link";
 
 export type AttendeeTicketOverviewProps = {
   eventTitle: string;
+  eventCoverUrl?: string | null;
   activeOrder: Record<string, unknown> | null;
   resumeCheckoutUrl: string | null;
   seatAssignmentOrders: SeatAssignmentOrderLink[];
@@ -18,6 +19,7 @@ export type AttendeeTicketOverviewProps = {
 /** Full attendee ticket hub: seat work, QR issuance, passes list — no ticket purchase form */
 export function AttendeeTicketOverview({
   eventTitle,
+  eventCoverUrl,
   activeOrder,
   resumeCheckoutUrl,
   seatAssignmentOrders,
@@ -196,25 +198,48 @@ export function AttendeeTicketOverview({
                 return (
                   <div
                     key={t.id}
-                    className="panel-card p-0 flex flex-col overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 border-accent-gold/10"
+                    className="panel-card p-0 flex flex-col overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1 border-accent-gold/10 group"
                   >
-                    <div className={`p-6 ${isCheckedIn ? 'bg-primary/5' : 'bg-card'} border-b border-border/50`}>
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="space-y-1">
-                          <p className="text-[10px] uppercase tracking-[0.2em] text-accent-gold font-bold">{ticketTypeName}</p>
-                          <h3 className="font-serif text-xl font-medium text-foreground">{label}</h3>
+                    {/* Background Image Header */}
+                    <div className="relative overflow-hidden border-b border-border/50 aspect-[16/9]">
+                      {eventCoverUrl && (
+                        <div 
+                          className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110"
+                          style={{ backgroundImage: `url(${eventCoverUrl})` }}
+                        />
+                      )}
+                      {/* Deep premium overlay for readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-obsidian/95 via-obsidian/50 to-obsidian/20" />
+                      <div className="absolute inset-0 bg-obsidian/20 backdrop-blur-[1px]" />
+                      
+                      <div className="relative h-full p-6 z-10 flex flex-col justify-between">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                             <p className="text-[10px] uppercase tracking-[0.2em] text-accent-gold font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+                               {ticketTypeName}
+                             </p>
+                            <h3 className="font-serif text-2xl font-medium text-ivory drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
+                              {label}
+                            </h3>
+                          </div>
+                           <span className={`text-[10px] uppercase tracking-widest font-bold px-3 py-1 rounded-full border backdrop-blur-md transition-colors ${isCheckedIn ? 'border-success/50 bg-success/20 text-ivory' : 'border-ivory/20 bg-ivory/10 text-ivory'}`}>
+                            {isCheckedIn ? 'Arrived' : 'Valid'}
+                          </span>
                         </div>
-                        <span className={`text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-full border ${isCheckedIn ? 'border-primary/30 bg-primary/10 text-primary' : 'border-border bg-muted/50 text-muted-foreground'}`}>
-                          {isCheckedIn ? 'Arrived' : 'Valid'}
-                        </span>
-                      </div>
-                      <div className="space-y-2 pt-2">
-                         <p className="text-sm text-foreground/90 font-medium">{t.attendee_name}</p>
-                         {detail && <p className="text-xs text-muted-foreground font-light">{detail}</p>}
+                         <div className="space-y-1">
+                           <p className="text-sm text-ivory font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+                             {t.attendee_name}
+                           </p>
+                           {detail && (
+                             <p className="text-[10px] uppercase tracking-wider text-ivory/80 font-light drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
+                               {detail}
+                             </p>
+                           )}
+                        </div>
                       </div>
                     </div>
                     
-                    <div className="p-6 flex flex-col items-center justify-center bg-accent-gold/[0.01]">
+                    <div className="p-6 flex flex-col items-center justify-center bg-card">
                       <p className="font-mono text-[10px] tracking-[0.3em] text-muted-foreground mb-4">{t.ticket_code}</p>
                       <Link
                         href={`/attendee/event/tickets/${t.id}`}

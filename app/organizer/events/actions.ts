@@ -179,7 +179,7 @@ export async function createEvent(formData: FormData) {
 
         const { error: imageErr } = await supabase
           .from("events")
-          .update({ image_url: uploaded.publicUrl })
+          .update({ cover_url: uploaded.publicUrl })
           .eq("id", evId)
           .eq("organizer_id", user.id);
 
@@ -231,7 +231,7 @@ export async function updateEvent(eventId: string, formData: FormData) {
   const { data: gate, error: gateErr } = await supabase
     .from("events")
     .select(
-      "id, organizer_id, status, venue, formatted_address, lat, lng, image_url, capacity_hold_minutes, payment_hold_minutes, early_bird_hold_minutes"
+      "id, organizer_id, status, venue, formatted_address, lat, lng, cover_url, capacity_hold_minutes, payment_hold_minutes, early_bird_hold_minutes"
     )
     .eq("id", eventId)
     .maybeSingle();
@@ -283,16 +283,16 @@ export async function updateEvent(eventId: string, formData: FormData) {
   const lat = formData.has("lat") ? (latRaw ? Number(latRaw) : null) : Number(gate.lat ?? NaN);
   const lng = formData.has("lng") ? (lngRaw ? Number(lngRaw) : null) : Number(gate.lng ?? NaN);
   const coverImage = getEventCoverImageFile(formData);
-  let imageUrl = (gate.image_url as string | null) ?? null;
+  let coverUrl = (gate.cover_url as string | null) ?? null;
 
   if (String(formData.get("remove_cover_image") ?? "") === "1") {
-    imageUrl = null;
+    coverUrl = null;
   }
 
   if (coverImage) {
     const uploaded = await uploadEventCoverImage(supabase, user.id, eventId, coverImage);
     if (!uploaded.ok) redirectEventError(eventId, uploaded.message);
-    imageUrl = uploaded.publicUrl;
+    coverUrl = uploaded.publicUrl;
   }
 
   const { error } = await supabase
@@ -308,7 +308,7 @@ export async function updateEvent(eventId: string, formData: FormData) {
       formatted_address,
       lat: isNaN(lat!) ? null : lat,
       lng: isNaN(lng!) ? null : lng,
-      image_url: imageUrl,
+      cover_url: coverUrl,
       capacity_hold_minutes: cap,
       payment_hold_minutes: pay,
       early_bird_hold_minutes: eb,

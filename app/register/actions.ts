@@ -25,6 +25,10 @@ export async function registerAccountAction(
   const fullName = String(formData.get("full_name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
+  const phoneNumber = String(formData.get("phone_number") ?? "").trim();
+  const birthday = String(formData.get("birthday") ?? "").trim();
+  const organizationName = String(formData.get("organization_name") ?? "").trim();
+  const address = String(formData.get("address") ?? "").trim();
   const accepted = formData.get("terms_accepted") === "on";
   const submittedTermsId = String(formData.get("terms_id") ?? "").trim();
   const submittedTermsVersion = Number(formData.get("terms_version") ?? "");
@@ -33,6 +37,10 @@ export async function registerAccountAction(
   if (!fullName) return { error: "Full name is required." };
   if (!emailLooksValid(email)) return { error: "Enter a valid email address." };
   if (password.length < 6) return { error: "Password must be at least 6 characters." };
+  if (!phoneNumber) return { error: "Phone number is required." };
+  if (!birthday) return { error: "Birthday is required." };
+  if (!organizationName) return { error: "Organization name is required." };
+  if (!address) return { error: "Address is required." };
   if (!accepted) return { error: "You must accept the Terms and Conditions to create an account." };
 
   const { terms, error: termsError } = await loadActiveTermsForRegistration();
@@ -56,7 +64,13 @@ export async function registerAccountAction(
     password,
     options: {
       emailRedirectTo: `${origin}/auth/callback?next=${nextQuery}`,
-      data: { full_name: fullName },
+      data: { 
+        full_name: fullName,
+        phone_number: phoneNumber,
+        birthday,
+        organization_name: organizationName,
+        address
+      },
     },
   });
 
@@ -69,8 +83,25 @@ export async function registerAccountAction(
     return { error: "Account was created, but no user ID was returned. Please sign in and contact support if needed." };
   }
 
+  // Update profile row with the extra fields (trigger handle_new_user might have created it already)
   try {
     const admin = createServiceRoleClient();
+    
+    // We update the profile to include the new fields. 
+    // We use service role to ensure we can update the row even before the user confirms email (if enabled).
+    const { error: profileUpdateError } = await admin.from("profiles").update({
+      organization_name: organizationName,
+      address: address,
+      birthday: birthday,
+      phone_number: phoneNumber
+    }).eq("id", userId);
+
+    if (profileUpdateError) {
+      console.error("Profile update error during registration:", profileUpdateError);
+      // We don't return error here because auth account is already created, 
+      // but we log it. The user can update it later or it might have worked via trigger if we updated it.
+    }
+
     const { error: acceptanceError } = await admin.from("profile_terms_acceptances").upsert(
       {
         profile_id: userId,

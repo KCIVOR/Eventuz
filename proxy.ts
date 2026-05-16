@@ -12,7 +12,7 @@ import {
 import type { EventuzRole } from "@/lib/auth/roles";
 import { updateSession } from "@/lib/supabase/middleware";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { response, supabase } = await updateSession(request);
   const pathname = request.nextUrl.pathname;
   const requiredRole = getRequiredRoleForPathname(pathname);

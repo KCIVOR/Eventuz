@@ -19,7 +19,7 @@ const roleShort: Record<string, string> = {
 export async function SiteHeader({ layout = "default" }: { layout?: "default" | "flush" }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  
+
   let profile = null;
   if (user) {
     const { data } = await supabase

@@ -159,7 +159,7 @@ export default async function HomePage() {
       {/* ── ABOUT SECTION ── */}
       <section id="about" className="section section-alt">
         <div className="section-content">
-          <div className="sec-eyebrow">The Narrative</div>
+          <div className="sec-eyebrow">Overview</div>
           <h2 className="sec-title">About the Event</h2>
           <div className="flex items-center gap-4 mb-10">
             <div className="h-1.5 w-1.5 rotate-45 bg-accent-gold" />

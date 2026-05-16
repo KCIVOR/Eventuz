@@ -4,6 +4,7 @@ import { AuthShell } from "@/components/layout/AuthShell";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/Input";
+import Link from "next/link";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -48,7 +49,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <AuthShell title="Forgot password" backHref="/login" backLabel="Back to login">
+    <AuthShell title="Forgot password">
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <p className="text-sm leading-relaxed text-muted-foreground">
           Enter your email address and we&apos;ll send you a link to reset your password.
@@ -78,13 +79,24 @@ export default function ForgotPasswordPage() {
           disabled={loading}
         />
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="mt-2 rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-50"
-        >
-          {loading ? "Sending link…" : "Send reset link"}
-        </button>
+        <div className="flex flex-col gap-4 mt-2">
+          <button
+            type="submit"
+            disabled={loading}
+            className="rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-50"
+          >
+            {loading ? "Sending link…" : "Send reset link"}
+          </button>
+
+          <p className="text-center">
+            <Link
+              href="/login"
+              className="text-xs font-semibold text-primary underline-offset-4 hover:underline"
+            >
+              Return to log in
+            </Link>
+          </p>
+        </div>
       </form>
     </AuthShell>
   );

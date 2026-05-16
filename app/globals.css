@@ -66,6 +66,18 @@
   --color-surface-app: var(--surface-app);
   --color-sidebar-bg: var(--sidebar-bg);
   --color-sidebar-border: var(--sidebar-border);
+  
+  /* Brand Colors for Utilities */
+  --color-obsidian: var(--obsidian);
+  --color-ivory: var(--ivory);
+  --color-champagne: var(--champagne);
+  --color-champagne-light: var(--champagne-light);
+  --color-champagne-dark: var(--champagne-dark);
+  --color-blush: var(--blush);
+  --color-blush-dark: var(--blush-dark);
+  --color-warm-gray: var(--warm-gray);
+  --color-light-gray: var(--light-gray);
+
 
   /* Font variables are managed by next/font/google in layout.tsx (--font-sans, --font-serif) */
 

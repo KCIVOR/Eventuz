@@ -242,7 +242,16 @@ export function CapacityHoldForm({
                   <div className="text-left sm:text-right">
                     <p className="text-[10px] uppercase tracking-[0.2em] text-accent-gold font-semibold mb-1">Estimated Total</p>
                     <p className="text-3xl font-serif text-foreground">
-                      {formatPhp((selectedTicket.early_bird_price ? Number(selectedTicket.early_bird_price) : Number(selectedTicket.regular_price)) * quantity)}
+                      {(() => {
+                        const { unitPrice } = resolveUnitPrice({
+                          regularPrice: Number(selectedTicket.regular_price),
+                          earlyBirdPrice: Number(selectedTicket.early_bird_price),
+                          earlyBirdStartAt: selectedTicket.early_bird_start_at as string | null,
+                          earlyBirdEndAt: selectedTicket.early_bird_end_at as string | null,
+                          at: now,
+                        });
+                        return formatPhp(unitPrice * quantity);
+                      })()}
                     </p>
                   </div>
                 </div>

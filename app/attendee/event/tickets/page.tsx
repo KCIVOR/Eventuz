@@ -38,6 +38,7 @@ export default async function AttendeeTicketsIndexPage() {
     >
       <AttendeeTicketOverview
         eventTitle={name}
+        eventCoverUrl={event.cover_url as string | null}
         activeOrder={activeOrder}
         resumeCheckoutUrl={resumeCheckoutUrl}
         seatAssignmentOrders={seatAssignmentOrders}

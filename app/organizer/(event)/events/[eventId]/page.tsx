@@ -166,12 +166,12 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
                   </div>
 
                   <EventCoverImageField
-                    currentImageUrl={(event.image_url as string | null) ?? null}
+                    currentImageUrl={(event.cover_url as string | null) ?? null}
                     eventName={event.name as string}
                     label="Replace cover image"
                   />
 
-                  {event.image_url ? (
+                  {event.cover_url ? (
                     <label className="flex items-start gap-3 rounded-sm border border-destructive/20 bg-destructive-muted/40 p-4 text-sm text-muted-foreground">
                       <input
                         type="checkbox"
