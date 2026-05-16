@@ -86,6 +86,7 @@ export default async function StaffInviteAcceptPage({ searchParams }: Props) {
             >
               <Link
                 href={`/auth/sign-out?next=${encodeURIComponent(nextPath)}&error=${encodeURIComponent("Sign in with the invited staff email to accept this invitation.")}`}
+                prefetch={false}
               >
                 Switch Account
               </Link>
