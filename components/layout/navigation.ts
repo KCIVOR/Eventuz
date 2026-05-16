@@ -79,6 +79,12 @@ export function navSectionsForRole(role: EventuzRole, ctx: NavContext = {}): Nav
             },
             { id: "setup", label: "Event setup", href: `/organizer/events/${eventId}`, icon: "setup" },
             {
+              id: "tickets",
+              label: "Ticket management",
+              href: `/organizer/events/${eventId}/tickets`,
+              icon: "tickets",
+            },
+            {
               id: "attendees",
               label: "Attendees",
               href: `/organizer/events/${eventId}/attendees`,

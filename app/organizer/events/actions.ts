@@ -29,8 +29,10 @@ import { slugify, randomSuffix } from "@/lib/utils/slug";
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 
-function redirectEventError(eventId: string, message: string): never {
-  redirect(`/organizer/events/${eventId}?error=${encodeURIComponent(message)}`);
+function redirectEventError(eventId: string, message: string, redirectPath?: string): never {
+  const target = redirectPath || `/organizer/events/${eventId}`;
+  const separator = target.includes("?") ? "&" : "?";
+  redirect(`${target}${separator}error=${encodeURIComponent(message)}`);
 }
 
 function redirectSeatInventoryError(eventId: string, message: string): never {
@@ -357,8 +359,9 @@ export async function createTicketType(eventId: string, formData: FormData) {
 
   if (evErr || !ev) notFound();
 
+  const redirectPath = (formData.get("redirect_path") as string | null) ?? `/organizer/events/${eventId}`;
   const parsed = validateTicketTypeForm(formData);
-  if (!parsed.ok) redirectEventError(eventId, parsed.message);
+  if (!parsed.ok) redirectEventError(eventId, parsed.message, redirectPath);
 
   const { data: orderRows, error: orderErr } = await supabase
     .from("ticket_types")
@@ -367,7 +370,7 @@ export async function createTicketType(eventId: string, formData: FormData) {
     .order("seat_overview_order", { ascending: false, nullsFirst: false })
     .limit(1);
 
-  if (orderErr) redirectEventError(eventId, orderErr.message);
+  if (orderErr) redirectEventError(eventId, orderErr.message, redirectPath);
 
   const nextOverviewOrder = Number(orderRows?.[0]?.seat_overview_order ?? 0) + 1;
 
@@ -381,7 +384,7 @@ export async function createTicketType(eventId: string, formData: FormData) {
     .select("id, name")
     .single();
 
-  if (error || !tt) redirectEventError(eventId, error?.message ?? "Failed to create ticket type.");
+  if (error || !tt) redirectEventError(eventId, error?.message ?? "Failed to create ticket type.", redirectPath);
 
   await writeAuditLogSafe(supabase, {
     action: "ticket_type.created",
@@ -403,7 +406,7 @@ export async function createTicketType(eventId: string, formData: FormData) {
   const { error: seatsErr } = await supabase.from("seats").insert(rows);
   if (seatsErr) {
     await supabase.from("ticket_types").delete().eq("id", tt.id);
-    redirectEventError(eventId, seatsErr.message);
+    redirectEventError(eventId, seatsErr.message, redirectPath);
   }
 
   await writeAuditLogSafe(supabase, {
@@ -417,8 +420,8 @@ export async function createTicketType(eventId: string, formData: FormData) {
     },
   });
 
-  revalidatePath(`/organizer/events/${eventId}`);
-  redirect(`/organizer/events/${eventId}?ok=1`);
+  revalidatePath(redirectPath);
+  redirect(`${redirectPath}?ok=1`);
 }
 
 export async function updateTicketType(formData: FormData) {
@@ -430,8 +433,9 @@ export async function updateTicketType(formData: FormData) {
 
   const eventIdForm = String(formData.get("event_id") ?? "");
   const ticketTypeId = String(formData.get("ticket_type_id") ?? "");
+  const redirectPath = (formData.get("redirect_path") as string | null) || (eventIdForm ? `/organizer/events/${eventIdForm}` : "/organizer");
   if (!ticketTypeId) {
-    if (eventIdForm) redirectEventError(eventIdForm, "Missing ticket type.");
+    if (eventIdForm) redirectEventError(eventIdForm, "Missing ticket type.", redirectPath);
     redirect("/organizer");
   }
 
@@ -442,7 +446,7 @@ export async function updateTicketType(formData: FormData) {
     .maybeSingle();
 
   if (fetchErr || !tt) {
-    if (eventIdForm) redirectEventError(eventIdForm, "Ticket type not found.");
+    if (eventIdForm) redirectEventError(eventIdForm, "Ticket type not found.", redirectPath);
     notFound();
   }
 
@@ -459,14 +463,14 @@ export async function updateTicketType(formData: FormData) {
   }
 
   const parsed = validateTicketTypeForm(formData);
-  if (!parsed.ok) redirectEventError(eventId, parsed.message);
+  if (!parsed.ok) redirectEventError(eventId, parsed.message, redirectPath);
 
   const { error: updErr } = await supabase
     .from("ticket_types")
     .update(parsed.data)
     .eq("id", ticketTypeId);
 
-  if (updErr) redirectEventError(eventId, updErr.message);
+  if (updErr) redirectEventError(eventId, updErr.message, redirectPath);
 
   const prevQty = tt.quantity != null ? Number(tt.quantity) : null;
 
@@ -477,7 +481,7 @@ export async function updateTicketType(formData: FormData) {
     parsed.data.name,
     parsed.data.quantity
   );
-  if (!sync.ok) redirectEventError(eventId, sync.message);
+  if (!sync.ok) redirectEventError(eventId, sync.message, redirectPath);
 
   await writeAuditLogSafe(supabase, {
     action: "ticket_type.updated",
@@ -505,8 +509,8 @@ export async function updateTicketType(formData: FormData) {
     });
   }
 
-  revalidatePath(`/organizer/events/${eventId}`);
-  redirect(`/organizer/events/${eventId}?ok=1`);
+  revalidatePath(redirectPath as string);
+  redirect(`${redirectPath}?ok=1`);
 }
 
 export async function updateSeat(formData: FormData) {
