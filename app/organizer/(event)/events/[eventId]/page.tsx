@@ -18,6 +18,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Input } from "@/components/ui/Input";
 import { GooglePlaceAutocomplete } from "@/components/ui/GooglePlaceAutocomplete";
 import { loadActiveGoogleMapsApiKey } from "@/lib/super-admin/loadGoogleMapsSettings";
+import { EventCoverImageField } from "@/components/organizer/EventCoverImageField";
 
 type Props = {
   params: Promise<{ eventId: string }>;
@@ -155,6 +156,35 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
                       ))}
                     </select>
                   </div>
+                </div>
+
+                {/* Cover Image */}
+                <div className="space-y-6 pt-12 border-t border-border/60">
+                  <div className="flex items-center gap-4">
+                    <h2 className="font-serif text-2xl font-light text-foreground">Cover Image</h2>
+                    <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
+                  </div>
+
+                  <EventCoverImageField
+                    currentImageUrl={(event.image_url as string | null) ?? null}
+                    eventName={event.name as string}
+                    label="Replace cover image"
+                  />
+
+                  {event.image_url ? (
+                    <label className="flex items-start gap-3 rounded-sm border border-destructive/20 bg-destructive-muted/40 p-4 text-sm text-muted-foreground">
+                      <input
+                        type="checkbox"
+                        name="remove_cover_image"
+                        value="1"
+                        className="mt-1"
+                      />
+                      <span>
+                        Remove the current cover image and return the public landing page to the
+                        default hero background.
+                      </span>
+                    </label>
+                  ) : null}
                 </div>
 
                 {/* Schedule & Location */}

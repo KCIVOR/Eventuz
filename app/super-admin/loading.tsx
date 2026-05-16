@@ -23,8 +23,8 @@ export default function SuperAdminLoading() {
         {/* Metrics Grid Skeleton */}
         <section className="space-y-4">
           <div className="flex justify-between border-b pb-3">
-             <Skeleton className="h-6 w-40" />
-             <Skeleton className="h-4 w-60" />
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-4 w-60" />
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[...Array(4)].map((_, i) => (

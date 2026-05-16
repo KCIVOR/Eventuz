@@ -6,6 +6,13 @@ import {
   parseHoldMinutesOptional,
   parseHoldMinutesRequired,
 } from "@/lib/organizer/eventForm";
+import {
+  EVENT_COVER_BUCKET,
+  buildEventCoverImagePath,
+  readEventCoverImageDimensions,
+  validateEventCoverImageDimensions,
+  validateEventCoverImageFile,
+} from "@/lib/organizer/eventCoverImage";
 import { validateTicketTypeForm } from "@/lib/organizer/ticketTypeForm";
 import {
   initialSeatsForNewTicketType,
@@ -39,6 +46,58 @@ function redirectNewEventError(message: string): never {
 function emptyToNull(v: FormDataEntryValue | null): string | null {
   const s = String(v ?? "").trim();
   return s === "" ? null : s;
+}
+
+function getEventCoverImageFile(formData: FormData): File | null {
+  const value = formData.get("cover_image");
+  if (!(value instanceof File) || value.size === 0) return null;
+  return value;
+}
+
+async function uploadEventCoverImage(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  organizerId: string,
+  eventId: string,
+  file: File
+): Promise<{ ok: true; publicUrl: string } | { ok: false; message: string }> {
+  const validation = validateEventCoverImageFile(file);
+  if (!validation.ok) return { ok: false, message: validation.message ?? "Invalid cover image." };
+
+  const dimensions = await readEventCoverImageDimensions(file);
+  if (!dimensions) {
+    return { ok: false, message: "Could not read the cover image dimensions." };
+  }
+
+  const dimensionValidation = validateEventCoverImageDimensions(dimensions);
+  if (!dimensionValidation.ok) {
+    return {
+      ok: false,
+      message: dimensionValidation.message ?? "Cover image dimensions are not supported.",
+    };
+  }
+
+  const filePath = buildEventCoverImagePath({
+    organizerId,
+    eventId,
+    fileName: file.name,
+  });
+
+  const { error: uploadError } = await supabase.storage
+    .from(EVENT_COVER_BUCKET)
+    .upload(filePath, file, {
+      cacheControl: "31536000",
+      contentType: file.type,
+      upsert: false,
+    });
+
+  if (uploadError) return { ok: false, message: uploadError.message };
+
+  const { data } = supabase.storage.from(EVENT_COVER_BUCKET).getPublicUrl(filePath);
+  if (!data.publicUrl) {
+    return { ok: false, message: "Could not create a public URL for the cover image." };
+  }
+
+  return { ok: true, publicUrl: data.publicUrl };
 }
 
 export async function createEvent(formData: FormData) {
@@ -113,6 +172,20 @@ export async function createEvent(formData: FormData) {
 
     if (!error && data?.id) {
       const evId = data.id as string;
+      const coverImage = getEventCoverImageFile(formData);
+      if (coverImage) {
+        const uploaded = await uploadEventCoverImage(supabase, user.id, evId, coverImage);
+        if (!uploaded.ok) redirectEventError(evId, uploaded.message);
+
+        const { error: imageErr } = await supabase
+          .from("events")
+          .update({ image_url: uploaded.publicUrl })
+          .eq("id", evId)
+          .eq("organizer_id", user.id);
+
+        if (imageErr) redirectEventError(evId, imageErr.message);
+      }
+
       await writeAuditLogSafe(supabase, {
         action: "event.created",
         entityType: "event",
@@ -128,6 +201,7 @@ export async function createEvent(formData: FormData) {
         });
       }
       revalidatePath("/organizer");
+      revalidatePath("/");
       redirect(`/organizer/events/${evId}`);
     }
     if (error?.code === "23505") {
@@ -157,7 +231,7 @@ export async function updateEvent(eventId: string, formData: FormData) {
   const { data: gate, error: gateErr } = await supabase
     .from("events")
     .select(
-      "id, organizer_id, status, venue, formatted_address, lat, lng, capacity_hold_minutes, payment_hold_minutes, early_bird_hold_minutes"
+      "id, organizer_id, status, venue, formatted_address, lat, lng, image_url, capacity_hold_minutes, payment_hold_minutes, early_bird_hold_minutes"
     )
     .eq("id", eventId)
     .maybeSingle();
@@ -208,6 +282,18 @@ export async function updateEvent(eventId: string, formData: FormData) {
   const lngRaw = formData.get("lng");
   const lat = formData.has("lat") ? (latRaw ? Number(latRaw) : null) : Number(gate.lat ?? NaN);
   const lng = formData.has("lng") ? (lngRaw ? Number(lngRaw) : null) : Number(gate.lng ?? NaN);
+  const coverImage = getEventCoverImageFile(formData);
+  let imageUrl = (gate.image_url as string | null) ?? null;
+
+  if (String(formData.get("remove_cover_image") ?? "") === "1") {
+    imageUrl = null;
+  }
+
+  if (coverImage) {
+    const uploaded = await uploadEventCoverImage(supabase, user.id, eventId, coverImage);
+    if (!uploaded.ok) redirectEventError(eventId, uploaded.message);
+    imageUrl = uploaded.publicUrl;
+  }
 
   const { error } = await supabase
     .from("events")
@@ -222,6 +308,7 @@ export async function updateEvent(eventId: string, formData: FormData) {
       formatted_address,
       lat: isNaN(lat!) ? null : lat,
       lng: isNaN(lng!) ? null : lng,
+      image_url: imageUrl,
       capacity_hold_minutes: cap,
       payment_hold_minutes: pay,
       early_bird_hold_minutes: eb,
@@ -249,6 +336,7 @@ export async function updateEvent(eventId: string, formData: FormData) {
   }
   revalidatePath("/organizer");
   revalidatePath(`/organizer/events/${eventId}`);
+  revalidatePath("/");
   revalidatePath("/attendee/event");
   redirect(`/organizer/events/${eventId}?ok=1`);
 }

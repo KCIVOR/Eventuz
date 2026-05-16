@@ -389,7 +389,13 @@ body {
   background: linear-gradient(160deg, #1a1512 0%, #2e2825 40%, #3d3028 100%);
   z-index: 0;
   background-size: cover;
-  background-position: center;
+  background-position: center center;
+}
+
+@media (max-width: 767px) {
+  .hero-img {
+    background-position: center top;
+  }
 }
 
 .hero-img::after {

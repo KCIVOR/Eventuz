@@ -45,11 +45,13 @@ export function GooglePlaceAutocomplete({
 }: Props) {
   const effectiveApiKey = apiKey?.trim() ?? "";
 
-  const { isLoaded, loadError } = useJsApiLoader({
+  const { isLoaded: loaderLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: effectiveApiKey,
     libraries,
   });
+
+  const isLoaded = loaderLoaded || (typeof window !== "undefined" && !!window.google?.maps);
 
   const [inputValue, setInputValue] = useState(defaultValue);
   const [formattedAddress, setFormattedAddress] = useState(defaultFormattedAddress);

@@ -128,10 +128,7 @@ export function GoogleMapsSettingsForm({ initial, loadError }: Props) {
         </p>
       </section>
 
-      <p className="text-xs leading-relaxed text-muted-foreground">
-        Uses <span className="font-mono text-foreground">SMTP_SETTINGS_ENCRYPTION_KEY</span> as the platform encryption
-        key. It must be at least 32 characters.
-      </p>
+
     </div>
   );
 }
