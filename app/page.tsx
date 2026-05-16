@@ -73,20 +73,20 @@ export default async function HomePage() {
   // Calculate min price for the countdown bar
   const minPrice = ticketTypes?.length
     ? Math.min(
-        ...ticketTypes.map((t) => {
-          const earlyBirdStart = t.early_bird_start_at ? new Date(String(t.early_bird_start_at)) : null;
-          const earlyBirdEnd = t.early_bird_end_at ? new Date(String(t.early_bird_end_at)) : null;
-          const now = new Date();
-          const hasActiveEarlyBird =
-            Boolean(t.early_bird_price) &&
-            earlyBirdStart !== null &&
-            earlyBirdEnd !== null &&
-            now >= earlyBirdStart &&
-            now <= earlyBirdEnd;
+      ...ticketTypes.map((t) => {
+        const earlyBirdStart = t.early_bird_start_at ? new Date(String(t.early_bird_start_at)) : null;
+        const earlyBirdEnd = t.early_bird_end_at ? new Date(String(t.early_bird_end_at)) : null;
+        const now = new Date();
+        const hasActiveEarlyBird =
+          Boolean(t.early_bird_price) &&
+          earlyBirdStart !== null &&
+          earlyBirdEnd !== null &&
+          now >= earlyBirdStart &&
+          now <= earlyBirdEnd;
 
-          return hasActiveEarlyBird ? Number(t.early_bird_price) : Number(t.regular_price);
-        })
-      )
+        return hasActiveEarlyBird ? Number(t.early_bird_price) : Number(t.regular_price);
+      })
+    )
     : undefined;
 
   // Format dates
@@ -151,7 +151,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── COUNTDOWN BAR ── */}
+      {/* ── COUNTDOWN BARS ── */}
       {event.event_date && (
         <LandingCountdownBar targetDate={event.event_date} minPrice={minPrice} />
       )}
