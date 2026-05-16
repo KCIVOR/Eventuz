@@ -141,7 +141,7 @@ export default async function HomePage() {
           </div>
 
           <div className="hero-actions">
-            <Link href={`/register?event=${event.id}`} className="btn-eventuz-gold">
+            <Link href={user ? `?checkout=1` : `/login?next=/?checkout=1`} scroll={false} className="btn-eventuz-gold">
               Reserve Your Seat
             </Link>
             <a href="#about" className="btn-eventuz-secondary" style={{ color: '#fff', borderColor: 'rgba(253,250,244,0.3)' }}>
