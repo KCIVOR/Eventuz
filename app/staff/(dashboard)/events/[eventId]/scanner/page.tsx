@@ -61,7 +61,7 @@ export default async function StaffEventScannerPage({ params }: Props) {
         { label: "Scanner" },
       ]}
     >
-      <div className="mx-auto w-full max-w-lg px-0 sm:px-2">
+      <div className="mx-auto w-full max-w-5xl px-0 sm:px-2">
         <EventCheckInScanner eventId={eventId} backHref="/staff" backLabel="All events" />
       </div>
     </RoleAreaShell>

@@ -36,7 +36,7 @@ export default async function OrganizerEventScanPage({ params }: Props) {
         { label: "Scanner" },
       ]}
     >
-      <div className="mx-auto w-full max-w-lg pb-8">
+      <div className="mx-auto w-full max-w-5xl pb-8">
         <div className="mt-2">
           <EventCheckInScanner
             eventId={eventId}
