@@ -12,7 +12,7 @@ import {
 import type { TicketTypeWithSlots } from "@/lib/attendee/eventContext";
 import { formatPhp } from "@/lib/utils/money";
 import { resolveUnitPrice } from "@/lib/orders/pricing";
-import { useActionState, useMemo, useState, useEffect } from "react";
+import { useActionState, useMemo, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -40,6 +40,8 @@ export function CapacityHoldForm({
   const [releaseState, releaseAction, releasePending] = useActionState(releaseHoldAction, {} as HoldActionState);
   const [payState, payAction, payPending] = useActionState(startHitPayCheckoutAction, {} as PayActionState);
   const [simState, simAction, simPending] = useActionState(simulateHitPaySuccessAction, {} as HitPaySimulateState);
+  const paymentTabRef = useRef<Window | null>(null);
+  const [blockedCheckoutUrl, setBlockedCheckoutUrl] = useState<string | null>(null);
 
   // Local state for selection if no active hold exists
   const [selectedTypeId, setSelectedTypeId] = useState<string>(
@@ -51,17 +53,70 @@ export function CapacityHoldForm({
 
   useEffect(() => {
     if (activeHold?.ticket_type_id) {
-      setSelectedTypeId(activeHold.ticket_type_id as string);
-      setQuantity(Number(activeHold.quantity));
+      const timer = window.setTimeout(() => {
+        setSelectedTypeId(activeHold.ticket_type_id as string);
+        setQuantity(Number(activeHold.quantity));
+      }, 0);
+      return () => window.clearTimeout(timer);
     }
   }, [activeHold]);
 
   const router = useRouter();
   useEffect(() => {
     if (simState.ok) {
-      router.push("/attendee/event/seats");
+      const orderId = activeHold?.id ? `?order=${encodeURIComponent(String(activeHold.id))}` : "";
+      router.push(`/attendee/event/seats${orderId}`);
     }
-  }, [simState.ok, router]);
+  }, [activeHold?.id, simState.ok, router]);
+
+  useEffect(() => {
+    if (!payState.checkoutUrl || !payState.waitingUrl) return;
+
+    const openedTab = paymentTabRef.current;
+    if (openedTab && !openedTab.closed) {
+      openedTab.location.href = payState.checkoutUrl;
+      paymentTabRef.current = null;
+      window.setTimeout(() => setBlockedCheckoutUrl(null), 0);
+    } else {
+      const fallbackTab = window.open(payState.checkoutUrl, "_blank", "noopener,noreferrer");
+      if (!fallbackTab) {
+        window.setTimeout(() => setBlockedCheckoutUrl(payState.checkoutUrl ?? null), 0);
+      }
+    }
+
+    router.push(payState.waitingUrl);
+  }, [payState.checkoutUrl, payState.waitingUrl, router]);
+
+  useEffect(() => {
+    if (!payState.error || !paymentTabRef.current || paymentTabRef.current.closed) return;
+    paymentTabRef.current.close();
+    paymentTabRef.current = null;
+  }, [payState.error]);
+
+  function preparePaymentTab() {
+    setBlockedCheckoutUrl(null);
+    try {
+      const tab = window.open("", "eventuz_hitpay_checkout");
+      if (tab) {
+        tab.opener = null;
+        tab.document.write(
+          "<!doctype html><title>Opening HitPay</title><body style=\"font-family:system-ui,sans-serif;padding:32px;color:#1A1512\">Opening secure payment...</body>"
+        );
+      }
+      paymentTabRef.current = tab;
+    } catch {
+      paymentTabRef.current = null;
+    }
+  }
+
+  function openResumeCheckout() {
+    if (!resumeCheckoutUrl || !activeHold?.id) return;
+    const tab = window.open(resumeCheckoutUrl, "_blank", "noopener,noreferrer");
+    if (!tab) {
+      setBlockedCheckoutUrl(resumeCheckoutUrl);
+    }
+    router.push(`/attendee/event/payment/wait?order=${encodeURIComponent(String(activeHold.id))}`);
+  }
 
   const selectedTicket = useMemo(() =>
     ticketTypes.find(t => t.id === selectedTypeId),
@@ -80,7 +135,6 @@ export function CapacityHoldForm({
   const now = new Date();
   const paymentPending = activeHold?.status === "payment_pending";
   const capacityHeld = activeHold?.status === "capacity_held";
-  const payBlocked = paymentPending;
 
   return (
     <div className="space-y-10">
@@ -316,7 +370,7 @@ export function CapacityHoldForm({
             </div>
 
             {capacityHeld ? (
-              <form action={payAction} className="space-y-4">
+              <form action={payAction} onSubmit={preparePaymentTab} className="space-y-4">
                 <input type="hidden" name="order_id" value={String(activeHold.id)} />
                 <input type="hidden" name="event_id" value={eventId} />
                 <button
@@ -327,9 +381,22 @@ export function CapacityHoldForm({
                   {payPending ? "Connecting to HitPay..." : "Proceed to Secure Payment"}
                 </button>
                 <p className="text-center text-[11px] text-muted-foreground font-light">
-                  {showDevHitPaySimulate ? "Dev Mode: Simulation only." : "You will be redirected to HitPay to complete your transaction safely."}
+                  {showDevHitPaySimulate
+                    ? "Dev Mode: a payment tab and waiting page will open for simulation."
+                    : "HitPay will open in a new tab while this page waits for confirmation."}
                 </p>
               </form>
+            ) : null}
+
+            {blockedCheckoutUrl ? (
+              <a
+                href={blockedCheckoutUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-eventuz-secondary block w-full py-4 text-center"
+              >
+                Open HitPay checkout
+              </a>
             ) : null}
 
             {paymentPending && (
@@ -339,9 +406,13 @@ export function CapacityHoldForm({
                   <span className="text-sm font-light">Waiting for payment confirmation...</span>
                 </div>
                 {resumeCheckoutUrl && (
-                  <a href={resumeCheckoutUrl} className="btn-eventuz-secondary w-full py-4 block text-center">
+                  <button
+                    type="button"
+                    onClick={openResumeCheckout}
+                    className="btn-eventuz-secondary block w-full py-4 text-center"
+                  >
                     Resume Secure Payment
-                  </a>
+                  </button>
                 )}
                 {showDevHitPaySimulate && (
                   <form action={simAction} className="mt-8 p-6 border border-dashed border-accent-gold/30 bg-accent-gold/5 text-center">

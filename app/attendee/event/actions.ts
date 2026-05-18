@@ -17,9 +17,19 @@ import { redirect } from "next/navigation";
 
 export type HoldActionState = { error?: string; ok?: boolean };
 
-export type PayActionState = { error?: string };
+export type PayActionState = {
+  error?: string;
+  checkoutUrl?: string;
+  waitingUrl?: string;
+  orderId?: string;
+};
 
 export type HitPaySimulateState = { error?: string; ok?: boolean };
+
+function paymentWaitingUrl(orderId: string, fromHitPay = false): string {
+  const base = `/attendee/event/payment/wait?order=${encodeURIComponent(orderId)}`;
+  return fromHitPay ? `${base}&hitpay_return=1` : base;
+}
 
 /** Mark pending HitPay payment succeeded (Super Admin → HitPay → Allow dev simulation). */
 export async function simulateHitPaySuccessAction(
@@ -464,7 +474,11 @@ export async function startHitPayCheckoutAction(
       .limit(1)
       .maybeSingle();
     if (pend?.provider_checkout_url) {
-      redirect(pend.provider_checkout_url as string);
+      return {
+        checkoutUrl: pend.provider_checkout_url as string,
+        waitingUrl: paymentWaitingUrl(orderId),
+        orderId,
+      };
     }
     return {
       error:
@@ -514,12 +528,16 @@ export async function startHitPayCheckoutAction(
   if (existingPending?.provider_checkout_url) {
     const prev = Math.round(Number(existingPending.amount) * 100) / 100;
     if (prev === amount) {
-      redirect(existingPending.provider_checkout_url as string);
+      return {
+        checkoutUrl: existingPending.provider_checkout_url as string,
+        waitingUrl: paymentWaitingUrl(orderId),
+        orderId,
+      };
     }
   }
 
   const origin = await getAppOrigin();
-  const redirectUrl = `${origin}/attendee/event?hitpay_return=1`;
+  const redirectUrl = `${origin}${paymentWaitingUrl(orderId, true)}`;
   const webhookUrl = `${origin}/api/hitpay/webhook`;
 
   let hitpay: { id: string; url: string };
@@ -577,7 +595,12 @@ export async function startHitPayCheckoutAction(
   }
 
   revalidatePath("/attendee/event");
-  redirect(hitpay.url);
+  revalidatePath("/attendee/event/payment/wait");
+  return {
+    checkoutUrl: hitpay.url,
+    waitingUrl: paymentWaitingUrl(orderId),
+    orderId,
+  };
 }
 
 export async function issueAdmissionTicketsAction(formData: FormData) {

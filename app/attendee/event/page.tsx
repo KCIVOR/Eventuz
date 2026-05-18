@@ -3,6 +3,7 @@ import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
 import { loadAttendeeEventContext } from "@/lib/attendee/eventContext";
 import { loadAttendeeTransactions } from "@/lib/attendee/transactions";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
 type Props = {
   searchParams: Promise<{
@@ -18,7 +19,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function AttendeeEventPage({ searchParams }: Props) {
   const q = await searchParams;
-  const fromHitPay = q.hitpay_return === "1";
   const {
     event,
     activeOrder,
@@ -28,6 +28,10 @@ export default async function AttendeeEventPage({ searchParams }: Props) {
     qrTickets,
     message,
   } = await loadAttendeeEventContext();
+
+  if (q.hitpay_return === "1" && activeOrder?.id) {
+    redirect(`/attendee/event/payment/wait?order=${encodeURIComponent(String(activeOrder.id))}&hitpay_return=1`);
+  }
 
   if (message || !event) {
     return (
@@ -65,7 +69,6 @@ export default async function AttendeeEventPage({ searchParams }: Props) {
           eventDate,
           eventTime,
         }}
-        fromHitPay={fromHitPay}
         activeOrder={activeOrder}
         resumeCheckoutUrl={resumeCheckoutUrl}
         seatAssignmentOrders={seatAssignmentOrders}

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { PaymentStatusPoller } from "@/components/attendee/PaymentStatusPoller";
 import type {
   PaidOrderSummary,
   QrTicketListRow,
@@ -17,7 +16,6 @@ type EventSummary = {
 
 type Props = {
   event: EventSummary;
-  fromHitPay: boolean;
   activeOrder: Record<string, unknown> | null;
   resumeCheckoutUrl: string | null;
   seatAssignmentOrders: SeatAssignmentOrderLink[];
@@ -56,7 +54,6 @@ function statusLabel(status: string) {
 
 export function AttendeeEventDashboard({
   event,
-  fromHitPay,
   activeOrder,
   resumeCheckoutUrl,
   seatAssignmentOrders,
@@ -79,16 +76,14 @@ export function AttendeeEventDashboard({
   let actionBody = "Start from the public event page to select a ticket category and begin checkout.";
   let actionHref = "/?checkout=1";
   let actionLabel = "Reserve tickets";
-  let actionExternal = false;
 
   if (paymentPending) {
     actionTitle = "Complete your payment";
-    actionBody = fromHitPay
-      ? "We are checking for the HitPay confirmation. This usually updates in a few moments."
-      : "Your reservation is waiting for payment. Continue checkout before the payment window expires.";
-    actionHref = resumeCheckoutUrl ?? "/?checkout=1";
-    actionLabel = resumeCheckoutUrl ? "Continue to payment" : "Review reservation";
-    actionExternal = Boolean(resumeCheckoutUrl);
+    actionBody = "Your reservation is waiting for payment. Open the payment status page to continue checkout and wait for confirmation.";
+    actionHref = activeOrder?.id
+      ? `/attendee/event/payment/wait?order=${encodeURIComponent(String(activeOrder.id))}`
+      : "/?checkout=1";
+    actionLabel = resumeCheckoutUrl ? "Open payment status" : "Review reservation";
   } else if (capacityHeld) {
     actionTitle = "Finish your reservation";
     actionBody = "Your ticket selection is being held temporarily. Continue checkout to secure it.";
@@ -152,29 +147,9 @@ export function AttendeeEventDashboard({
                 <p className="mt-3 text-sm font-light leading-relaxed text-muted-foreground">{actionBody}</p>
               </div>
 
-              {fromHitPay && paymentPending && activeOrder?.id ? (
-                <div className="rounded-sm border border-primary/20 bg-muted/30 px-5 py-4">
-                  <PaymentStatusPoller
-                    orderId={activeOrder.id as string}
-                    redirectTo="/attendee/event/seats"
-                  />
-                </div>
-              ) : null}
-
-              {actionExternal ? (
-                <a
-                  href={actionHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-eventuz-gold px-8 py-4 text-sm"
-                >
-                  {actionLabel}
-                </a>
-              ) : (
-                <Link href={actionHref} className="btn-eventuz-gold px-8 py-4 text-sm">
-                  {actionLabel}
-                </Link>
-              )}
+              <Link href={actionHref} className="btn-eventuz-gold px-8 py-4 text-sm">
+                {actionLabel}
+              </Link>
             </div>
           </section>
 
