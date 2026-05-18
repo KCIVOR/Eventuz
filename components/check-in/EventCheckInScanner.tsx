@@ -63,6 +63,7 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 
 export function EventCheckInScanner({ eventId, backHref, backLabel }: Props) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const resultPanelRef = useRef<HTMLElement | null>(null);
   const gateRef = useRef(false);
   const activeCameraRef = useRef<string | MediaTrackConstraints | null>(null);
   const runScanRef = useRef<(raw: string, source: "camera" | "manual") => Promise<void>>(
@@ -162,6 +163,15 @@ export function EventCheckInScanner({ eventId, backHref, backLabel }: Props) {
       }
     };
   }, [eventId]);
+
+  useEffect(() => {
+    if (!result) return;
+    const timeout = window.setTimeout(() => {
+      resultPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+
+    return () => window.clearTimeout(timeout);
+  }, [result]);
 
   function getScanner(): Html5Qrcode {
     if (!scannerRef.current) {
@@ -442,7 +452,7 @@ export function EventCheckInScanner({ eventId, backHref, backLabel }: Props) {
       ) : null}
 
       {result ? (
-        <section className={`${panelClass} overflow-hidden`}>
+        <section ref={resultPanelRef} className={`${panelClass} scroll-mt-20 overflow-hidden`}>
           <div className={`border-b px-6 py-5 ${resultTone[result.scan_result]}`}>
             <p className="text-xs font-semibold uppercase tracking-wide opacity-80">Result</p>
             <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">

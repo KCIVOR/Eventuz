@@ -166,7 +166,9 @@ export function SidebarNav({ role, sections, onNavigate }: Props) {
                     <Link
                       href={item.href}
                       prefetch={false}
-                      onClick={() => onNavigate?.()}
+                      onClick={() => {
+                        if (!active) onNavigate?.();
+                      }}
                       aria-current={active ? "page" : undefined}
                       className="sidebar-link-hover group flex items-center gap-3"
                       style={{

@@ -3,18 +3,12 @@
 import type { NavSection } from "@/components/layout/navigation";
 import type { EventuzRole } from "@/lib/auth/roles";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { SidebarNav } from "./SidebarNav";
 import { SiteFooter } from "./SiteFooter";
 import { UserDropdown } from "./UserDropdown";
 import { AnnouncementDropdown } from "./AnnouncementDropdown";
-
-const roleShort: Record<EventuzRole, string> = {
-  attendee: "Guest",
-  organizer: "Organizer",
-  staff: "Staff",
-  super_admin: "Admin",
-};
 
 type Props = {
   role: EventuzRole;
@@ -30,13 +24,30 @@ type Props = {
 
 export function DashboardFrame({
   role,
-  homeHref,
   navSections,
   compactTitle,
   user,
   children,
 }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [contentLoading, setContentLoading] = useState(false);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setContentLoading(false), 0);
+    return () => window.clearTimeout(timeout);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!contentLoading) return;
+    const timeout = window.setTimeout(() => setContentLoading(false), 8_000);
+    return () => window.clearTimeout(timeout);
+  }, [contentLoading]);
+
+  function handleSidebarNavigate() {
+    setMobileOpen(false);
+    setContentLoading(true);
+  }
 
   return (
     <div className="flex flex-1 flex-col" style={{ background: "var(--surface-app)" }}>
@@ -150,12 +161,27 @@ export function DashboardFrame({
           }}
         >
           <div className="h-full overflow-y-auto px-3 py-6 lg:sticky lg:top-14 lg:max-h-[calc(100vh-3.5rem)]">
-            <SidebarNav role={role} sections={navSections} onNavigate={() => setMobileOpen(false)} />
+            <SidebarNav role={role} sections={navSections} onNavigate={handleSidebarNavigate} />
           </div>
         </aside>
 
-        <div id="dashboard-main" className="min-w-0 flex-1 overflow-x-hidden" tabIndex={-1}>
+        <div id="dashboard-main" className="relative min-w-0 flex-1 overflow-x-hidden" tabIndex={-1}>
           {children}
+          {contentLoading ? (
+            <div
+              className="absolute inset-0 z-30 flex min-h-[18rem] items-start justify-center bg-[#F7F4EF]/75 px-4 pt-10 backdrop-blur-[1px] sm:pt-16"
+              role="status"
+              aria-live="polite"
+              aria-label="Loading page content"
+            >
+              <div className="flex flex-col items-center gap-4 rounded-[2px] border border-[#EDE8E3] bg-white/90 px-8 py-7 shadow-[0_18px_50px_rgba(26,21,18,0.08)]">
+                <div className="h-9 w-9 animate-spin rounded-full border-2 border-[#C9A96E] border-t-transparent" />
+                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#7A6E68]">
+                  Loading content
+                </p>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 
