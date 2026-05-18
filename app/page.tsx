@@ -7,6 +7,8 @@ import { EventMapPreview } from "@/components/ui/EventMapPreview";
 import { loadActiveGoogleMapsApiKey } from "@/lib/super-admin/loadGoogleMapsSettings";
 import { LandingCheckoutModal } from "@/components/attendee/LandingCheckoutModal";
 import { isHitPayDevSimulationAllowed } from "@/lib/payments/hitpayDevSimulation";
+import { ReserveCheckoutLink } from "@/components/attendee/ReserveCheckoutLink";
+import { SmoothAnchorLink } from "@/components/ui/SmoothAnchorLink";
 
 interface EventData {
   id: string;
@@ -141,12 +143,12 @@ export default async function HomePage() {
           </div>
 
           <div className="hero-actions">
-            <Link href={user ? `?checkout=1` : `/login?next=/?checkout=1`} scroll={false} className="btn-eventuz-gold">
+            <ReserveCheckoutLink href={user ? `?checkout=1` : `/login?next=/?checkout=1`} className="btn-eventuz-gold">
               Reserve Your Seat
-            </Link>
-            <a href="#about" className="btn-eventuz-secondary" style={{ color: '#fff', borderColor: 'rgba(253,250,244,0.3)' }}>
+            </ReserveCheckoutLink>
+            <SmoothAnchorLink href="#about" className="btn-eventuz-secondary" style={{ color: '#fff', borderColor: 'rgba(253,250,244,0.3)' }}>
               Explore Event
-            </a>
+            </SmoothAnchorLink>
           </div>
         </div>
       </section>
@@ -287,13 +289,12 @@ export default async function HomePage() {
                   </div>
                 ) : null}
               </div>
-              <Link
+              <ReserveCheckoutLink
                 href={user ? `?checkout=1` : `/login?next=/?checkout=1`}
-                scroll={false}
                 className="btn-eventuz-primary reserve-panel-cta"
               >
                 Reserve Tickets
-              </Link>
+              </ReserveCheckoutLink>
             </div>
           </div>
         </section>

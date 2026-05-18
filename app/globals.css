@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html {
+  scroll-behavior: smooth;
+}
+
 /* ─── Design System Tokens (from docs/wedding-expo-design-system.jsx) ─────── */
 :root {
   /* Brand Colors */

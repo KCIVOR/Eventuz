@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { CapacityHoldForm } from "./CapacityHoldForm";
 import type { TicketTypeWithSlots } from "@/lib/attendee/eventContext";
 
@@ -21,15 +21,18 @@ export function LandingCheckoutModal({
   showDevHitPaySimulate = false,
 }: Props) {
   const [isOpen, setIsOpen] = useState(false);
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (searchParams.get("checkout") === "1" || searchParams.get("checkout") === "true") {
-      setIsOpen(true);
-    } else {
-      setIsOpen(false);
-    }
+    const shouldOpen = searchParams.get("checkout") === "1" || searchParams.get("checkout") === "true";
+    const timer = window.setTimeout(() => {
+      setIsOpen(shouldOpen);
+      if (shouldOpen) {
+        window.dispatchEvent(new Event("eventuz:checkout-modal-open"));
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [searchParams]);
 
   const handleClose = () => {
