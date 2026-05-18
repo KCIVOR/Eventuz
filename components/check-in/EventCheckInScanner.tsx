@@ -15,6 +15,10 @@ type Props = {
 
 type CameraState = "idle" | "requesting" | "active" | "stopped" | "error";
 type CameraDevice = Awaited<ReturnType<typeof Html5Qrcode.getCameras>>[number];
+type CameraOption = {
+  id: string;
+  label: string;
+};
 
 const SCANNER_ELEMENT_ID = "evz-checkin-qr-reader";
 const scanConfig = {
@@ -69,6 +73,8 @@ export function EventCheckInScanner({ eventId, backHref, backLabel }: Props) {
   const [busy, setBusy] = useState(false);
   const [cameraState, setCameraState] = useState<CameraState>("idle");
   const [cameraLabel, setCameraLabel] = useState<string | null>(null);
+  const [cameras, setCameras] = useState<CameraOption[]>([]);
+  const [selectedCameraId, setSelectedCameraId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ProcessTicketScanPayload | null>(null);
 
@@ -112,6 +118,31 @@ export function EventCheckInScanner({ eventId, backHref, backLabel }: Props) {
   useEffect(() => {
     runScanRef.current = runScan;
   }, [runScan]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    Html5Qrcode.getCameras()
+      .then((found) => {
+        if (cancelled) return;
+        const options = found.map((camera, index) => ({
+          id: camera.id,
+          label: cameraLabelFor(camera, index),
+        }));
+        setCameras(options);
+        const preferred = preferredCamera(found);
+        if (preferred) {
+          setSelectedCameraId(preferred.id);
+        }
+      })
+      .catch(() => {
+        /* Camera labels may be unavailable until permission is granted. */
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     gateRef.current = false;
@@ -169,6 +200,14 @@ export function EventCheckInScanner({ eventId, backHref, backLabel }: Props) {
     return rear ?? cameras[cameras.length - 1] ?? cameras[0] ?? null;
   }
 
+  function cameraLabelFor(camera: CameraDevice, index: number): string {
+    return camera.label?.trim() || `Camera ${index + 1}`;
+  }
+
+  function selectedCameraLabel(cameraId: string): string {
+    return cameras.find((camera) => camera.id === cameraId)?.label || "Selected camera";
+  }
+
   async function startWith(camera: string | MediaTrackConstraints, label: string): Promise<boolean> {
     const scanner = getScanner();
     try {
@@ -205,6 +244,11 @@ export function EventCheckInScanner({ eventId, backHref, backLabel }: Props) {
 
     await stopCamera("requesting");
 
+    if (selectedCameraId) {
+      const selectedStarted = await startWith(selectedCameraId, selectedCameraLabel(selectedCameraId));
+      if (selectedStarted) return;
+    }
+
     const exactRearStarted = await startWith(
       { facingMode: { exact: "environment" } },
       "Back camera"
@@ -215,10 +259,17 @@ export function EventCheckInScanner({ eventId, backHref, backLabel }: Props) {
     if (rearStarted) return;
 
     try {
-      const cameras = await Html5Qrcode.getCameras();
-      const preferred = preferredCamera(cameras);
+      const found = await Html5Qrcode.getCameras();
+      const options = found.map((camera, index) => ({
+        id: camera.id,
+        label: cameraLabelFor(camera, index),
+      }));
+      setCameras(options);
+      const preferred = preferredCamera(found);
       if (preferred) {
-        const label = preferred.label || "Camera";
+        const selected = options.find((camera) => camera.id === preferred.id);
+        const label = selected?.label || "Camera";
+        setSelectedCameraId(preferred.id);
         const deviceStarted = await startWith(preferred.id, label);
         if (deviceStarted) return;
       }
@@ -228,6 +279,22 @@ export function EventCheckInScanner({ eventId, backHref, backLabel }: Props) {
 
     setCameraState("error");
     setError("Camera could not be started. Allow camera access, then try again or use manual entry.");
+  }
+
+  async function onCameraSelect(nextCameraId: string) {
+    setSelectedCameraId(nextCameraId);
+    setError(null);
+    setResult(null);
+
+    if (!nextCameraId || cameraState !== "active") return;
+
+    setCameraState("requesting");
+    await stopCamera("requesting");
+    const started = await startWith(nextCameraId, selectedCameraLabel(nextCameraId));
+    if (!started) {
+      setCameraState("error");
+      setError("Selected camera could not be started. Choose another camera or use manual entry.");
+    }
   }
 
   async function onManualSubmit(e: React.FormEvent) {
@@ -283,6 +350,7 @@ export function EventCheckInScanner({ eventId, backHref, backLabel }: Props) {
 
   const hasTicketDetails = Boolean(result?.ticket_id);
   const controlsDisabled = busy || cameraState === "requesting";
+  const cameraSelectDisabled = controlsDisabled || cameras.length === 0;
 
   return (
     <div className="space-y-8">
@@ -303,7 +371,27 @@ export function EventCheckInScanner({ eventId, backHref, backLabel }: Props) {
                 {cameraStateText[cameraState]}
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+              <label className="flex min-w-[14rem] flex-col gap-1 text-left sm:min-w-[16rem]">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Camera
+                </span>
+                <select
+                  value={selectedCameraId}
+                  onChange={(e) => void onCameraSelect(e.target.value)}
+                  disabled={cameraSelectDisabled}
+                  className="min-h-11 rounded-xl border border-border bg-card px-3 text-sm font-semibold text-foreground transition-colors focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  <option value="">
+                    {cameras.length === 0 ? "Start camera to detect" : "Auto back camera"}
+                  </option>
+                  {cameras.map((camera) => (
+                    <option key={camera.id} value={camera.id}>
+                      {camera.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <button
                 type="button"
                 onClick={() => void startCamera()}
