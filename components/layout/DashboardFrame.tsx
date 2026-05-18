@@ -39,7 +39,7 @@ export function DashboardFrame({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex min-h-full flex-col" style={{ background: "var(--surface-app)" }}>
+    <div className="flex flex-1 flex-col" style={{ background: "var(--surface-app)" }}>
       <a
         href="#dashboard-main"
         className="no-print sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:shadow-md"
@@ -118,26 +118,8 @@ export function DashboardFrame({
             <span className="flex-1" />
           )}
 
-            <div className="flex shrink-0 items-center gap-3">
-              <AnnouncementDropdown />
-              <div className="hidden items-center gap-2 sm:flex" aria-label="Account">
-              <span
-                className="hidden sm:inline-block"
-                style={{
-                  fontSize: "10px",
-                  fontWeight: 600,
-                  letterSpacing: "0.2em",
-                  textTransform: "uppercase",
-                  color: "#C9A96E",
-                  border: "1px solid rgba(201,169,110,0.35)",
-                  padding: "3px 10px",
-                  borderRadius: "1px",
-                }}
-              >
-                {roleShort[role]}
-              </span>
-              <span style={{ width: 1, height: 16, background: "rgba(201,169,110,0.2)" }} aria-hidden />
-            </div>
+          <div className="flex shrink-0 items-center gap-3">
+            <AnnouncementDropdown />
             <UserDropdown user={user} role={role} />
           </div>
         </div>
@@ -157,9 +139,8 @@ export function DashboardFrame({
         {/* Sidebar — DS .nav-links style, ivory/alt-surface bg */}
         <aside
           id="mobile-drawer-nav"
-          className={`no-print fixed bottom-0 left-0 top-14 z-50 lg:static lg:top-auto lg:z-auto lg:flex lg:min-h-[calc(100vh-3.5rem)] lg:w-60 lg:shrink-0 lg:translate-x-0 ${
-            mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-          }`}
+          className={`no-print fixed bottom-0 left-0 top-14 z-50 lg:static lg:top-auto lg:z-auto lg:flex lg:min-h-[calc(100vh-3.5rem)] lg:w-60 lg:shrink-0 lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+            }`}
           style={{
             width: "min(18rem, 88vw)",
             borderRight: "1px solid #EDE8E3",

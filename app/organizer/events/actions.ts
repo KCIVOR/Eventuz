@@ -6,6 +6,13 @@ import {
   parseHoldMinutesOptional,
   parseHoldMinutesRequired,
 } from "@/lib/organizer/eventForm";
+import {
+  EVENT_COVER_BUCKET,
+  buildEventCoverImagePath,
+  readEventCoverImageDimensions,
+  validateEventCoverImageDimensions,
+  validateEventCoverImageFile,
+} from "@/lib/organizer/eventCoverImage";
 import { validateTicketTypeForm } from "@/lib/organizer/ticketTypeForm";
 import {
   initialSeatsForNewTicketType,
@@ -22,8 +29,10 @@ import { slugify, randomSuffix } from "@/lib/utils/slug";
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 
-function redirectEventError(eventId: string, message: string): never {
-  redirect(`/organizer/events/${eventId}?error=${encodeURIComponent(message)}`);
+function redirectEventError(eventId: string, message: string, redirectPath?: string): never {
+  const target = redirectPath || `/organizer/events/${eventId}`;
+  const separator = target.includes("?") ? "&" : "?";
+  redirect(`${target}${separator}error=${encodeURIComponent(message)}`);
 }
 
 function redirectSeatInventoryError(eventId: string, message: string): never {
@@ -39,6 +48,58 @@ function redirectNewEventError(message: string): never {
 function emptyToNull(v: FormDataEntryValue | null): string | null {
   const s = String(v ?? "").trim();
   return s === "" ? null : s;
+}
+
+function getEventCoverImageFile(formData: FormData): File | null {
+  const value = formData.get("cover_image");
+  if (!(value instanceof File) || value.size === 0) return null;
+  return value;
+}
+
+async function uploadEventCoverImage(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  organizerId: string,
+  eventId: string,
+  file: File
+): Promise<{ ok: true; publicUrl: string } | { ok: false; message: string }> {
+  const validation = validateEventCoverImageFile(file);
+  if (!validation.ok) return { ok: false, message: validation.message ?? "Invalid cover image." };
+
+  const dimensions = await readEventCoverImageDimensions(file);
+  if (!dimensions) {
+    return { ok: false, message: "Could not read the cover image dimensions." };
+  }
+
+  const dimensionValidation = validateEventCoverImageDimensions(dimensions);
+  if (!dimensionValidation.ok) {
+    return {
+      ok: false,
+      message: dimensionValidation.message ?? "Cover image dimensions are not supported.",
+    };
+  }
+
+  const filePath = buildEventCoverImagePath({
+    organizerId,
+    eventId,
+    fileName: file.name,
+  });
+
+  const { error: uploadError } = await supabase.storage
+    .from(EVENT_COVER_BUCKET)
+    .upload(filePath, file, {
+      cacheControl: "31536000",
+      contentType: file.type,
+      upsert: false,
+    });
+
+  if (uploadError) return { ok: false, message: uploadError.message };
+
+  const { data } = supabase.storage.from(EVENT_COVER_BUCKET).getPublicUrl(filePath);
+  if (!data.publicUrl) {
+    return { ok: false, message: "Could not create a public URL for the cover image." };
+  }
+
+  return { ok: true, publicUrl: data.publicUrl };
 }
 
 export async function createEvent(formData: FormData) {
@@ -113,6 +174,20 @@ export async function createEvent(formData: FormData) {
 
     if (!error && data?.id) {
       const evId = data.id as string;
+      const coverImage = getEventCoverImageFile(formData);
+      if (coverImage) {
+        const uploaded = await uploadEventCoverImage(supabase, user.id, evId, coverImage);
+        if (!uploaded.ok) redirectEventError(evId, uploaded.message);
+
+        const { error: imageErr } = await supabase
+          .from("events")
+          .update({ cover_url: uploaded.publicUrl })
+          .eq("id", evId)
+          .eq("organizer_id", user.id);
+
+        if (imageErr) redirectEventError(evId, imageErr.message);
+      }
+
       await writeAuditLogSafe(supabase, {
         action: "event.created",
         entityType: "event",
@@ -128,6 +203,7 @@ export async function createEvent(formData: FormData) {
         });
       }
       revalidatePath("/organizer");
+      revalidatePath("/");
       redirect(`/organizer/events/${evId}`);
     }
     if (error?.code === "23505") {
@@ -157,7 +233,7 @@ export async function updateEvent(eventId: string, formData: FormData) {
   const { data: gate, error: gateErr } = await supabase
     .from("events")
     .select(
-      "id, organizer_id, status, venue, formatted_address, lat, lng, capacity_hold_minutes, payment_hold_minutes, early_bird_hold_minutes"
+      "id, organizer_id, status, venue, formatted_address, lat, lng, cover_url, capacity_hold_minutes, payment_hold_minutes, early_bird_hold_minutes"
     )
     .eq("id", eventId)
     .maybeSingle();
@@ -208,6 +284,18 @@ export async function updateEvent(eventId: string, formData: FormData) {
   const lngRaw = formData.get("lng");
   const lat = formData.has("lat") ? (latRaw ? Number(latRaw) : null) : Number(gate.lat ?? NaN);
   const lng = formData.has("lng") ? (lngRaw ? Number(lngRaw) : null) : Number(gate.lng ?? NaN);
+  const coverImage = getEventCoverImageFile(formData);
+  let coverUrl = (gate.cover_url as string | null) ?? null;
+
+  if (String(formData.get("remove_cover_image") ?? "") === "1") {
+    coverUrl = null;
+  }
+
+  if (coverImage) {
+    const uploaded = await uploadEventCoverImage(supabase, user.id, eventId, coverImage);
+    if (!uploaded.ok) redirectEventError(eventId, uploaded.message);
+    coverUrl = uploaded.publicUrl;
+  }
 
   const { error } = await supabase
     .from("events")
@@ -222,6 +310,7 @@ export async function updateEvent(eventId: string, formData: FormData) {
       formatted_address,
       lat: isNaN(lat!) ? null : lat,
       lng: isNaN(lng!) ? null : lng,
+      cover_url: coverUrl,
       capacity_hold_minutes: cap,
       payment_hold_minutes: pay,
       early_bird_hold_minutes: eb,
@@ -249,6 +338,7 @@ export async function updateEvent(eventId: string, formData: FormData) {
   }
   revalidatePath("/organizer");
   revalidatePath(`/organizer/events/${eventId}`);
+  revalidatePath("/");
   revalidatePath("/attendee/event");
   redirect(`/organizer/events/${eventId}?ok=1`);
 }
@@ -269,8 +359,9 @@ export async function createTicketType(eventId: string, formData: FormData) {
 
   if (evErr || !ev) notFound();
 
+  const redirectPath = (formData.get("redirect_path") as string | null) ?? `/organizer/events/${eventId}`;
   const parsed = validateTicketTypeForm(formData);
-  if (!parsed.ok) redirectEventError(eventId, parsed.message);
+  if (!parsed.ok) redirectEventError(eventId, parsed.message, redirectPath);
 
   const { data: orderRows, error: orderErr } = await supabase
     .from("ticket_types")
@@ -279,7 +370,7 @@ export async function createTicketType(eventId: string, formData: FormData) {
     .order("seat_overview_order", { ascending: false, nullsFirst: false })
     .limit(1);
 
-  if (orderErr) redirectEventError(eventId, orderErr.message);
+  if (orderErr) redirectEventError(eventId, orderErr.message, redirectPath);
 
   const nextOverviewOrder = Number(orderRows?.[0]?.seat_overview_order ?? 0) + 1;
 
@@ -293,7 +384,7 @@ export async function createTicketType(eventId: string, formData: FormData) {
     .select("id, name")
     .single();
 
-  if (error || !tt) redirectEventError(eventId, error?.message ?? "Failed to create ticket type.");
+  if (error || !tt) redirectEventError(eventId, error?.message ?? "Failed to create ticket type.", redirectPath);
 
   await writeAuditLogSafe(supabase, {
     action: "ticket_type.created",
@@ -315,7 +406,7 @@ export async function createTicketType(eventId: string, formData: FormData) {
   const { error: seatsErr } = await supabase.from("seats").insert(rows);
   if (seatsErr) {
     await supabase.from("ticket_types").delete().eq("id", tt.id);
-    redirectEventError(eventId, seatsErr.message);
+    redirectEventError(eventId, seatsErr.message, redirectPath);
   }
 
   await writeAuditLogSafe(supabase, {
@@ -329,8 +420,8 @@ export async function createTicketType(eventId: string, formData: FormData) {
     },
   });
 
-  revalidatePath(`/organizer/events/${eventId}`);
-  redirect(`/organizer/events/${eventId}?ok=1`);
+  revalidatePath(redirectPath);
+  redirect(`${redirectPath}?ok=1`);
 }
 
 export async function updateTicketType(formData: FormData) {
@@ -342,8 +433,9 @@ export async function updateTicketType(formData: FormData) {
 
   const eventIdForm = String(formData.get("event_id") ?? "");
   const ticketTypeId = String(formData.get("ticket_type_id") ?? "");
+  const redirectPath = (formData.get("redirect_path") as string | null) || (eventIdForm ? `/organizer/events/${eventIdForm}` : "/organizer");
   if (!ticketTypeId) {
-    if (eventIdForm) redirectEventError(eventIdForm, "Missing ticket type.");
+    if (eventIdForm) redirectEventError(eventIdForm, "Missing ticket type.", redirectPath);
     redirect("/organizer");
   }
 
@@ -354,7 +446,7 @@ export async function updateTicketType(formData: FormData) {
     .maybeSingle();
 
   if (fetchErr || !tt) {
-    if (eventIdForm) redirectEventError(eventIdForm, "Ticket type not found.");
+    if (eventIdForm) redirectEventError(eventIdForm, "Ticket type not found.", redirectPath);
     notFound();
   }
 
@@ -371,14 +463,14 @@ export async function updateTicketType(formData: FormData) {
   }
 
   const parsed = validateTicketTypeForm(formData);
-  if (!parsed.ok) redirectEventError(eventId, parsed.message);
+  if (!parsed.ok) redirectEventError(eventId, parsed.message, redirectPath);
 
   const { error: updErr } = await supabase
     .from("ticket_types")
     .update(parsed.data)
     .eq("id", ticketTypeId);
 
-  if (updErr) redirectEventError(eventId, updErr.message);
+  if (updErr) redirectEventError(eventId, updErr.message, redirectPath);
 
   const prevQty = tt.quantity != null ? Number(tt.quantity) : null;
 
@@ -389,7 +481,7 @@ export async function updateTicketType(formData: FormData) {
     parsed.data.name,
     parsed.data.quantity
   );
-  if (!sync.ok) redirectEventError(eventId, sync.message);
+  if (!sync.ok) redirectEventError(eventId, sync.message, redirectPath);
 
   await writeAuditLogSafe(supabase, {
     action: "ticket_type.updated",
@@ -417,8 +509,8 @@ export async function updateTicketType(formData: FormData) {
     });
   }
 
-  revalidatePath(`/organizer/events/${eventId}`);
-  redirect(`/organizer/events/${eventId}?ok=1`);
+  revalidatePath(redirectPath as string);
+  redirect(`${redirectPath}?ok=1`);
 }
 
 export async function updateSeat(formData: FormData) {

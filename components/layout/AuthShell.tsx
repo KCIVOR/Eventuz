@@ -11,7 +11,7 @@ type Props = {
 
 export function AuthShell({ title, children, backHref, backLabel }: Props) {
   return (
-    <div className="flex min-h-full flex-col">
+    <div className="flex flex-1 flex-col">
       {/* Auth top bar — dark obsidian, same as dashboard header */}
       <div
         style={{

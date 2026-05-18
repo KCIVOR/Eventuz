@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/Input";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/Button";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -118,13 +119,13 @@ export default function ResetPasswordPage() {
           disabled={loading}
         />
 
-        <button
+        <Button
           type="submit"
-          disabled={loading}
-          className="mt-2 rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-50"
+          isLoading={loading}
+          className="w-full mt-2"
         >
           {loading ? "Updating password…" : "Update password"}
-        </button>
+        </Button>
       </form>
     </AuthShell>
   );

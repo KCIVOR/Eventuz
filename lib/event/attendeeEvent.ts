@@ -39,7 +39,7 @@ export async function resolveAttendeeFacingEvent(
     .from("orders")
     .select(
       `updated_at,
-       events ( id, name, description, venue, formatted_address, lat, lng, event_date, event_time, status, public_slug )`
+       events ( id, name, description, venue, formatted_address, lat, lng, event_date, event_time, status, public_slug, cover_url )`
     )
     .eq("buyer_user_id", uid)
     .in("status", [...POST_PURCHASE_HUB_STATUSES])

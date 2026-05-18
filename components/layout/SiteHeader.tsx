@@ -19,7 +19,7 @@ const roleShort: Record<string, string> = {
 export async function SiteHeader({ layout = "default" }: { layout?: "default" | "flush" }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  
+
   let profile = null;
   if (user) {
     const { data } = await supabase
@@ -84,25 +84,6 @@ export async function SiteHeader({ layout = "default" }: { layout?: "default" | 
           ) : (
             <div className="flex items-center gap-3">
               <AnnouncementDropdown />
-              {profile?.role && (
-                <div className="hidden items-center gap-2 sm:flex" aria-label="Account">
-                  <span
-                    style={{
-                      fontSize: "10px",
-                      fontWeight: 600,
-                      letterSpacing: "0.2em",
-                      textTransform: "uppercase",
-                      color: "#C9A96E",
-                      border: "1px solid rgba(201,169,110,0.35)",
-                      padding: "3px 10px",
-                      borderRadius: "1px",
-                    }}
-                  >
-                    {roleShort[profile.role] || "User"}
-                  </span>
-                  <span style={{ width: 1, height: 16, background: "rgba(201,169,110,0.2)" }} aria-hidden />
-                </div>
-              )}
               <UserDropdown user={profile || { full_name: user.email || "User" }} role={profile?.role} />
             </div>
           )}

@@ -258,10 +258,7 @@ export function SmtpSettingsForm({ initial, loadError }: Props) {
         </form>
       </section>
 
-      <p className="text-xs leading-relaxed text-muted-foreground">
-        Set <span className="font-mono text-foreground">SMTP_SETTINGS_ENCRYPTION_KEY</span> in the server environment
-        (at least 32 characters) so passwords can be encrypted at rest.
-      </p>
+
     </div>
   );
 }

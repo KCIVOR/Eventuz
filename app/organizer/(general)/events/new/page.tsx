@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { GooglePlaceAutocomplete } from "@/components/ui/GooglePlaceAutocomplete";
 import { loadActiveGoogleMapsApiKey } from "@/lib/super-admin/loadGoogleMapsSettings";
+import { EventCoverImageField } from "@/components/organizer/EventCoverImageField";
 
 type Props = {
   searchParams: Promise<{ error?: string }>;
@@ -82,6 +83,17 @@ export default async function NewEventPage({ searchParams }: Props) {
                   ))}
                 </select>
               </div>
+            </section>
+
+            <section className="space-y-4 border-t border-border pt-8">
+              <div>
+                <h2 className="section-title">Cover image</h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Add one polished hero image for the public landing page. Use a landscape image
+                  close to 16:9, at least 1200x675 pixels, JPG/PNG/WebP, max 5MB.
+                </p>
+              </div>
+              <EventCoverImageField />
             </section>
 
             <section className="space-y-4 border-t border-border pt-8">

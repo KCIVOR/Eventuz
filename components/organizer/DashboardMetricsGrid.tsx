@@ -25,21 +25,21 @@ export function DashboardMetricsGrid({ metrics: m }: Props) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <div className="panel-card p-5">
-        <p className="label-eventuz">Orders (excl. cancelled)</p>
+        <p className="label-eventuz">Total Orders</p>
         <p className="mt-2 font-serif text-2xl font-semibold tabular-nums text-foreground">
           {m.total_orders}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">Registration attempts and purchases</p>
       </div>
       <div className="panel-card p-5">
-        <p className="label-eventuz">Paid slots</p>
+        <p className="label-eventuz">Paid Tickets</p>
         <p className="mt-2 font-serif text-2xl font-semibold tabular-nums text-foreground">
           {m.paid_attendee_slots}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">Quantity on paid orders (all stages)</p>
       </div>
       <div className="panel-card p-5">
-        <p className="label-eventuz">Revenue (confirmed)</p>
+        <p className="label-eventuz">Confirmed Sales</p>
         <p className="mt-2 font-serif text-2xl font-semibold tabular-nums text-foreground">
           {formatPhp(m.revenue_succeeded_php)}
         </p>
@@ -79,7 +79,7 @@ export function DashboardMetricsGrid({ metrics: m }: Props) {
         <p className="mt-1 text-xs text-muted-foreground">Checkout open & payment window active</p>
       </div>
       <div className="panel-card p-5">
-        <p className="label-eventuz">Active holds</p>
+        <p className="label-eventuz">In-Progress Purchases</p>
         <p className="mt-2 font-serif text-2xl font-semibold tabular-nums text-foreground">
           {m.active_checkout_holds}
         </p>

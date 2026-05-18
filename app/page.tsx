@@ -1,5 +1,4 @@
 import { PublicShell } from "@/components/layout/PublicShell";
-import { type EventuzRole } from "@/lib/auth/roles";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { loadAttendeeEventContext } from "@/lib/attendee/eventContext";
@@ -26,16 +25,6 @@ interface EventData {
 export default async function HomePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-
-  let role: EventuzRole | null = null;
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-    role = profile?.role as EventuzRole | null;
-  }
 
   const { event: rawEvent, ticketTypes, registrationOpen, activeOrder, resumeCheckoutUrl } = await loadAttendeeEventContext();
   const event = rawEvent as unknown as EventData | null;
@@ -83,11 +72,21 @@ export default async function HomePage() {
 
   // Calculate min price for the countdown bar
   const minPrice = ticketTypes?.length
-    ? Math.min(...ticketTypes.map((t: any) =>
-      t.early_bird_price && new Date() >= new Date(t.early_bird_start_at) && new Date() <= new Date(t.early_bird_end_at)
-        ? Number(t.early_bird_price)
-        : Number(t.regular_price)
-    ))
+    ? Math.min(
+      ...ticketTypes.map((t) => {
+        const earlyBirdStart = t.early_bird_start_at ? new Date(String(t.early_bird_start_at)) : null;
+        const earlyBirdEnd = t.early_bird_end_at ? new Date(String(t.early_bird_end_at)) : null;
+        const now = new Date();
+        const hasActiveEarlyBird =
+          Boolean(t.early_bird_price) &&
+          earlyBirdStart !== null &&
+          earlyBirdEnd !== null &&
+          now >= earlyBirdStart &&
+          now <= earlyBirdEnd;
+
+        return hasActiveEarlyBird ? Number(t.early_bird_price) : Number(t.regular_price);
+      })
+    )
     : undefined;
 
   // Format dates
@@ -108,7 +107,7 @@ export default async function HomePage() {
   const heroContent = (
     <div className="w-full">
       {/* ── HERO ── */}
-      <section className="hero">
+      <section className="hero" aria-label={`${event.name} event details`}>
         {event.image_url ? (
           <div className="hero-img" style={{ backgroundImage: `url(${event.image_url})` }} />
         ) : (
@@ -142,7 +141,7 @@ export default async function HomePage() {
           </div>
 
           <div className="hero-actions">
-            <Link href={`/register?event=${event.id}`} className="btn-eventuz-gold">
+            <Link href={user ? `?checkout=1` : `/login?next=/?checkout=1`} scroll={false} className="btn-eventuz-gold">
               Reserve Your Seat
             </Link>
             <a href="#about" className="btn-eventuz-secondary" style={{ color: '#fff', borderColor: 'rgba(253,250,244,0.3)' }}>
@@ -152,7 +151,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── COUNTDOWN BAR ── */}
+      {/* ── COUNTDOWN BARS ── */}
       {event.event_date && (
         <LandingCountdownBar targetDate={event.event_date} minPrice={minPrice} />
       )}
@@ -160,7 +159,7 @@ export default async function HomePage() {
       {/* ── ABOUT SECTION ── */}
       <section id="about" className="section section-alt">
         <div className="section-content">
-          <div className="sec-eyebrow">The Narrative</div>
+          <div className="sec-eyebrow">Overview</div>
           <h2 className="sec-title">About the Event</h2>
           <div className="flex items-center gap-4 mb-10">
             <div className="h-1.5 w-1.5 rotate-45 bg-accent-gold" />
@@ -178,7 +177,9 @@ export default async function HomePage() {
                 <div className="astat-label">Ticket Tiers</div>
               </div>
               <div className="astat">
-                <div className="astat-val">{ticketTypes?.reduce((acc: number, curr: any) => acc + (curr.quantity || 0), 0) || 0}</div>
+                <div className="astat-val">
+                  {ticketTypes?.reduce((acc, curr) => acc + Number(curr.quantity ?? 0), 0) || 0}
+                </div>
                 <div className="astat-label">Total Capacity</div>
               </div>
             </div>
@@ -271,7 +272,7 @@ export default async function HomePage() {
                 <p className="reserve-panel-label">Invitation Access</p>
                 <h3 className="reserve-panel-title">Secure your place in one elegant step.</h3>
                 <p className="reserve-panel-text">
-                  Choose your ticket package, complete checkout, and continue to guest details when payment is confirmed.
+                  Choose your ticket category, complete checkout, and continue to guest details when payment is confirmed.
                 </p>
               </div>
               <div className="reserve-panel-meta" aria-label="Ticket availability summary">

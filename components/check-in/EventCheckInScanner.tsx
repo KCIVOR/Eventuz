@@ -4,6 +4,7 @@ import { processTicketScan, type ProcessTicketScanPayload } from "@/app/actions/
 import { EVENTUZ_QR_PREFIX } from "@/lib/tickets/eventTicketQr";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import Link from "next/link";
+import { Alert } from "../ui/Alert";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type Props = {
@@ -160,9 +161,9 @@ export function EventCheckInScanner({ eventId, backHref, backLabel }: Props) {
       </p>
 
       {error ? (
-        <p className="rounded-xl border border-destructive/30 bg-destructive-muted px-4 py-3 text-center text-sm text-destructive">
+        <Alert type="error" title="Check-in Error">
           {error}
-        </p>
+        </Alert>
       ) : null}
 
       {result ? (

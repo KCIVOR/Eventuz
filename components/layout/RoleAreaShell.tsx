@@ -48,7 +48,7 @@ export async function RoleAreaShell({
     const { getActiveEventId } = await import("@/lib/auth/getDashboardUser");
     const supabase = await createClient();
     const { data: { user: authUser } } = await supabase.auth.getUser();
-    
+
     if (authUser) {
       const activeId = await getActiveEventId(role, authUser.id);
       if (activeId) {
@@ -81,13 +81,13 @@ export async function RoleAreaShell({
         <div className="space-y-10">{children}</div>
       ) : (
         // DS Panel — .card style with sharp corners
-        <div 
+        <div
           className="p-6 sm:p-10"
-          style={{ 
-            background: "#fff", 
-            border: "1px solid #EDE8E3", 
+          style={{
+            background: "#fff",
+            border: "1px solid #EDE8E3",
             borderRadius: "2px",
-            boxShadow: "0 2px 12px rgba(26,21,18,0.03)" 
+            boxShadow: "0 2px 12px rgba(26,21,18,0.03)"
           }}
         >
           {children}

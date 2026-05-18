@@ -66,6 +66,18 @@
   --color-surface-app: var(--surface-app);
   --color-sidebar-bg: var(--sidebar-bg);
   --color-sidebar-border: var(--sidebar-border);
+  
+  /* Brand Colors for Utilities */
+  --color-obsidian: var(--obsidian);
+  --color-ivory: var(--ivory);
+  --color-champagne: var(--champagne);
+  --color-champagne-light: var(--champagne-light);
+  --color-champagne-dark: var(--champagne-dark);
+  --color-blush: var(--blush);
+  --color-blush-dark: var(--blush-dark);
+  --color-warm-gray: var(--warm-gray);
+  --color-light-gray: var(--light-gray);
+
 
   /* Font variables are managed by next/font/google in layout.tsx (--font-sans, --font-serif) */
 
@@ -338,6 +350,11 @@ body {
   }
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -360,6 +377,10 @@ body {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease forwards;
 }
 
 .animate-fade-in-up {
@@ -389,7 +410,13 @@ body {
   background: linear-gradient(160deg, #1a1512 0%, #2e2825 40%, #3d3028 100%);
   z-index: 0;
   background-size: cover;
-  background-position: center;
+  background-position: center center;
+}
+
+@media (max-width: 767px) {
+  .hero-img {
+    background-position: center top;
+  }
 }
 
 .hero-img::after {
@@ -1223,4 +1250,81 @@ body {
 
 .ticket-cta {
   padding: 0 24px 24px;
+}
+
+/* ─── Pagination ─────────────────────────────────────────────────────────── */
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pg-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--charcoal);
+  border: 1px solid var(--border);
+  border-radius: 1px;
+  cursor: pointer;
+  background: #fff;
+  transition: all 0.15s;
+}
+
+.pg-btn:hover:not(:disabled) {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.pg-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--accent-gold);
+}
+
+.pg-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ─── Table Utilities ────────────────────────────────────────────────────── */
+.tw {
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead th {
+  padding: 14px 20px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  text-align: left;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+
+tbody tr:last-child {
+  border-bottom: none;
+}
+
+tbody td {
+  padding: 14px 20px;
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--charcoal);
+  vertical-align: middle;
 }

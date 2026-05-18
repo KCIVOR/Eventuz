@@ -1,6 +1,7 @@
 
 import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
 import { Button } from "@/components/ui/Button";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 import { loadOrganizerEventDashboard } from "@/lib/organizer/loadEventDashboard";
 import { DEFAULT_LIST_PAGE_SIZE, parsePageParam, slicePage } from "@/lib/ui/pagination";
 import type { SerializableSearchParams } from "@/lib/ui/paginationUrl";
@@ -73,7 +74,7 @@ export default async function OrganizerEventDashboardPage({ params, searchParams
             {/* Availability Section */}
             <section className="space-y-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
               <div className="flex items-center gap-4">
-                <h3 className="font-serif text-xl font-light text-foreground">Package Availability</h3>
+                <h3 className="font-serif text-xl font-light text-foreground">Ticket Availability</h3>
                 <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
               </div>
               <DashboardAvailabilityTable availability={d.availability} />
@@ -83,7 +84,7 @@ export default async function OrganizerEventDashboardPage({ params, searchParams
             {d.paid_unassigned.length > 0 && (
               <section className="space-y-6 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
                 <div className="flex items-center gap-4">
-                  <h3 className="font-serif text-xl font-light text-foreground">Awaiting Assignment</h3>
+                  <h3 className="font-serif text-xl font-light text-foreground">Paid Tickets (Awaiting Seat Assignment)</h3>
                   <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
                 </div>
                 <DashboardOrdersTable
@@ -96,24 +97,39 @@ export default async function OrganizerEventDashboardPage({ params, searchParams
               </section>
             )}
 
-            {/* Tickets Section */}
+            {/* Attendees Sneak Peek */}
             <section className="space-y-6 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-              <div className="flex items-center gap-4">
-                <h3 className="font-serif text-xl font-light text-foreground">Attendee Registry</h3>
-                <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 flex-1">
+                  <h3 className="font-serif text-xl font-light text-foreground">Guest Registry</h3>
+                  <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
+                </div>
+                <Button variant="outline" className="btn-eventuz-secondary ml-4 px-4 py-2 text-xs" asChild>
+                  <Link href={`/organizer/events/${eventId}/attendees`}>
+                    View All Attendees
+                  </Link>
+                </Button>
               </div>
               <DashboardTicketsTable
-                tickets={d.tickets}
-                pageData={ticketsPage}
+                tickets={d.tickets.slice(0, 5)}
+                pageData={{
+                  slice: d.tickets.slice(0, 5),
+                  page: 1,
+                  total: d.tickets.length,
+                  pageCount: 1,
+                  rangeStart: 1,
+                  rangeEnd: Math.min(5, d.tickets.length)
+                }}
                 dashPath={dashPath}
                 searchParams={q}
+                withoutPagination
               />
             </section>
 
             {/* All Orders */}
             <section className="space-y-6 animate-fade-in-up" style={{ animationDelay: '0.25s' }}>
               <div className="flex items-center gap-4">
-                <h3 className="font-serif text-xl font-light text-foreground">Financial Ledger</h3>
+                <h3 className="font-serif text-xl font-light text-foreground">Order History & Sales</h3>
                 <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
               </div>
               <DashboardOrdersTable
@@ -170,9 +186,9 @@ export default async function OrganizerEventDashboardPage({ params, searchParams
                       required
                     />
                   </div>
-                  <Button type="submit" className="w-full btn-eventuz-gold py-3 text-[10px] shadow-sm">
+                  <SubmitButton className="w-full btn-eventuz-gold py-3 text-[10px] shadow-sm">
                     Publish Announcement
-                  </Button>
+                  </SubmitButton>
                 </form>
 
                 {/* List of recent announcements */}
@@ -203,7 +219,7 @@ export default async function OrganizerEventDashboardPage({ params, searchParams
                           const { deleteAnnouncement } = await import("@/app/organizer/events/announcementActions");
                           await deleteAnnouncement(eventId, ann.id);
                         }}>
-                          <button type="submit" className="text-[10px] text-destructive hover:underline">Delete</button>
+                          <SubmitButton variant="ghost" className="text-[10px] text-destructive hover:underline p-0 h-auto border-none lowercase tracking-normal font-normal">Delete</SubmitButton>
                         </form>
                       </div>
                     ));

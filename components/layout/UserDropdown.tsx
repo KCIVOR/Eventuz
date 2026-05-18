@@ -121,6 +121,7 @@ export function UserDropdown({ user, role }: UserDropdownProps) {
 
           <Link
             href="/auth/sign-out"
+            prefetch={false}
             onClick={() => setOpen(false)}
             className="flex items-center gap-3 px-4 py-3 text-[11px] font-medium uppercase tracking-[0.1em] text-[#AEA89F] hover:bg-[#C9A96E] hover:text-[#1A1512] transition-colors"
           >

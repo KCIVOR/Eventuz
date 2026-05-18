@@ -6,7 +6,7 @@ import { Suspense } from "react";
 
 export default function LoginPage() {
   return (
-    <AuthShell title="Log in" backHref="/" backLabel="Back to home">
+    <AuthShell title="Log in">
       <Suspense
         fallback={<p className="text-center text-sm text-muted-foreground">Loading…</p>}
       >

@@ -1,6 +1,7 @@
 import React from "react";
 import { EventStatusChip } from "./AdminStatusChip";
 import { Button } from "@/components/ui/Button";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 import { ListPagination } from "@/components/ui/ListPagination";
 import { DEFAULT_LIST_PAGE_SIZE } from "@/lib/ui/pagination";
 import type { SerializableSearchParams } from "@/lib/ui/paginationUrl";
@@ -93,17 +94,17 @@ export function SuperAdminEventsTable({
                     <form action={superAdminSetEventRegistrationBlockedAction}>
                       <input type="hidden" name="event_id" value={e.id} />
                       <input type="hidden" name="blocked" value="false" />
-                      <Button type="submit" variant="secondary" size="sm">
+                      <SubmitButton variant="secondary" size="sm">
                         Restore draft
-                      </Button>
+                      </SubmitButton>
                     </form>
                   ) : (
                     <form action={superAdminSetEventRegistrationBlockedAction}>
                       <input type="hidden" name="event_id" value={e.id} />
                       <input type="hidden" name="blocked" value="true" />
-                      <Button type="submit" variant="destructive" size="sm">
+                      <SubmitButton variant="destructive" size="sm">
                         Suspend
-                      </Button>
+                      </SubmitButton>
                     </form>
                   )}
                 </div>

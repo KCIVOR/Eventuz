@@ -44,9 +44,10 @@ export function AnnouncementDropdown() {
       .from("event_announcements")
       .select(`
         *,
-        events ( name ),
+        events!inner ( name, organizer_id ),
         event_announcement_reads ( id )
       `)
+      .neq("events.organizer_id", user.id)
       .order("created_at", { ascending: false })
       .limit(10);
 

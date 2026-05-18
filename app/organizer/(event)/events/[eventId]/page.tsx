@@ -1,23 +1,17 @@
-import { createTicketType, updateEvent, updateTicketType } from "@/app/organizer/events/actions";
+import { updateEvent } from "@/app/organizer/events/actions";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/Button";
-import { ScrollableTableWrapper } from "@/components/ui/ScrollableTableWrapper";
-import { CollapsibleTicketTypeCard } from "@/components/organizer/CollapsibleTicketTypeCard";
-import { ListPagination } from "@/components/ui/ListPagination";
 import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
 import { EVENT_STATUSES } from "@/lib/organizer/eventForm";
-import { TICKET_TYPE_STATUSES } from "@/lib/organizer/ticketTypeForm";
-import { DEFAULT_LIST_PAGE_SIZE, parsePageParam, slicePage } from "@/lib/ui/pagination";
+import { trimTimeForInput } from "@/lib/utils/date";
 import type { SerializableSearchParams } from "@/lib/ui/paginationUrl";
-import { formatPhp } from "@/lib/utils/money";
-import { nestedOne } from "@/lib/supabase/nestedOne";
-import { trimTimeForInput, toDatetimeLocalInput } from "@/lib/utils/date";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Input } from "@/components/ui/Input";
 import { GooglePlaceAutocomplete } from "@/components/ui/GooglePlaceAutocomplete";
 import { loadActiveGoogleMapsApiKey } from "@/lib/super-admin/loadGoogleMapsSettings";
+import { EventCoverImageField } from "@/components/organizer/EventCoverImageField";
 
 type Props = {
   params: Promise<{ eventId: string }>;
@@ -43,26 +37,6 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
   if (!user || event.organizer_id !== user.id) notFound();
 
   const googleMapsApiKey = await loadActiveGoogleMapsApiKey();
-
-  const { data: ticketTypes } = await supabase
-    .from("ticket_types")
-    .select("*")
-    .eq("event_id", eventId)
-    .order("created_at", { ascending: true });
-
-  const eventSetupPath = `/organizer/events/${eventId}`;
-
-  const ticketStatusBadge: Record<string, string> = {
-    active: "bg-success-muted text-success",
-    inactive: "bg-muted text-muted-foreground",
-    sold_out: "bg-warning/15 text-warning",
-  };
-
-  const ticketStatusLabels: Record<string, string> = {
-    active: "Active — available when the event is published",
-    inactive: "Inactive — hidden from registration lists",
-    sold_out: "Sold out — shown as unavailable",
-  };
 
   return (
     <RoleAreaShell
@@ -157,6 +131,35 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
                   </div>
                 </div>
 
+                {/* Cover Image */}
+                <div className="space-y-6 pt-12 border-t border-border/60">
+                  <div className="flex items-center gap-4">
+                    <h2 className="font-serif text-2xl font-light text-foreground">Cover Image</h2>
+                    <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
+                  </div>
+
+                  <EventCoverImageField
+                    currentImageUrl={(event.cover_url as string | null) ?? null}
+                    eventName={event.name as string}
+                    label="Replace cover image"
+                  />
+
+                  {event.cover_url ? (
+                    <label className="flex items-start gap-3 rounded-sm border border-destructive/20 bg-destructive-muted/40 p-4 text-sm text-muted-foreground">
+                      <input
+                        type="checkbox"
+                        name="remove_cover_image"
+                        value="1"
+                        className="mt-1"
+                      />
+                      <span>
+                        Remove the current cover image and return the public landing page to the
+                        default hero background.
+                      </span>
+                    </label>
+                  ) : null}
+                </div>
+
                 {/* Schedule & Location */}
                 <div className="space-y-6 pt-12 border-t border-border/60">
                   <div className="flex items-center gap-4">
@@ -219,93 +222,9 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
                 </div>
               </form>
             </section>
-
-            {/* Existing Ticket Types Section */}
-            <section className="space-y-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-              <div className="flex items-center gap-4">
-                <h2 className="font-serif text-2xl font-light text-foreground">Ticket Inventory</h2>
-                <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
-              </div>
-              
-              {(ticketTypes ?? []).length === 0 ? (
-                <div className="panel-card py-16 text-center border-dashed border-border/60 bg-muted/5">
-                   <p className="text-sm font-light text-muted-foreground">No ticket types defined yet. Use the sidebar to create your first ticket type.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {(ticketTypes ?? []).map((tt) => (
-                    <CollapsibleTicketTypeCard
-                      key={tt.id as string}
-                      ticketTypeId={tt.id as string}
-                      title={tt.name as string}
-                      summary={`${formatPhp(Number(tt.regular_price))} Regular · ${formatPhp(Number(tt.early_bird_price))} Early Bird · Qty ${tt.quantity}`}
-                      defaultExpanded={(ticketTypes ?? []).length <= 1}
-                      statusBadge={
-                        <StatusBadge status={tt.status as string} />
-                      }
-                    >
-                      <form action={updateTicketType} className="space-y-8 p-2">
-                        <input type="hidden" name="event_id" value={eventId} />
-                        <input type="hidden" name="ticket_type_id" value={tt.id as string} />
-                        
-                        <div className="grid gap-6 sm:grid-cols-2">
-                          <Input label="Name" name="name" required defaultValue={tt.name as string} />
-                          <Input label="Quantity" name="quantity" type="number" required min={1} defaultValue={String(tt.quantity)} />
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Ticket Description</label>
-                          <textarea
-                            name="description"
-                            rows={3}
-                            defaultValue={tt.description as string}
-                            className="input-eventuz"
-                          />
-                        </div>
-
-                        <div className="grid gap-6 sm:grid-cols-2">
-                          <Input label="Regular Price (PHP)" name="regular_price" type="number" required min={0} step="0.01" defaultValue={String(tt.regular_price)} />
-                          <Input label="Early Bird Price (PHP)" name="early_bird_price" type="number" required min={0} step="0.01" defaultValue={String(tt.early_bird_price)} />
-                        </div>
-
-                        <div className="grid gap-6 sm:grid-cols-2">
-                          <Input
-                            label="Early Bird Begins"
-                            name="early_bird_start_at"
-                            type="datetime-local"
-                            defaultValue={toDatetimeLocalInput(tt.early_bird_start_at as string | null)}
-                          />
-                          <Input
-                            label="Early Bird Ends"
-                            name="early_bird_end_at"
-                            type="datetime-local"
-                            defaultValue={toDatetimeLocalInput(tt.early_bird_end_at as string | null)}
-                          />
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Ticket Status</label>
-                          <select name="status" className="input-eventuz" defaultValue={tt.status as string}>
-                            {TICKET_TYPE_STATUSES.map((s) => (
-                              <option key={s} value={s}>{ticketStatusLabels[s] ?? s}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="pt-4 flex justify-end">
-                          <button type="submit" className="btn-eventuz-gold px-8 py-3 text-xs">
-                            Update Ticket Type
-                          </button>
-                        </div>
-                      </form>
-                    </CollapsibleTicketTypeCard>
-                  ))}
-                </div>
-              )}
-            </section>
           </div>
 
-          {/* SIDEBAR: Status, Rules & Creation */}
+          {/* SIDEBAR: Status & Rules */}
           <aside className="lg:col-span-5 space-y-8 lg:sticky lg:top-32">
             
             {/* Publication Status Card */}
@@ -340,9 +259,6 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
               </div>
               
               <form action={updateEvent.bind(null, eventId)} className="space-y-6">
-                 {/* Re-including hidden basic fields to satisfy required form inputs if necessary, 
-                     but since we have separate save buttons, we keep them isolated if the action handles partials. 
-                     Assuming action needs all fields or we just move the inputs here for specific control. */}
                  <input type="hidden" name="name" defaultValue={event.name as string} />
                  <input type="hidden" name="description" defaultValue={event.description as string} />
                  <input type="hidden" name="status" defaultValue={event.status as string} />
@@ -351,9 +267,9 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
                  <input type="hidden" name="event_time" defaultValue={trimTimeForInput(event.event_time)} />
 
                  <div className="grid gap-4">
-                    <Input label="Capacity Hold (Mins)" name="capacity_hold_minutes" type="number" required min={1} defaultValue={String(event.capacity_hold_minutes)} />
-                    <Input label="Payment Hold (Mins)" name="payment_hold_minutes" type="number" required min={1} defaultValue={String(event.payment_hold_minutes)} />
-                    <Input label="Early Bird Price Hold (Mins)" name="early_bird_hold_minutes" type="number" required min={1} defaultValue={String(event.early_bird_hold_minutes)} />
+                    <Input label="Reservation Window (Mins)" name="capacity_hold_minutes" type="number" required min={1} defaultValue={String(event.capacity_hold_minutes)} />
+                    <Input label="Checkout Window (Mins)" name="payment_hold_minutes" type="number" required min={1} defaultValue={String(event.payment_hold_minutes)} />
+                    <Input label="Price Lock Duration (Mins)" name="early_bird_hold_minutes" type="number" required min={1} defaultValue={String(event.early_bird_hold_minutes)} />
                  </div>
                  
                  <Button type="submit" variant="outline" className="w-full btn-eventuz-secondary py-3 text-xs">
@@ -362,35 +278,23 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
               </form>
             </div>
 
-            {/* Add New Ticket Type Portal */}
-            <div className="panel-card p-8 border-accent-gold/20 bg-accent-gold/[0.02]">
-              <div className="space-y-2 mb-8">
+            {/* Event Access & Management Snapshot */}
+            <div className="panel-card p-8 border-accent-gold/20 bg-accent-gold/[0.02] shadow-xl shadow-accent-gold/[0.02] animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+              <div className="space-y-2 mb-6">
                 <p className="text-[10px] uppercase tracking-widest text-accent-gold font-bold">Inventory Management</p>
-                <h3 className="font-serif text-2xl font-light text-foreground">Ticket Management</h3>
+                <h3 className="font-serif text-2xl font-light text-foreground">Ticket Inventory</h3>
               </div>
               
-              <form action={createTicketType.bind(null, eventId)} className="space-y-6">
-                <Input label="Ticket Name" name="name" required placeholder="e.g. VIP Gala" />
-                <Input label="Initial Quantity" name="quantity" type="number" required min={1} defaultValue="10" />
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <Input label="Regular Price" name="regular_price" type="number" required min={0} step="0.01" defaultValue="1500" />
-                  <Input label="Early Bird Price" name="early_bird_price" type="number" required min={0} step="0.01" defaultValue="1200" />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Visibility</label>
-                  <select name="status" className="input-eventuz" defaultValue="active">
-                    {TICKET_TYPE_STATUSES.map((s) => (
-                      <option key={s} value={s}>{ticketStatusLabels[s] ?? s}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <Button type="submit" className="w-full btn-eventuz-gold py-4 shadow-lg shadow-accent-gold/10">
-                  Create Ticket Type
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground font-light leading-relaxed">
+                  Configure your pricing tiers, early bird specials, and overall inventory limits in the dedicated ticket portal.
+                </p>
+                <Button className="w-full btn-eventuz-primary py-5 text-sm shadow-xl shadow-black/10" asChild>
+                  <Link href={`/organizer/events/${eventId}/tickets`}>
+                    Manage Tickets
+                  </Link>
                 </Button>
-              </form>
+              </div>
             </div>
 
           </aside>
@@ -399,4 +303,5 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
     </RoleAreaShell>
   );
 }
+
 

@@ -8,7 +8,7 @@ const shimmer = "relative overflow-hidden before:absolute before:inset-0 before:
 
 // Shared skeleton block — DS .card bg with light-gray border
 const block = (extra: string) =>
-  `${shimmer} ${extra}` ;
+  `${shimmer} ${extra}`;
 
 export function SeatingShellSkeleton() {
   return (

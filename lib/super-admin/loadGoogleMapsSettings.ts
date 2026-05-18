@@ -69,5 +69,7 @@ export async function loadActiveGoogleMapsApiKey(): Promise<string> {
       e instanceof Error ? e.message : e
     );
     return envFallback;
+  } finally {
+    // console.log("[eventuz:google-maps] Key loading complete.");
   }
 }
