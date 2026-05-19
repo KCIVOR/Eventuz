@@ -2,25 +2,20 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { UserDropdown } from "./UserDropdown";
 import { AnnouncementDropdown } from "./AnnouncementDropdown";
+import { homeForRole } from "@/lib/auth/redirects";
+import { isEventuzRole } from "@/lib/auth/roles";
 
 const publicNav = [
   { href: "/login", label: "Log in" },
   { href: "/register", label: "Register" },
 ];
 
-const roleShort: Record<string, string> = {
-  attendee: "Guest",
-  organizer: "Organizer",
-  staff: "Staff",
-  super_admin: "Admin",
-};
-
 // Public site header — DS .nav style (dark obsidian)
 export async function SiteHeader({ layout = "default" }: { layout?: "default" | "flush" }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  let profile = null;
+  let profile: { full_name: string | null; avatar_url: string | null; role: string | null } | null = null;
   if (user) {
     const { data } = await supabase
       .from("profiles")
@@ -29,6 +24,13 @@ export async function SiteHeader({ layout = "default" }: { layout?: "default" | 
       .single();
     profile = data;
   }
+  const role = profile?.role;
+  const dashboardRole = role && isEventuzRole(role) ? role : undefined;
+  const dashboardHref = dashboardRole ? homeForRole(dashboardRole) : "/attendee/event";
+  const dropdownUser = {
+    full_name: profile?.full_name?.trim() || user?.email || "User",
+    avatar_url: profile?.avatar_url ?? null,
+  };
 
   return (
     <header
@@ -42,21 +44,42 @@ export async function SiteHeader({ layout = "default" }: { layout?: "default" | 
         className={`mx-auto flex h-14 items-center justify-between gap-4 px-4 sm:h-16 sm:px-6 sm:px-8 ${layout === "flush" ? "w-full" : "max-w-6xl"}`}
       >
         {/* DS .nav-brand — Cormorant Garamond */}
-        <Link
-          href="/"
-          className="hover-gold-text"
-          style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontSize: "22px",
-            fontWeight: 300,
-            color: "#FDFAF4",
-            letterSpacing: "0.05em",
-            textDecoration: "none",
-            transition: "color 0.2s",
-          }}
-        >
-          Eventuz
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/"
+            className="hover-gold-text"
+            style={{
+              fontFamily: "'Cormorant Garamond', serif",
+              fontSize: "22px",
+              fontWeight: 300,
+              color: "#FDFAF4",
+              letterSpacing: "0.05em",
+              textDecoration: "none",
+              transition: "color 0.2s",
+            }}
+          >
+            Eventuz
+          </Link>
+          {user ? (
+            <Link
+              href={dashboardHref}
+              className="hover-gold-text hidden sm:inline-flex"
+              style={{
+                fontFamily: "'Jost', sans-serif",
+                fontSize: "10px",
+                fontWeight: 500,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: "#C9A96E",
+                textDecoration: "none",
+                paddingTop: "2px",
+                transition: "color 0.2s",
+              }}
+            >
+              Dashboard
+            </Link>
+          ) : null}
+        </div>
 
         {/* DS .nav-links — Jost 500, uppercase, spaced */}
         <nav aria-label="Public" className="flex flex-wrap items-center justify-end gap-x-1 sm:gap-x-2">
@@ -84,7 +107,7 @@ export async function SiteHeader({ layout = "default" }: { layout?: "default" | 
           ) : (
             <div className="flex items-center gap-3">
               <AnnouncementDropdown />
-              <UserDropdown user={profile || { full_name: user.email || "User" }} role={profile?.role} />
+              <UserDropdown user={dropdownUser} role={dashboardRole} />
             </div>
           )}
         </nav>

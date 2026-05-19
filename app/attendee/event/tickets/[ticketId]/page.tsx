@@ -1,8 +1,8 @@
 import { TicketPrintButton } from "@/components/attendee/TicketPrintButton";
+import { TicketNavigationLink } from "@/components/attendee/TicketNavigationLink";
 import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
 import { createClient } from "@/lib/supabase/server";
 import { eventTicketQrDataUrl, eventTicketQrPayload } from "@/lib/tickets/eventTicketQr";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 type Props = { params: Promise<{ ticketId: string }> };
@@ -67,12 +67,13 @@ export default async function AttendeeTicketPassPage({ params }: Props) {
     >
       <div className="mx-auto max-w-md space-y-6">
         <nav className="no-print">
-          <Link
+          <TicketNavigationLink
             href="/attendee/event/tickets"
+            loadingLabel="Loading tickets..."
             className="text-sm font-medium text-primary underline-offset-4 transition-colors duration-200 hover:text-primary-hover hover:underline motion-reduce:transition-none"
           >
             ← Back to your tickets
-          </Link>
+          </TicketNavigationLink>
         </nav>
 
         <article

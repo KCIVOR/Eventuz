@@ -1,13 +1,13 @@
-import { issueAdmissionTicketsAction, retryTicketEmailsAction } from "@/app/attendee/event/actions";
+import { retryTicketEmailsAction } from "@/app/attendee/event/actions";
 import type {
   PaidOrderSummary,
   QrTicketListRow,
   SeatAssignmentOrderLink,
 } from "@/lib/attendee/eventContext";
+import { TicketNavigationLink } from "@/components/attendee/TicketNavigationLink";
 import Link from "next/link";
 
 export type AttendeeTicketOverviewProps = {
-  eventTitle: string;
   eventCoverUrl?: string | null;
   activeOrder: Record<string, unknown> | null;
   resumeCheckoutUrl: string | null;
@@ -18,7 +18,6 @@ export type AttendeeTicketOverviewProps = {
 
 /** Full attendee ticket hub: seat work, QR issuance, passes list — no ticket purchase form */
 export function AttendeeTicketOverview({
-  eventTitle,
   eventCoverUrl,
   activeOrder,
   resumeCheckoutUrl,
@@ -241,12 +240,13 @@ export function AttendeeTicketOverview({
                     
                     <div className="p-6 flex flex-col items-center justify-center bg-card">
                       <p className="font-mono text-[10px] tracking-[0.3em] text-muted-foreground mb-4">{t.ticket_code}</p>
-                      <Link
+                      <TicketNavigationLink
                         href={`/attendee/event/tickets/${t.id}`}
+                        loadingLabel="Opening pass..."
                         className="btn-eventuz-secondary w-full py-2.5 text-xs font-semibold"
                       >
                         Open Digital Pass
-                      </Link>
+                      </TicketNavigationLink>
                     </div>
                   </div>
                 );

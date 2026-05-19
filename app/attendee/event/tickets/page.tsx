@@ -21,8 +21,6 @@ export default async function AttendeeTicketsIndexPage() {
     );
   }
 
-  const name = event.name as string;
-
   return (
     <RoleAreaShell
       role="attendee"
@@ -37,7 +35,6 @@ export default async function AttendeeTicketsIndexPage() {
       ]}
     >
       <AttendeeTicketOverview
-        eventTitle={name}
         eventCoverUrl={event.cover_url as string | null}
         activeOrder={activeOrder}
         resumeCheckoutUrl={resumeCheckoutUrl}
