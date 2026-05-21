@@ -136,17 +136,17 @@ export function SeatAssignmentForm({
       const det = detailsBySeat[seatId];
       const name = (det?.name ?? "").trim();
       const email = (det?.email ?? "").trim();
-      if (!name || !email) {
-        return "Every seat needs an attendee name and email.";
+      if (!name) {
+        return "Every selected seat needs an attendee name.";
       }
       const basicEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!basicEmail.test(email)) {
+      if (email && !basicEmail.test(email)) {
         return `Enter a valid email for seat ${labelById.get(seatId) ?? seatId}.`;
       }
       rows.push({
         seat_id: seatId,
         attendee_name: name,
-        attendee_email: email.toLowerCase(),
+        attendee_email: email ? email.toLowerCase() : "",
       });
     }
     return rows;
@@ -217,7 +217,7 @@ export function SeatAssignmentForm({
           "flex aspect-square min-h-10 min-w-10 cursor-pointer items-center justify-center rounded-md border px-2 text-xs font-semibold transition-colors duration-200 motion-reduce:transition-none",
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
           occupied
-            ? "cursor-not-allowed border-border bg-muted/70 text-muted-foreground opacity-55"
+            ? "cursor-not-allowed border-[#D9A6A1]/60 bg-[#F7E2DF] text-[#8F4C45] opacity-80"
             : selected
               ? "border-primary bg-primary text-primary-foreground"
               : "border-border bg-background text-foreground hover:border-primary/50 hover:bg-muted/40",
@@ -265,6 +265,20 @@ export function SeatAssignmentForm({
                 <span className="h-1.5 w-1.5 rotate-45 bg-accent-gold" />
                 <span className="text-[10px] uppercase tracking-widest text-accent-gold font-semibold">Tier: {ticketTypeName}</span>
               </div>
+            </div>
+            <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-border/60 bg-muted/10 px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              <span className="inline-flex items-center gap-2">
+                <span className="h-3 w-3 rounded border border-border bg-background" />
+                Available
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <span className="h-3 w-3 rounded border border-primary bg-primary" />
+                Selected
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <span className="h-3 w-3 rounded border border-[#D9A6A1]/60 bg-[#F7E2DF]" />
+                Occupied
+              </span>
             </div>
 
             <div className="space-y-6" role="group" aria-label="Seat selection">
@@ -341,6 +355,9 @@ export function SeatAssignmentForm({
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-accent-gold">
                   Guest Information
                 </p>
+                <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                  Email is optional. Blank guest emails will be sent to the buyer&apos;s account email.
+                </p>
               </div>
 
               <ul className="space-y-4 p-8">
@@ -377,18 +394,17 @@ export function SeatAssignmentForm({
                         </div>
                         <div className="space-y-1.5">
                           <label htmlFor={`${idBase}-email`} className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
-                            Email address
+                            Email address <span className="font-normal tracking-normal text-muted-foreground/70">(optional)</span>
                           </label>
                           <input
                             id={`${idBase}-email`}
                             type="email"
                             className="w-full rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground transition-all focus:border-accent-gold focus:ring-1 focus:ring-accent-gold/20"
                             autoComplete="email"
-                            placeholder="john@example.com"
+                            placeholder="Blank sends to buyer email"
                             value={det.email}
                             onChange={(ev) => setDetail(seatId, "email", ev.target.value)}
                             disabled={pending}
-                            required
                           />
                         </div>
                       </div>

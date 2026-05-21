@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 export type SeatAssignmentRow = {
   seat_id: string;
   attendee_name: string;
-  attendee_email: string;
+  attendee_email?: string;
 };
 
 export type SubmitSeatAssignmentsResult =
@@ -27,9 +27,39 @@ export async function submitSeatAssignments(
     redirect("/login?next=/attendee/event/seats");
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("email")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const buyerEmail = (user.email || (profile?.email as string | null) || "").trim().toLowerCase();
+  if (!buyerEmail) {
+    return { error: "Your account email could not be found. Add an email before assigning seats." } as const;
+  }
+
+  const basicEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const normalizedRows = rows.map((row) => {
+    const attendeeEmail = (row.attendee_email ?? "").trim().toLowerCase();
+    return {
+      ...row,
+      attendee_name: row.attendee_name.trim(),
+      attendee_email: attendeeEmail || buyerEmail,
+    };
+  });
+
+  for (const row of normalizedRows) {
+    if (!row.seat_id || !row.attendee_name) {
+      return { error: "Every selected seat needs an attendee name." } as const;
+    }
+    if (!basicEmail.test(row.attendee_email)) {
+      return { error: "Enter a valid attendee email, or leave it blank to use the buyer email." } as const;
+    }
+  }
+
   const { error } = await supabase.rpc("submit_order_seat_assignments", {
     p_order_id: orderId,
-    p_assignments: rows,
+    p_assignments: normalizedRows,
   });
 
   if (error) {
