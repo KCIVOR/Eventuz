@@ -1,6 +1,7 @@
 import { updateEvent } from "@/app/organizer/events/actions";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/Button";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
 import { EVENT_STATUSES } from "@/lib/organizer/eventForm";
 import { trimTimeForInput } from "@/lib/utils/date";
@@ -216,9 +217,9 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
                 </div>
 
                 <div className="pt-8 flex justify-end">
-                  <Button type="submit" className="btn-eventuz-gold px-10 py-4 shadow-lg shadow-accent-gold/10">
+                  <SubmitButton className="btn-eventuz-gold px-10 py-4 shadow-lg shadow-accent-gold/10">
                     Save Event Configuration
-                  </Button>
+                  </SubmitButton>
                 </div>
               </form>
             </section>

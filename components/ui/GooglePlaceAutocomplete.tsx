@@ -60,6 +60,7 @@ export function GooglePlaceAutocomplete({
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [suggestions, setSuggestions] = useState<google.maps.places.AutocompleteSuggestion[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [shouldSearch, setShouldSearch] = useState(false);
   const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
 
   const mapOptions = React.useMemo(() => ({
@@ -75,7 +76,7 @@ export function GooglePlaceAutocomplete({
   }, []);
 
   useEffect(() => {
-    if (!isLoaded || !effectiveApiKey || inputValue.trim().length < 3) {
+    if (!shouldSearch || !isLoaded || !effectiveApiKey || inputValue.trim().length < 3) {
       return;
     }
 
@@ -110,7 +111,7 @@ export function GooglePlaceAutocomplete({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [effectiveApiKey, inputValue, isLoaded]);
+  }, [effectiveApiKey, inputValue, isLoaded, shouldSearch]);
 
   const applyLocation = useCallback(
     (venue: string, addr: string, latitude: number, longitude: number) => {
@@ -118,6 +119,7 @@ export function GooglePlaceAutocomplete({
       setFormattedAddress(addr);
       setLat(latitude);
       setLng(longitude);
+      setShouldSearch(false);
       setSuggestions([]);
 
       if (map) {
@@ -223,12 +225,16 @@ export function GooglePlaceAutocomplete({
           name="venue"
           value={inputValue}
           onChange={(e) => {
+            setShouldSearch(true);
             setInputValue(e.target.value);
             if (e.target.value.trim().length < 3) {
               setSuggestions([]);
             }
           }}
-          onBlur={() => window.setTimeout(() => setSuggestions([]), 150)}
+          onBlur={() => window.setTimeout(() => {
+            setShouldSearch(false);
+            setSuggestions([]);
+          }, 150)}
           placeholder={placeholder}
           className="input-eventuz pr-10"
           autoComplete="off"
