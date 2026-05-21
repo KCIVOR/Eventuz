@@ -1,10 +1,11 @@
-import Link from "next/link";
 import type {
   PaidOrderSummary,
   QrTicketListRow,
   SeatAssignmentOrderLink,
 } from "@/lib/attendee/eventContext";
 import type { TransactionRow } from "@/lib/attendee/transactions";
+import { DashboardNavigationLink } from "@/components/attendee/DashboardNavigationLink";
+import Link from "next/link";
 
 type EventSummary = {
   id: string;
@@ -128,9 +129,13 @@ export function AttendeeEventDashboard({
           </div>
         </header>
 
-        <Link href="/" className="btn-eventuz-secondary justify-center px-6 py-3 text-xs">
+        <DashboardNavigationLink
+          href="/"
+          loadingLabel="Opening event..."
+          className="btn-eventuz-secondary justify-center px-6 py-3 text-xs"
+        >
           View public event page
-        </Link>
+        </DashboardNavigationLink>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-12 lg:items-start">
@@ -191,7 +196,10 @@ export function AttendeeEventDashboard({
                 </p>
                 <h2 className="mt-2 font-serif text-2xl font-light text-foreground">Transactions</h2>
               </div>
-              <Link href="/attendee/transactions" className="text-[10px] font-semibold uppercase tracking-widest text-accent-gold">
+              <Link
+                href="/attendee/transactions"
+                className="text-[10px] font-semibold uppercase tracking-widest text-accent-gold"
+              >
                 View all
               </Link>
             </div>
