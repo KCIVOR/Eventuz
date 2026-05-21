@@ -167,23 +167,24 @@ export function DashboardFrame({
 
         <div id="dashboard-main" className="relative min-w-0 flex-1 overflow-x-hidden" tabIndex={-1}>
           {children}
-          {contentLoading ? (
-            <div
-              className="absolute inset-0 z-30 flex min-h-[18rem] items-start justify-center bg-[#F7F4EF]/75 px-4 pt-10 backdrop-blur-[1px] sm:pt-16"
-              role="status"
-              aria-live="polite"
-              aria-label="Loading page content"
-            >
-              <div className="flex flex-col items-center gap-4 rounded-[2px] border border-[#EDE8E3] bg-white/90 px-8 py-7 shadow-[0_18px_50px_rgba(26,21,18,0.08)]">
-                <div className="h-9 w-9 animate-spin rounded-full border-2 border-[#C9A96E] border-t-transparent" />
-                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#7A6E68]">
-                  Loading content
-                </p>
-              </div>
-            </div>
-          ) : null}
         </div>
       </div>
+
+      {contentLoading ? (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-[#1A1512]/35 px-4 backdrop-blur-[1px]"
+          role="status"
+          aria-live="polite"
+          aria-label="Loading page content"
+        >
+          <div className="flex flex-col items-center gap-4 rounded-[2px] border border-[#EDE8E3] bg-white/95 px-8 py-7 shadow-[0_18px_50px_rgba(26,21,18,0.16)]">
+            <div className="h-9 w-9 animate-spin rounded-full border-2 border-[#C9A96E] border-t-transparent" />
+            <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#7A6E68]">
+              Loading content
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <SiteFooter />
     </div>
