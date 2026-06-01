@@ -5,9 +5,10 @@ import { useEffect, useState, useCallback } from "react";
 interface LandingCountdownBarProps {
   targetDate: string | Date;
   minPrice?: number;
+  className?: string;
 }
 
-export function LandingCountdownBar({ targetDate, minPrice }: LandingCountdownBarProps) {
+export function LandingCountdownBar({ targetDate, minPrice, className = "" }: LandingCountdownBarProps) {
   const calculateTimeLeft = useCallback(() => {
     const difference = +new Date(targetDate) - +new Date();
     let timeLeft = {
@@ -33,18 +34,21 @@ export function LandingCountdownBar({ targetDate, minPrice }: LandingCountdownBa
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
-    const timer = setInterval(() => {
+    const mountTimer = window.setTimeout(() => setIsMounted(true), 0);
+    const timer = window.setInterval(() => {
       setTimeLeft(calculateTimeLeft());
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      window.clearTimeout(mountTimer);
+      window.clearInterval(timer);
+    };
   }, [calculateTimeLeft]);
 
   if (!isMounted) return null;
 
   return (
-    <div className="countdown-bar">
+    <div className={`countdown-bar ${className}`.trim()}>
       <div>
         <div className="cd-label mb-3">Event Countdown</div>
         <div className="cd-units">

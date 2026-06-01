@@ -553,9 +553,50 @@ body {
   gap: 24px;
 }
 
+.hero-countdown {
+  max-width: 760px;
+  margin-bottom: 32px;
+  border: 1px solid rgba(201, 169, 110, 0.28);
+  background: rgba(26, 21, 18, 0.68);
+  padding: 16px 20px;
+  backdrop-filter: blur(3px);
+}
+
+.hero-countdown .cd-unit {
+  min-width: 52px;
+}
+
+.hero-countdown .cd-num {
+  font-size: clamp(26px, 3vw, 34px);
+}
+
+.hero-countdown .cd-label {
+  letter-spacing: 0.24em;
+}
+
 @media (min-width: 768px) {
   .countdown-bar {
     padding: 20px 80px;
+  }
+
+  .hero-countdown {
+    padding: 16px 24px;
+  }
+}
+
+@media (max-width: 767px) {
+  .hero-countdown {
+    align-items: flex-start;
+    gap: 18px;
+    padding: 14px 16px;
+  }
+
+  .hero-countdown .cd-unit {
+    min-width: 42px;
+  }
+
+  .hero-countdown .cd-num {
+    font-size: 24px;
   }
 }
 

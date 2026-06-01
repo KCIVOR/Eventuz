@@ -142,6 +142,14 @@ export default async function HomePage() {
             )}
           </div>
 
+          {event.event_date && (
+            <LandingCountdownBar
+              targetDate={event.event_date}
+              minPrice={minPrice}
+              className="hero-countdown"
+            />
+          )}
+
           <div className="hero-actions">
             <ReserveCheckoutLink href={user ? `?checkout=1` : `/login?next=/?checkout=1`} className="btn-eventuz-gold">
               Reserve Your Seat
@@ -154,9 +162,6 @@ export default async function HomePage() {
       </section>
 
       {/* ── COUNTDOWN BARS ── */}
-      {event.event_date && (
-        <LandingCountdownBar targetDate={event.event_date} minPrice={minPrice} />
-      )}
 
       {/* ── ABOUT SECTION ── */}
       <section id="about" className="section section-alt">
