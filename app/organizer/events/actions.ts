@@ -24,6 +24,13 @@ import {
   type SeatLayoutConfig,
   type SeatLayoutMode,
 } from "@/lib/organizer/seatLayout";
+import {
+  FLOOR_PLAN_CANVAS_HEIGHT,
+  FLOOR_PLAN_CANVAS_WIDTH,
+  FLOOR_PLAN_GRID_SIZE,
+  validateFloorPlanLayout,
+  type FloorPlanTicketType,
+} from "@/lib/organizer/floorPlan";
 import { writeAuditLogSafe } from "@/lib/audit/writeAuditLog";
 import { slugify, randomSuffix } from "@/lib/utils/slug";
 import { revalidatePath } from "next/cache";
@@ -38,6 +45,12 @@ function redirectEventError(eventId: string, message: string, redirectPath?: str
 function redirectSeatInventoryError(eventId: string, message: string): never {
   redirect(
     `/organizer/events/${eventId}/seating?tab=inventory&error=${encodeURIComponent(message)}`
+  );
+}
+
+function redirectFloorPlanError(eventId: string, message: string): never {
+  redirect(
+    `/organizer/events/${eventId}/seating?tab=floor-plan&error=${encodeURIComponent(message)}`
   );
 }
 
@@ -771,6 +784,91 @@ export async function saveSeatLayout(formData: FormData) {
   revalidatePath(`/organizer/events/${eventId}/seating`);
   revalidatePath("/attendee/event/seats");
   redirect(`/organizer/events/${eventId}/seating?tab=inventory&ok=1`);
+}
+
+export async function saveFloorPlanLayout(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login?next=/organizer");
+
+  const eventId = String(formData.get("event_id") ?? "");
+  if (!eventId) redirect("/organizer");
+
+  const { data: eventRow, error: eventErr } = await supabase
+    .from("events")
+    .select("id, organizer_id")
+    .eq("id", eventId)
+    .maybeSingle();
+
+  if (eventErr || !eventRow || eventRow.organizer_id !== user.id) notFound();
+
+  const { data: ticketRows, error: ticketErr } = await supabase
+    .from("ticket_types")
+    .select(
+      "id, name, quantity, seat_layout_mode, seat_layout_rows, seat_layout_columns, seat_layout_table_count, seat_layout_seats_per_table"
+    )
+    .eq("event_id", eventId)
+    .order("created_at", { ascending: true });
+
+  if (ticketErr || !ticketRows) {
+    redirectFloorPlanError(eventId, ticketErr?.message ?? "Could not load ticket groups.");
+  }
+
+  const ticketTypes: FloorPlanTicketType[] = ticketRows.map((row) => ({
+    id: row.id as string,
+    name: (row.name as string) || "Ticket",
+    quantity: Number(row.quantity ?? 0),
+    seatLayoutMode: row.seat_layout_mode === "tables" ? "tables" : "rowed",
+    seatLayoutRows: row.seat_layout_rows == null ? null : Number(row.seat_layout_rows),
+    seatLayoutColumns: row.seat_layout_columns == null ? null : Number(row.seat_layout_columns),
+    seatLayoutTableCount: row.seat_layout_table_count == null ? null : Number(row.seat_layout_table_count),
+    seatLayoutSeatsPerTable:
+      row.seat_layout_seats_per_table == null ? null : Number(row.seat_layout_seats_per_table),
+  }));
+  const saveMode = String(formData.get("save_mode") ?? "validated");
+
+  let rawLayout: unknown;
+  try {
+    rawLayout = JSON.parse(String(formData.get("layout_json") ?? ""));
+  } catch {
+    redirectFloorPlanError(eventId, "Floor plan payload is invalid.");
+  }
+
+  const validated = validateFloorPlanLayout(rawLayout, ticketTypes, {
+    strictAllocation: saveMode !== "draft",
+  });
+  if (!validated.ok) redirectFloorPlanError(eventId, validated.message);
+
+  const { error } = await supabase
+    .from("event_floor_plans")
+    .upsert(
+      {
+        event_id: eventId,
+        layout_json: validated.layout,
+        canvas_width: FLOOR_PLAN_CANVAS_WIDTH,
+        canvas_height: FLOOR_PLAN_CANVAS_HEIGHT,
+        grid_size: FLOOR_PLAN_GRID_SIZE,
+      },
+      { onConflict: "event_id" }
+    );
+
+  if (error) redirectFloorPlanError(eventId, error.message);
+
+  await writeAuditLogSafe(supabase, {
+    action: "seat.floor_plan_saved",
+    entityType: "event",
+    entityId: eventId,
+    metadata: {
+      element_count: validated.layout.elements.length,
+      allocations: validated.allocations,
+      save_mode: saveMode === "draft" ? "draft" : "validated",
+    },
+  });
+
+  revalidatePath(`/organizer/events/${eventId}/seating`);
+  redirect(`/organizer/events/${eventId}/seating?tab=floor-plan&ok=1`);
 }
 
 type SeatOverviewOrderRow = {

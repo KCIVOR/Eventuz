@@ -4,15 +4,16 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 
-export type SeatingTabId = "map" | "inventory";
+export type SeatingTabId = "map" | "inventory" | "floor-plan";
 
 const TAB_DEFS: { id: SeatingTabId; label: string }[] = [
   { id: "map", label: "Overview" },
   { id: "inventory", label: "Seat inventory" },
+  { id: "floor-plan", label: "Floor Plan Designer" },
 ];
 
 function isTabId(v: string | null): v is SeatingTabId {
-  return v === "map" || v === "inventory";
+  return v === "map" || v === "inventory" || v === "floor-plan";
 }
 
 type Props = {
@@ -20,6 +21,7 @@ type Props = {
   defaultTab: SeatingTabId;
   mapContent: React.ReactNode;
   inventoryContent: React.ReactNode;
+  floorPlanContent: React.ReactNode;
 };
 
 export function OrganizerSeatingTabs({
@@ -27,6 +29,7 @@ export function OrganizerSeatingTabs({
   defaultTab,
   mapContent,
   inventoryContent,
+  floorPlanContent,
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -62,7 +65,15 @@ export function OrganizerSeatingTabs({
   const panels: Record<SeatingTabId, React.ReactNode> = {
     map: mapContent,
     inventory: inventoryContent,
+    "floor-plan": floorPlanContent,
   };
+
+  const loadingLabel =
+    loadingTab === "inventory"
+      ? "seat inventory"
+      : loadingTab === "floor-plan"
+        ? "floor plan designer"
+        : "overview";
 
   return (
     <div className="space-y-6">
@@ -103,7 +114,7 @@ export function OrganizerSeatingTabs({
           <div className="absolute inset-x-0 top-0 z-20 flex items-start justify-center rounded-2xl bg-[#FDFAF4]/80 px-4 py-8 backdrop-blur-[1px]">
             <div className="flex items-center gap-3 rounded-full border border-[#EDE8E3] bg-[#FDFAF4] px-5 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-[#7A6E68] shadow-sm">
               <LoadingSpinner size="sm" />
-              Loading {loadingTab === "inventory" ? "seat inventory" : "overview"}
+              Loading {loadingLabel}
             </div>
           </div>
         ) : null}
