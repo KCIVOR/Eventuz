@@ -292,36 +292,42 @@ export default async function HomePage() {
                     Get Directions
                   </a>
                 ) : null}
-
-                {recommendedLocations.length > 0 ? (
-                  <div className="recommended-locations">
-                    <p className="recommended-locations-label">Recommended nearby</p>
-                    <div className="recommended-locations-list">
-                      {recommendedLocations.map((location) => (
-                        <a
-                          key={location.id}
-                          href={recommendedLocationLink(location)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="recommended-location-card"
-                        >
-                          <span className="recommended-location-category">
-                            {recommendedCategoryLabel[location.category]}
-                          </span>
-                          <span className="recommended-location-name">{location.name}</span>
-                          {location.formatted_address ? (
-                            <span className="recommended-location-address">
-                              {location.formatted_address}
-                            </span>
-                          ) : null}
-                          <span className="recommended-location-action">Open location</span>
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
               </div>
             </div>
+
+            {recommendedLocations.length > 0 ? (
+              <div className="recommended-locations">
+                <p className="recommended-locations-label">Recommended Nearby Places</p>
+                <div className="recommended-locations-track" aria-label="Recommended nearby places">
+                  <div
+                    className={`recommended-locations-list ${
+                      recommendedLocations.length <= 3 ? "is-centered" : ""
+                    }`}
+                  >
+                    {recommendedLocations.map((location) => (
+                      <a
+                        key={location.id}
+                        href={recommendedLocationLink(location)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="recommended-location-card"
+                      >
+                        <span className="recommended-location-category">
+                          {recommendedCategoryLabel[location.category]}
+                        </span>
+                        <span className="recommended-location-name">{location.name}</span>
+                        {location.formatted_address ? (
+                          <span className="recommended-location-address">
+                            {location.formatted_address}
+                          </span>
+                        ) : null}
+                        <span className="recommended-location-action">Open location</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
         </section>
       )}
