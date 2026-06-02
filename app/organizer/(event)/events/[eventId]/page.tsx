@@ -13,6 +13,10 @@ import { Input } from "@/components/ui/Input";
 import { GooglePlaceAutocomplete } from "@/components/ui/GooglePlaceAutocomplete";
 import { loadActiveGoogleMapsApiKey } from "@/lib/super-admin/loadGoogleMapsSettings";
 import { EventCoverImageField } from "@/components/organizer/EventCoverImageField";
+import {
+  RecommendedLocationsField,
+  type RecommendedLocationInput,
+} from "@/components/organizer/RecommendedLocationsField";
 
 type Props = {
   params: Promise<{ eventId: string }>;
@@ -36,6 +40,26 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
 
   if (error || !event) notFound();
   if (!user || event.organizer_id !== user.id) notFound();
+
+  const { data: recommendedLocationRows } = await supabase
+    .from("event_recommended_locations")
+    .select("id, category, name, formatted_address, place_id, lat, lng")
+    .eq("event_id", eventId)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  const recommendedLocations: RecommendedLocationInput[] = (recommendedLocationRows ?? []).map((row) => ({
+    id: row.id as string,
+    category:
+      row.category === "transport" || row.category === "other" || row.category === "hotel"
+        ? row.category
+        : "hotel",
+    name: (row.name as string) ?? "",
+    formatted_address: (row.formatted_address as string | null) ?? "",
+    place_id: (row.place_id as string | null) ?? "",
+    lat: row.lat == null ? null : Number(row.lat),
+    lng: row.lng == null ? null : Number(row.lng),
+  }));
 
   const googleMapsApiKey = await loadActiveGoogleMapsApiKey();
 
@@ -196,6 +220,18 @@ export default async function OrganizerEventDetailPage({ params, searchParams }:
                       defaultValue={trimTimeForInput(event.event_time)}
                     />
                   </div>
+                </div>
+
+                <div className="space-y-6 pt-12 border-t border-border/60">
+                  <div className="flex items-center gap-4">
+                    <h2 className="font-serif text-2xl font-light text-foreground">Recommended Locations</h2>
+                    <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
+                  </div>
+
+                  <RecommendedLocationsField
+                    apiKey={googleMapsApiKey}
+                    initialLocations={recommendedLocations}
+                  />
                 </div>
 
                 {/* Public Link */}

@@ -50,6 +50,63 @@ function emptyToNull(v: FormDataEntryValue | null): string | null {
   return s === "" ? null : s;
 }
 
+const RECOMMENDED_LOCATION_CATEGORIES = new Set(["hotel", "transport", "other"]);
+
+type RecommendedLocationPayload = {
+  category: string;
+  name: string;
+  formatted_address: string | null;
+  place_id: string | null;
+  lat: number | null;
+  lng: number | null;
+  sort_order: number;
+};
+
+function parseRecommendedLocations(
+  formData: FormData
+): RecommendedLocationPayload[] | { error: string } {
+  const categories = formData.getAll("recommended_location_category");
+  const names = formData.getAll("recommended_location_name");
+  const addresses = formData.getAll("recommended_location_address");
+  const placeIds = formData.getAll("recommended_location_place_id");
+  const lats = formData.getAll("recommended_location_lat");
+  const lngs = formData.getAll("recommended_location_lng");
+  const max = Math.max(categories.length, names.length, addresses.length);
+  const rows: RecommendedLocationPayload[] = [];
+
+  for (let i = 0; i < max; i++) {
+    const name = String(names[i] ?? "").trim();
+    const formatted_address = emptyToNull(addresses[i] ?? null);
+    if (!name && !formatted_address) continue;
+    if (!name) return { error: "Recommended locations need a place name." };
+
+    const category = String(categories[i] ?? "hotel").trim();
+    if (!RECOMMENDED_LOCATION_CATEGORIES.has(category)) {
+      return { error: "Choose a valid recommended location category." };
+    }
+
+    const latRaw = String(lats[i] ?? "").trim();
+    const lngRaw = String(lngs[i] ?? "").trim();
+    const lat = latRaw ? Number(latRaw) : null;
+    const lng = lngRaw ? Number(lngRaw) : null;
+    if ((latRaw && !Number.isFinite(lat)) || (lngRaw && !Number.isFinite(lng))) {
+      return { error: "Recommended location coordinates are invalid." };
+    }
+
+    rows.push({
+      category,
+      name,
+      formatted_address,
+      place_id: emptyToNull(placeIds[i] ?? null),
+      lat,
+      lng,
+      sort_order: rows.length + 1,
+    });
+  }
+
+  return rows;
+}
+
 function getEventCoverImageFile(formData: FormData): File | null {
   const value = formData.get("cover_image");
   if (!(value instanceof File) || value.size === 0) return null;
@@ -291,6 +348,13 @@ export async function updateEvent(eventId: string, formData: FormData) {
     coverUrl = null;
   }
 
+  const recommendedLocations = formData.has("recommended_locations_present")
+    ? parseRecommendedLocations(formData)
+    : null;
+  if (recommendedLocations && "error" in recommendedLocations) {
+    redirectEventError(eventId, recommendedLocations.error);
+  }
+
   if (coverImage) {
     const uploaded = await uploadEventCoverImage(supabase, user.id, eventId, coverImage);
     if (!uploaded.ok) redirectEventError(eventId, uploaded.message);
@@ -319,6 +383,23 @@ export async function updateEvent(eventId: string, formData: FormData) {
     .eq("organizer_id", user.id);
 
   if (error) redirectEventError(eventId, error.message);
+
+  if (recommendedLocations) {
+    const { error: deleteLocationsErr } = await supabase
+      .from("event_recommended_locations")
+      .delete()
+      .eq("event_id", eventId);
+
+    if (deleteLocationsErr) redirectEventError(eventId, deleteLocationsErr.message);
+
+    if (recommendedLocations.length > 0) {
+      const { error: insertLocationsErr } = await supabase
+        .from("event_recommended_locations")
+        .insert(recommendedLocations.map((row) => ({ ...row, event_id: eventId })));
+
+      if (insertLocationsErr) redirectEventError(eventId, insertLocationsErr.message);
+    }
+  }
 
   if (nextStatus === "published" && prevStatus !== "published") {
     await writeAuditLogSafe(supabase, {

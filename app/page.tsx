@@ -24,6 +24,28 @@ interface EventData {
   organizer_id?: string;
 }
 
+type RecommendedLocation = {
+  id: string;
+  category: "hotel" | "transport" | "other";
+  name: string;
+  formatted_address: string | null;
+  place_id: string | null;
+};
+
+const recommendedCategoryLabel: Record<RecommendedLocation["category"], string> = {
+  hotel: "Hotel",
+  transport: "Transport",
+  other: "Other",
+};
+
+function recommendedLocationLink(location: RecommendedLocation): string {
+  const query = encodeURIComponent(location.formatted_address || location.name);
+  const placeId = location.place_id?.trim();
+  return placeId
+    ? `https://www.google.com/maps/search/?api=1&query=${query}&query_place_id=${encodeURIComponent(placeId)}`
+    : `https://www.google.com/maps/search/?api=1&query=${query}`;
+}
+
 export default async function HomePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -32,6 +54,24 @@ export default async function HomePage() {
   const event = rawEvent as unknown as EventData | null;
   const showDevHitPaySimulate = event?.organizer_id ? await isHitPayDevSimulationAllowed(event.organizer_id) : false;
   const googleMapsApiKey = await loadActiveGoogleMapsApiKey();
+  const { data: recommendedLocationRows } = event
+    ? await supabase
+        .from("event_recommended_locations")
+        .select("id, category, name, formatted_address, place_id")
+        .eq("event_id", event.id)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true })
+    : { data: [] };
+  const recommendedLocations: RecommendedLocation[] = (recommendedLocationRows ?? []).map((row) => ({
+    id: row.id as string,
+    category:
+      row.category === "transport" || row.category === "other" || row.category === "hotel"
+        ? row.category
+        : "hotel",
+    name: (row.name as string) ?? "",
+    formatted_address: (row.formatted_address as string | null) ?? null,
+    place_id: (row.place_id as string | null) ?? null,
+  }));
 
   // If no event is published
   if (!event || !registrationOpen) {
@@ -251,6 +291,34 @@ export default async function HomePage() {
                   >
                     Get Directions
                   </a>
+                ) : null}
+
+                {recommendedLocations.length > 0 ? (
+                  <div className="recommended-locations">
+                    <p className="recommended-locations-label">Recommended nearby</p>
+                    <div className="recommended-locations-list">
+                      {recommendedLocations.map((location) => (
+                        <a
+                          key={location.id}
+                          href={recommendedLocationLink(location)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="recommended-location-card"
+                        >
+                          <span className="recommended-location-category">
+                            {recommendedCategoryLabel[location.category]}
+                          </span>
+                          <span className="recommended-location-name">{location.name}</span>
+                          {location.formatted_address ? (
+                            <span className="recommended-location-address">
+                              {location.formatted_address}
+                            </span>
+                          ) : null}
+                          <span className="recommended-location-action">Open location</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
                 ) : null}
               </div>
             </div>
