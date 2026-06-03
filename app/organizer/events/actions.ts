@@ -828,6 +828,16 @@ export async function saveFloorPlanLayout(formData: FormData) {
       row.seat_layout_seats_per_table == null ? null : Number(row.seat_layout_seats_per_table),
   }));
   const saveMode = String(formData.get("save_mode") ?? "validated");
+  const canvasWidthRaw = Number(formData.get("canvas_width") ?? FLOOR_PLAN_CANVAS_WIDTH);
+  const canvasHeightRaw = Number(formData.get("canvas_height") ?? FLOOR_PLAN_CANVAS_HEIGHT);
+  const canvasWidth =
+    Number.isInteger(canvasWidthRaw) && canvasWidthRaw >= 1200 && canvasWidthRaw <= 2400
+      ? canvasWidthRaw
+      : FLOOR_PLAN_CANVAS_WIDTH;
+  const canvasHeight =
+    Number.isInteger(canvasHeightRaw) && canvasHeightRaw >= 800 && canvasHeightRaw <= 1600
+      ? canvasHeightRaw
+      : FLOOR_PLAN_CANVAS_HEIGHT;
 
   let rawLayout: unknown;
   try {
@@ -838,6 +848,8 @@ export async function saveFloorPlanLayout(formData: FormData) {
 
   const validated = validateFloorPlanLayout(rawLayout, ticketTypes, {
     strictAllocation: saveMode !== "draft",
+    canvasWidth,
+    canvasHeight,
   });
   if (!validated.ok) redirectFloorPlanError(eventId, validated.message);
 
@@ -847,8 +859,8 @@ export async function saveFloorPlanLayout(formData: FormData) {
       {
         event_id: eventId,
         layout_json: validated.layout,
-        canvas_width: FLOOR_PLAN_CANVAS_WIDTH,
-        canvas_height: FLOOR_PLAN_CANVAS_HEIGHT,
+        canvas_width: canvasWidth,
+        canvas_height: canvasHeight,
         grid_size: FLOOR_PLAN_GRID_SIZE,
       },
       { onConflict: "event_id" }

@@ -1,5 +1,5 @@
-export const FLOOR_PLAN_CANVAS_WIDTH = 1200;
-export const FLOOR_PLAN_CANVAS_HEIGHT = 800;
+export const FLOOR_PLAN_CANVAS_WIDTH = 1800;
+export const FLOOR_PLAN_CANVAS_HEIGHT = 1200;
 export const FLOOR_PLAN_GRID_SIZE = 20;
 
 export const FLOOR_PLAN_ELEMENT_TYPES = [
@@ -28,11 +28,14 @@ export type FloorPlanElement = {
   type: FloorPlanElementType;
   x: number;
   y: number;
+  x2?: number;
+  y2?: number;
   width: number;
   height: number;
   rotation: number;
   label: string;
   color: string;
+  wallStyle?: "solid" | "dashed" | "dotted";
   ticketTypeId?: string;
   seatsPerTable?: number;
   rows?: number;
@@ -61,6 +64,8 @@ export type FloorPlanValidationResult =
 
 export type FloorPlanValidationOptions = {
   strictAllocation?: boolean;
+  canvasWidth?: number;
+  canvasHeight?: number;
 };
 
 const ELEMENT_TYPE_SET = new Set<string>(FLOOR_PLAN_ELEMENT_TYPES);
@@ -115,6 +120,8 @@ export function validateFloorPlanLayout(
     return { ok: false, message: "Floor plan has too many components." };
   }
 
+  const canvasWidth = options.canvasWidth ?? FLOOR_PLAN_CANVAS_WIDTH;
+  const canvasHeight = options.canvasHeight ?? FLOOR_PLAN_CANVAS_HEIGHT;
   const ticketTypeIds = new Set(ticketTypes.map((t) => t.id));
   const allocations: Record<string, number> = Object.fromEntries(
     ticketTypes.map((t) => [t.id, 0])
@@ -132,13 +139,15 @@ export function validateFloorPlanLayout(
     }
 
     const elementType = type as FloorPlanElementType;
-    const width = clampToGrid(e.width, FLOOR_PLAN_CANVAS_WIDTH);
-    const height = clampToGrid(e.height, FLOOR_PLAN_CANVAS_HEIGHT);
+    const width = clampToGrid(e.width, canvasWidth);
+    const height = clampToGrid(e.height, canvasHeight);
+    const x = clampToGrid(e.x, canvasWidth);
+    const y = clampToGrid(e.y, canvasHeight);
     const element: FloorPlanElement = {
       id: String(e.id ?? "").trim().slice(0, 80) || crypto.randomUUID(),
       type: elementType,
-      x: clampToGrid(e.x, FLOOR_PLAN_CANVAS_WIDTH),
-      y: clampToGrid(e.y, FLOOR_PLAN_CANVAS_HEIGHT),
+      x,
+      y,
       width: Math.max(FLOOR_PLAN_GRID_SIZE, width),
       height: Math.max(FLOOR_PLAN_GRID_SIZE, height),
       rotation: intInRange(e.rotation, -180, 180, 0),
@@ -146,6 +155,16 @@ export function validateFloorPlanLayout(
       color: HEX_COLOR_RE.test(String(e.color ?? "")) ? String(e.color) : "#C9A96E",
       source: e.source === "ticket_import" ? "ticket_import" : "manual",
     };
+
+    if (elementType === "wall") {
+      element.x2 = clampToGrid(e.x2 ?? x + element.width, canvasWidth);
+      element.y2 = clampToGrid(e.y2 ?? y, canvasHeight);
+      element.height = Math.max(4, Math.min(12, intInRange(e.height, 4, 12, 4)));
+      element.wallStyle =
+        e.wallStyle === "dashed" || e.wallStyle === "dotted" || e.wallStyle === "solid"
+          ? e.wallStyle
+          : "solid";
+    }
 
     if (isFloorPlanSeatElement(elementType)) {
       const ticketTypeId = String(e.ticketTypeId ?? "").trim();
