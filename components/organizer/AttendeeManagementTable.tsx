@@ -2,7 +2,6 @@
 
 import React, { useState, useTransition } from "react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { ListPagination } from "@/components/ui/ListPagination";
 import { ScrollableTableWrapper } from "@/components/ui/ScrollableTableWrapper";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -36,6 +35,7 @@ export function AttendeeManagementTable({ eventId, initialAttendees }: Props) {
   const [selectedBuyerId, setSelectedBuyerId] = useState<string | null>(null);
   const [insightData, setInsightData] = useState<BuyerInsightData | null>(null);
   const [isInsightLoading, setIsInsightLoading] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
 
   // Derive unique ticket types for filter
   const ticketTypes = [...new Set(initialAttendees.map((a) => a.ticket_type_name))].sort();
@@ -57,6 +57,26 @@ export function AttendeeManagementTable({ eventId, initialAttendees }: Props) {
   const pageData = slicePage(filtered, page, DEFAULT_LIST_PAGE_SIZE);
 
   const activeTicket = confirmingCode ? initialAttendees.find(a => a.ticket_code === confirmingCode) : null;
+  const exportOptions = [
+    ["all", "All attendees", "Every issued ticket and attendee record for this event."],
+    ["current", "Current filters", "Only attendees matching the search, status, and ticket type filters currently set."],
+    ["issued", "Issued", "Tickets issued but not checked in."],
+    ["checked_in", "Checked in", "Attendees already verified at the venue."],
+    ["not_checked_in", "Not checked in", "Everyone who has not checked in yet."],
+    ["voided", "Voided", "Tickets marked voided."],
+    ["registered", "Registered", "Attendees with an Eventuz account."],
+    ["guest", "Guests", "Attendees without a registered Eventuz account."],
+  ];
+
+  function buildExportHref(scope: string) {
+    const params = new URLSearchParams({ scope });
+    if (scope === "current") {
+      if (search.trim()) params.set("q", search.trim());
+      params.set("status", statusFilter);
+      params.set("ticketType", typeFilter);
+    }
+    return `/organizer/events/${encodeURIComponent(eventId)}/attendees/export?${params.toString()}`;
+  }
 
   async function handleCheckIn() {
     if (!confirmingCode) return;
@@ -114,6 +134,41 @@ export function AttendeeManagementTable({ eventId, initialAttendees }: Props) {
         isLoading={isInsightLoading}
       />
 
+      <AlertModal
+        isOpen={isExportOpen}
+        onClose={() => setIsExportOpen(false)}
+        title="Export attendees"
+        description="Choose which attendee records to download as a CSV spreadsheet."
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsExportOpen(false)}
+            className="h-9 px-5 text-[11px] font-semibold tracking-wider"
+          >
+            Close
+          </Button>
+        }
+      >
+        <div className="grid gap-3 sm:grid-cols-2">
+          {exportOptions.map(([scope, label, description]) => (
+            <a
+              key={scope}
+              href={buildExportHref(scope)}
+              onClick={() => setIsExportOpen(false)}
+              className="group flex min-h-24 flex-col justify-between border border-[#EDE8E3] bg-background px-4 py-3 text-left transition-colors hover:border-[#C9A96E] hover:bg-[#C9A96E]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C9A96E]"
+            >
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8B6914] group-hover:text-[#1A1512]">
+                {label}
+              </span>
+              <span className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                {description}
+              </span>
+            </a>
+          ))}
+        </div>
+      </AlertModal>
+
       {/* Global Error Alert */}
       {errorMessage && (
         <Alert type="error" title="Scan Failed" icon="✕">
@@ -123,50 +178,68 @@ export function AttendeeManagementTable({ eventId, initialAttendees }: Props) {
       )}
 
       {/* Filters Bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-        <div className="flex-1">
-          <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1.5 block">Search</label>
-          <Input 
-            placeholder="Name, email, or code..." 
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            className="h-10"
-          />
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
+          <div className="flex-1">
+            <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1.5 block">Search</label>
+            <Input 
+              placeholder="Name, email, or code..." 
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="h-10"
+            />
+          </div>
+          <div className="w-full sm:w-40">
+            <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1.5 block">Status</label>
+            <select 
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
+              className="input-eventuz h-10 py-0"
+            >
+              <option value="all">All Status</option>
+              <option value="issued">Issued</option>
+              <option value="checked_in">Checked In</option>
+              <option value="voided">Voided</option>
+            </select>
+          </div>
+          <div className="w-full sm:w-48">
+            <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1.5 block">Ticket Type</label>
+            <select 
+              value={typeFilter}
+              onChange={(e) => {
+                setTypeFilter(e.target.value);
+                setPage(1);
+              }}
+              className="input-eventuz h-10 py-0"
+            >
+              <option value="all">All Types</option>
+              {ticketTypes.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
         </div>
-        <div className="w-full sm:w-40">
-          <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1.5 block">Status</label>
-          <select 
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(1);
-            }}
-            className="input-eventuz h-10 py-0"
+
+        <div className="flex flex-col gap-3 border-t border-border/70 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent-gold">Spreadsheet export</p>
+            <p className="mt-1 text-xs text-muted-foreground">Download attendee records as CSV for Excel or Google Sheets.</p>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsExportOpen(true)}
+            className="h-9 px-5 text-[10px] font-semibold tracking-[0.16em]"
           >
-            <option value="all">All Status</option>
-            <option value="issued">Issued</option>
-            <option value="checked_in">Checked In</option>
-            <option value="voided">Voided</option>
-          </select>
-        </div>
-        <div className="w-full sm:w-48">
-          <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1.5 block">Ticket Type</label>
-          <select 
-            value={typeFilter}
-            onChange={(e) => {
-              setTypeFilter(e.target.value);
-              setPage(1);
-            }}
-            className="input-eventuz h-10 py-0"
-          >
-            <option value="all">All Types</option>
-            {ticketTypes.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
+            Export spreadsheet
+          </Button>
         </div>
       </div>
 

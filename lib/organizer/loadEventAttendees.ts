@@ -10,6 +10,9 @@ export type AttendeeManagementRow = {
   ticket_type_name: string;
   checked_in_at: string | null;
   issued_at: string | null;
+  seat_display_label: string | null;
+  seat_label: string | null;
+  table_label: string | null;
   order_id: string;
   buyer: {
     name: string;
@@ -25,6 +28,28 @@ export type AttendeeManagementData = {
     name: string;
   };
   attendees: AttendeeManagementRow[];
+};
+
+type TicketAttendeeRow = {
+  id: string;
+  attendee_name: string;
+  attendee_email: string;
+  ticket_code: string;
+  status: string;
+  checked_in_at: string | null;
+  issued_at: string | null;
+  order_id: string;
+  ticket_types: { name?: string | null } | { name?: string | null }[] | null;
+  seats: {
+    display_label?: string | null;
+    seat_label?: string | null;
+    table_label?: string | null;
+  } | {
+    display_label?: string | null;
+    seat_label?: string | null;
+    table_label?: string | null;
+  }[] | null;
+  orders: { id?: string | null; buyer_user_id?: string | null } | { id?: string | null; buyer_user_id?: string | null }[] | null;
 };
 
 export async function loadOrganizerEventAttendees(
@@ -62,15 +87,16 @@ export async function loadOrganizerEventAttendees(
     .select(
       `id, attendee_name, attendee_email, ticket_code, status, checked_in_at, issued_at, order_id,
        ticket_types ( name ),
+       seats ( display_label, seat_label, table_label ),
        orders ( id, buyer_user_id )`
     )
     .eq("event_id", eventId)
     .order("issued_at", { ascending: false });
 
-  const tickets = (ticketsRaw ?? []) as any[];
+  const tickets = (ticketsRaw ?? []) as TicketAttendeeRow[];
   
   // Collect all unique buyer IDs and attendee emails
-  const buyerIds = [...new Set(tickets.map((t) => t.orders?.buyer_user_id))].filter(Boolean);
+  const buyerIds = [...new Set(tickets.map((t) => nestedOne(t.orders)?.buyer_user_id))].filter(Boolean);
   const attendeeEmails = [...new Set(tickets.map((t) => t.attendee_email.toLowerCase()))];
 
   // Fetch buyer profiles
@@ -89,6 +115,7 @@ export async function loadOrganizerEventAttendees(
 
   const attendees: AttendeeManagementRow[] = tickets.map((t) => {
     const tt = nestedOne(t.ticket_types);
+    const seat = nestedOne(t.seats);
     const order = nestedOne(t.orders);
     const buyerProfile = order ? buyerById.get(order.buyer_user_id) : null;
     
@@ -101,6 +128,9 @@ export async function loadOrganizerEventAttendees(
       ticket_type_name: tt?.name ?? "—",
       checked_in_at: t.checked_in_at,
       issued_at: t.issued_at,
+      seat_display_label: seat?.display_label ?? null,
+      seat_label: seat?.seat_label ?? null,
+      table_label: seat?.table_label ?? null,
       order_id: t.order_id,
       buyer: {
         name: buyerProfile?.full_name || "Unknown Buyer",
