@@ -42,6 +42,7 @@ export type FloorPlanElement = {
   wallStyle?: "solid" | "dashed" | "dotted";
   doorStyle?: "classic" | "single" | "double";
   ticketTypeId?: string;
+  ticketTableNumber?: number;
   seatsPerTable?: number;
   tableSeatSize?: number;
   showTableSeatNumbers?: boolean;
@@ -134,7 +135,9 @@ export function validateFloorPlanLayout(
   const backgroundColor = HEX_COLOR_RE.test(backgroundColorRaw)
     ? backgroundColorRaw
     : FLOOR_PLAN_BACKGROUND_COLOR;
+  const ticketTypeById = new Map(ticketTypes.map((t) => [t.id, t]));
   const ticketTypeIds = new Set(ticketTypes.map((t) => t.id));
+  const linkedTables = new Set<string>();
   const allocations: Record<string, number> = Object.fromEntries(
     ticketTypes.map((t) => [t.id, 0])
   );
@@ -200,13 +203,41 @@ export function validateFloorPlanLayout(
         if (!ticketTypeIds.has(ticketTypeId)) {
           return { ok: false, message: "A seat component uses an invalid ticket group." };
         }
+        const ticketType = ticketTypeById.get(ticketTypeId);
+        if (TABLE_TYPES.has(elementType) && ticketType?.seatLayoutMode !== "tables") {
+          return { ok: false, message: "A table component is linked to a rowed ticket group." };
+        }
+        if (elementType === "rowed_seats" && ticketType?.seatLayoutMode !== "rowed") {
+          return { ok: false, message: "A rowed seats component is linked to a table ticket group." };
+        }
         element.ticketTypeId = ticketTypeId;
       }
       if (TABLE_TYPES.has(elementType)) {
         element.seatsPerTable = intInRange(e.seatsPerTable, 1, 12, 8);
         element.tableSeatSize = intInRange(e.tableSeatSize, 10, 32, 16);
         element.showTableSeatNumbers = e.showTableSeatNumbers === true;
+        if (element.ticketTypeId) {
+          const ticketType = ticketTypeById.get(element.ticketTypeId);
+          const tableCount = ticketType?.seatLayoutTableCount ?? 0;
+          const tableNumber = Number(e.ticketTableNumber);
+          if (
+            !ticketType ||
+            tableCount < 1 ||
+            !Number.isInteger(tableNumber) ||
+            tableNumber < 1 ||
+            tableNumber > tableCount
+          ) {
+            return { ok: false, message: "A linked table component uses an invalid ticket table." };
+          }
+          const linkKey = `${element.ticketTypeId}:${tableNumber}`;
+          if (linkedTables.has(linkKey)) {
+            return { ok: false, message: `${ticketType.name} table T${tableNumber} is already linked to another component.` };
+          }
+          linkedTables.add(linkKey);
+          element.ticketTableNumber = tableNumber;
+        }
       } else {
+        element.ticketTableNumber = undefined;
         element.rows = intInRange(e.rows, 1, 100, 1);
         element.columns = intInRange(e.columns, 1, 100, 1);
       }

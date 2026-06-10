@@ -142,6 +142,19 @@ function isTableElement(type: FloorPlanElementType) {
   return SEAT_TABLE_TYPES.has(type);
 }
 
+function ticketTypeOptionsForElement(
+  ticketTypes: FloorPlanTicketType[],
+  element: FloorPlanElement
+) {
+  if (isTableElement(element.type)) {
+    return ticketTypes.filter((ticketType) => ticketType.seatLayoutMode === "tables");
+  }
+  if (element.type === "rowed_seats") {
+    return ticketTypes.filter((ticketType) => ticketType.seatLayoutMode === "rowed");
+  }
+  return ticketTypes;
+}
+
 function isLineElement(type: FloorPlanElementType) {
   return type === "wall" || type === "window";
 }
@@ -702,6 +715,12 @@ export function OrganizerFloorPlanDesigner({
     }))
     .filter((row) => row.allocated !== row.ticketType.quantity);
   const canSaveValidated = allocationIssues.length === 0 && ticketTypes.length > 0;
+  const selectedTicketType = selected?.ticketTypeId
+    ? ticketTypes.find((ticketType) => ticketType.id === selected.ticketTypeId) ?? null
+    : null;
+  const selectedTicketTypeOptions = selected
+    ? ticketTypeOptionsForElement(ticketTypes, selected)
+    : ticketTypes;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -756,6 +775,53 @@ export function OrganizerFloorPlanDesigner({
 
   function patchElement(id: string, patch: Partial<FloorPlanElement>) {
     setElements((prev) => prev.map((element) => (element.id === id ? { ...element, ...patch } : element)));
+  }
+
+  function usedTableNumbers(ticketTypeId: string, currentElementId: string) {
+    return new Set(
+      elements
+        .filter(
+          (element) =>
+            element.id !== currentElementId &&
+            isTableElement(element.type) &&
+            element.ticketTypeId === ticketTypeId &&
+            typeof element.ticketTableNumber === "number"
+        )
+        .map((element) => element.ticketTableNumber as number)
+    );
+  }
+
+  function firstAvailableTableNumber(ticketType: FloorPlanTicketType, currentElementId: string) {
+    const tableCount = ticketType.seatLayoutTableCount ?? 0;
+    if (tableCount < 1) return undefined;
+    const used = usedTableNumbers(ticketType.id, currentElementId);
+    for (let table = 1; table <= tableCount; table++) {
+      if (!used.has(table)) return table;
+    }
+    return undefined;
+  }
+
+  function handleSeatTicketGroupChange(element: FloorPlanElement, ticketTypeId: string) {
+    if (!ticketTypeId) {
+      patchElement(element.id, { ticketTypeId: undefined, ticketTableNumber: undefined });
+      return;
+    }
+
+    const ticketType = ticketTypes.find((item) => item.id === ticketTypeId);
+    if (!ticketType) return;
+    if (isTableElement(element.type)) {
+      patchElement(element.id, {
+        ticketTypeId,
+        ticketTableNumber: firstAvailableTableNumber(ticketType, element.id),
+        seatsPerTable: ticketType.seatLayoutSeatsPerTable ?? element.seatsPerTable ?? 8,
+      });
+      return;
+    }
+    patchElement(element.id, { ticketTypeId, ticketTableNumber: undefined });
+  }
+
+  function handleTicketTableChange(element: FloorPlanElement, tableNumber: number | undefined) {
+    patchElement(element.id, { ticketTableNumber: tableNumber });
   }
 
   function selectOnly(id: string | null) {
@@ -829,6 +895,7 @@ export function OrganizerFloorPlanDesigner({
       wallStyle: item.type === "wall" ? "solid" : undefined,
       doorStyle: isAccessElement(item.type) ? "classic" : undefined,
       ticketTypeId: undefined,
+      ticketTableNumber: undefined,
       seatsPerTable: SEAT_TABLE_TYPES.has(item.type) ? 8 : undefined,
       tableSeatSize: SEAT_TABLE_TYPES.has(item.type) ? 16 : undefined,
       showTableSeatNumbers: SEAT_TABLE_TYPES.has(item.type) ? false : undefined,
@@ -871,6 +938,7 @@ export function OrganizerFloorPlanDesigner({
             outlineWidth: 1,
             keepLabelHorizontal: false,
             ticketTypeId: ticketType.id,
+            ticketTableNumber: table,
             seatsPerTable: ticketType.seatLayoutSeatsPerTable,
             tableSeatSize: 16,
             showTableSeatNumbers: false,
@@ -897,6 +965,7 @@ export function OrganizerFloorPlanDesigner({
           outlineWidth: 1,
           keepLabelHorizontal: false,
           ticketTypeId: ticketType.id,
+          ticketTableNumber: undefined,
           rows: ticketType.seatLayoutRows,
           columns: ticketType.seatLayoutColumns,
           source: "ticket_import",
@@ -1785,9 +1854,13 @@ export function OrganizerFloorPlanDesigner({
               {isFloorPlanSeatElement(selected.type) ? (
                 <label className="block space-y-1.5">
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-[#7A6E68]">Ticket group</span>
-                  <select className="input-eventuz" value={selected.ticketTypeId ?? ""} onChange={(e) => patchElement(selected.id, { ticketTypeId: e.target.value })}>
+                  <select
+                    className="input-eventuz"
+                    value={selected.ticketTypeId ?? ""}
+                    onChange={(e) => handleSeatTicketGroupChange(selected, e.target.value)}
+                  >
                     <option value="">Choose ticket group</option>
-                    {ticketTypes.map((ticketType) => (
+                    {selectedTicketTypeOptions.map((ticketType) => (
                       <option key={ticketType.id} value={ticketType.id}>{ticketType.name}</option>
                     ))}
                   </select>
@@ -1811,6 +1884,37 @@ export function OrganizerFloorPlanDesigner({
                       <option value="circle_table">Circle</option>
                       <option value="square_table">Square</option>
                       <option value="rectangle_table">Rectangle</option>
+                    </select>
+                  </label>
+                  <label className="block space-y-1.5">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[#7A6E68]">Ticket table</span>
+                    <select
+                      className="input-eventuz"
+                      value={selected.ticketTableNumber ?? ""}
+                      disabled={!selectedTicketType || selectedTicketType.seatLayoutMode !== "tables"}
+                      onChange={(e) =>
+                        handleTicketTableChange(
+                          selected,
+                          e.target.value ? Number(e.target.value) : undefined
+                        )
+                      }
+                    >
+                      <option value="">
+                        {selectedTicketType && selectedTicketType.seatLayoutMode === "tables"
+                          ? "Choose ticket table"
+                          : "Choose table ticket group first"}
+                      </option>
+                      {selectedTicketType && selectedTicketType.seatLayoutMode === "tables"
+                        ? Array.from({ length: selectedTicketType.seatLayoutTableCount ?? 0 }).map((_, index) => {
+                            const tableNumber = index + 1;
+                            const usedByAnother = usedTableNumbers(selectedTicketType.id, selected.id).has(tableNumber);
+                            return (
+                              <option key={tableNumber} value={tableNumber} disabled={usedByAnother}>
+                                T{tableNumber}{usedByAnother ? " (linked)" : ""}
+                              </option>
+                            );
+                          })
+                        : null}
                     </select>
                   </label>
                   <label className="block space-y-1.5">
