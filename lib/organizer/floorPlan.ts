@@ -1,6 +1,7 @@
 export const FLOOR_PLAN_CANVAS_WIDTH = 1800;
 export const FLOOR_PLAN_CANVAS_HEIGHT = 1200;
 export const FLOOR_PLAN_GRID_SIZE = 20;
+export const FLOOR_PLAN_BACKGROUND_COLOR = "#FDFAF4";
 
 export const FLOOR_PLAN_ELEMENT_TYPES = [
   "wall",
@@ -35,9 +36,15 @@ export type FloorPlanElement = {
   rotation: number;
   label: string;
   color: string;
+  outlineColor?: string;
+  outlineWidth?: number;
+  keepLabelHorizontal?: boolean;
   wallStyle?: "solid" | "dashed" | "dotted";
+  doorStyle?: "classic" | "single" | "double";
   ticketTypeId?: string;
   seatsPerTable?: number;
+  tableSeatSize?: number;
+  showTableSeatNumbers?: boolean;
   rows?: number;
   columns?: number;
   source?: "manual" | "ticket_import";
@@ -45,6 +52,7 @@ export type FloorPlanElement = {
 
 export type FloorPlanLayout = {
   elements: FloorPlanElement[];
+  backgroundColor?: string;
 };
 
 export type FloorPlanTicketType = {
@@ -122,6 +130,10 @@ export function validateFloorPlanLayout(
 
   const canvasWidth = options.canvasWidth ?? FLOOR_PLAN_CANVAS_WIDTH;
   const canvasHeight = options.canvasHeight ?? FLOOR_PLAN_CANVAS_HEIGHT;
+  const backgroundColorRaw = String((raw as { backgroundColor?: unknown }).backgroundColor ?? "");
+  const backgroundColor = HEX_COLOR_RE.test(backgroundColorRaw)
+    ? backgroundColorRaw
+    : FLOOR_PLAN_BACKGROUND_COLOR;
   const ticketTypeIds = new Set(ticketTypes.map((t) => t.id));
   const allocations: Record<string, number> = Object.fromEntries(
     ticketTypes.map((t) => [t.id, 0])
@@ -153,17 +165,33 @@ export function validateFloorPlanLayout(
       rotation: intInRange(e.rotation, -180, 180, 0),
       label: String(e.label ?? "").trim().slice(0, 80),
       color: HEX_COLOR_RE.test(String(e.color ?? "")) ? String(e.color) : "#C9A96E",
+      outlineColor: HEX_COLOR_RE.test(String(e.outlineColor ?? "")) ? String(e.outlineColor) : "#1C1714",
+      outlineWidth: intInRange(e.outlineWidth, 0, 12, 1),
+      keepLabelHorizontal: e.keepLabelHorizontal === true,
       source: e.source === "ticket_import" ? "ticket_import" : "manual",
     };
 
-    if (elementType === "wall") {
+    if (elementType === "wall" || elementType === "window") {
       element.x2 = clampToGrid(e.x2 ?? x + element.width, canvasWidth);
       element.y2 = clampToGrid(e.y2 ?? y, canvasHeight);
-      element.height = Math.max(4, Math.min(12, intInRange(e.height, 4, 12, 4)));
+      element.height =
+        elementType === "window"
+          ? Math.max(6, Math.min(14, intInRange(e.height, 6, 14, 8)))
+          : Math.max(4, Math.min(12, intInRange(e.height, 4, 12, 4)));
+    }
+
+    if (elementType === "wall") {
       element.wallStyle =
         e.wallStyle === "dashed" || e.wallStyle === "dotted" || e.wallStyle === "solid"
           ? e.wallStyle
           : "solid";
+    }
+
+    if (elementType === "door" || elementType === "entrance" || elementType === "exit") {
+      element.doorStyle =
+        e.doorStyle === "single" || e.doorStyle === "double" || e.doorStyle === "classic"
+          ? e.doorStyle
+          : "classic";
     }
 
     if (isFloorPlanSeatElement(elementType)) {
@@ -176,6 +204,8 @@ export function validateFloorPlanLayout(
       }
       if (TABLE_TYPES.has(elementType)) {
         element.seatsPerTable = intInRange(e.seatsPerTable, 1, 12, 8);
+        element.tableSeatSize = intInRange(e.tableSeatSize, 10, 32, 16);
+        element.showTableSeatNumbers = e.showTableSeatNumbers === true;
       } else {
         element.rows = intInRange(e.rows, 1, 100, 1);
         element.columns = intInRange(e.columns, 1, 100, 1);
@@ -200,5 +230,5 @@ export function validateFloorPlanLayout(
     }
   }
 
-  return { ok: true, layout: { elements }, allocations };
+  return { ok: true, layout: { elements, backgroundColor }, allocations };
 }

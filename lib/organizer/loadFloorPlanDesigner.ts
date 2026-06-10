@@ -1,6 +1,7 @@
 import {
   FLOOR_PLAN_CANVAS_HEIGHT,
   FLOOR_PLAN_CANVAS_WIDTH,
+  FLOOR_PLAN_BACKGROUND_COLOR,
   FLOOR_PLAN_GRID_SIZE,
   type FloorPlanLayout,
   type FloorPlanTicketType,
@@ -66,8 +67,14 @@ export async function loadOrganizerFloorPlanDesigner(eventId: string): Promise<
   const layoutJson = planRow?.layout_json;
   const layout =
     layoutJson && typeof layoutJson === "object" && Array.isArray((layoutJson as { elements?: unknown }).elements)
-      ? (layoutJson as FloorPlanLayout)
-      : { elements: [] };
+      ? {
+          ...(layoutJson as FloorPlanLayout),
+          backgroundColor:
+            typeof (layoutJson as { backgroundColor?: unknown }).backgroundColor === "string"
+              ? String((layoutJson as { backgroundColor?: unknown }).backgroundColor)
+              : FLOOR_PLAN_BACKGROUND_COLOR,
+        }
+      : { elements: [], backgroundColor: FLOOR_PLAN_BACKGROUND_COLOR };
 
   return {
     ok: true,
