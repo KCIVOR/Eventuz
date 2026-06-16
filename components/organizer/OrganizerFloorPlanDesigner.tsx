@@ -682,7 +682,7 @@ export function OrganizerFloorPlanDesigner({
   const [focusedId, setFocusedId] = useState<string | null>(elements[0]?.id ?? null);
   const [drag, setDrag] = useState<DragState | null>(null);
   const [selectionBox, setSelectionBox] = useState<SelectionBoxState | null>(null);
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [showGrid, setShowGrid] = useState(true);
