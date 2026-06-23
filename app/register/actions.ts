@@ -63,7 +63,7 @@ export async function registerAccountAction(
     email,
     password,
     options: {
-      emailRedirectTo: `${origin}/auth/callback?next=${nextQuery}`,
+      emailRedirectTo: `${origin}/auth/confirm?next=${nextQuery}`,
       data: { 
         full_name: fullName,
         phone_number: phoneNumber,
