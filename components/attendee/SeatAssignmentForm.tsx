@@ -1,8 +1,10 @@
 "use client";
 
 import { submitSeatAssignments, type SeatAssignmentRow } from "@/app/attendee/event/seats/actions";
+import { AttendeeFloorPlanPreview } from "@/components/attendee/AttendeeFloorPlanPreview";
 import type {
   AssignableOrder,
+  AttendeeFloorPlanPreview as AttendeeFloorPlanPreviewData,
   ExistingAssignment,
   SeatPickerRow,
 } from "@/lib/attendee/loadSeatAssignmentPage";
@@ -19,6 +21,7 @@ type Props = {
   initialAssignments: ExistingAssignment[];
   /** Rows in `seats` for this ticket type (any status). 0 = no seating plan defined */
   seatInventoryTotal: number;
+  floorPlanPreview: AttendeeFloorPlanPreviewData | null;
 };
 
 type SeatDetail = { name: string; email: string };
@@ -52,6 +55,7 @@ export function SeatAssignmentForm({
   seats,
   initialAssignments,
   seatInventoryTotal,
+  floorPlanPreview,
 }: Props) {
   const qty = order.quantity;
   const initialIds = useMemo(
@@ -249,8 +253,15 @@ export function SeatAssignmentForm({
         </p>
       </header>
 
-      <div className="lg:grid lg:grid-cols-12 lg:gap-10 lg:items-start">
+      {floorPlanPreview ? (
+        <AttendeeFloorPlanPreview
+          preview={floorPlanPreview}
+          seats={seats}
+          selectedSeatIds={selectedSeatIds}
+        />
+      ) : null}
 
+      <div className="lg:grid lg:grid-cols-12 lg:gap-10 lg:items-start">
         {/* MAIN: Seating Map & Forms */}
         <div className="lg:col-span-7 space-y-8">
           <section

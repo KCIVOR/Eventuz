@@ -163,6 +163,7 @@ export default async function AttendeeSeatAssignmentPage({ searchParams }: Props
         seats={ctx.seats}
         initialAssignments={ctx.initialAssignments}
         seatInventoryTotal={ctx.seatInventoryTotal}
+        floorPlanPreview={ctx.floorPlanPreview}
       />
     </RoleAreaShell>
   );

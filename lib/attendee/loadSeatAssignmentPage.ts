@@ -1,6 +1,18 @@
 import { createClient } from "@/lib/supabase/server";
 import { resolveAttendeeFacingEvent } from "@/lib/event/attendeeEvent";
 import { runStaleOrderCleanup } from "@/lib/orders/cleanup";
+import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
+import {
+  FLOOR_PLAN_BACKGROUND_COLOR,
+  FLOOR_PLAN_CANVAS_HEIGHT,
+  FLOOR_PLAN_CANVAS_WIDTH,
+  FLOOR_PLAN_GRID_SIZE,
+  floorPlanSeatCount,
+  isFloorPlanSeatElement,
+  type FloorPlanLayout,
+  type FloorPlanTicketType,
+  validateFloorPlanLayout,
+} from "@/lib/organizer/floorPlan";
 
 export type SeatPickerRow = {
   id: string;
@@ -38,6 +50,15 @@ export type SeatAssignmentPageOk = {
   initialAssignments: ExistingAssignment[];
   /** Count of seat rows for this ticket type (any status). 0 usually means no seating plan exists yet */
   seatInventoryTotal: number;
+  floorPlanPreview: AttendeeFloorPlanPreview | null;
+};
+
+export type AttendeeFloorPlanPreview = {
+  layout: FloorPlanLayout;
+  canvasWidth: number;
+  canvasHeight: number;
+  gridSize: number;
+  currentTicketTypeId: string;
 };
 
 export type SeatWorkOrderPick = {
@@ -233,6 +254,14 @@ export async function loadSeatAssignmentPage(
     .eq("event_id", eventId)
     .eq("ticket_type_id", ticketTypeId);
 
+  const floorPlanPreview = await loadAttendeeFloorPlanPreview({
+    eventId,
+    ticketTypeId,
+    seatLayoutMode,
+    seats,
+    seatInventoryTotal: seatInventoryTotal ?? 0,
+  });
+
   return {
     ok: true,
     eventName,
@@ -250,10 +279,100 @@ export async function loadSeatAssignmentPage(
     seatLayoutMode,
     seats,
     seatInventoryTotal: seatInventoryTotal ?? 0,
+    floorPlanPreview,
     initialAssignments: (existing ?? []).map((r) => ({
       seat_id: r.seat_id as string,
       attendee_name: r.attendee_name as string,
       attendee_email: r.attendee_email as string,
     })),
+  };
+}
+
+async function loadAttendeeFloorPlanPreview({
+  eventId,
+  ticketTypeId,
+  seatLayoutMode,
+  seats,
+  seatInventoryTotal,
+}: {
+  eventId: string;
+  ticketTypeId: string;
+  seatLayoutMode: "rowed" | "tables";
+  seats: SeatPickerRow[];
+  seatInventoryTotal: number;
+}): Promise<AttendeeFloorPlanPreview | null> {
+  if (seatInventoryTotal === 0 || seats.length === 0) return null;
+
+  let admin;
+  try {
+    admin = createServiceRoleClient();
+  } catch {
+    return null;
+  }
+
+  const [{ data: ticketRows, error: ticketErr }, { data: planRow, error: planErr }] =
+    await Promise.all([
+      admin
+        .from("ticket_types")
+        .select(
+          "id, name, quantity, seat_layout_mode, seat_layout_rows, seat_layout_columns, seat_layout_table_count, seat_layout_seats_per_table"
+        )
+        .eq("event_id", eventId)
+        .order("created_at", { ascending: true }),
+      admin
+        .from("event_floor_plans")
+        .select("layout_json, canvas_width, canvas_height, grid_size")
+        .eq("event_id", eventId)
+        .maybeSingle(),
+    ]);
+
+  if (ticketErr || planErr || !ticketRows || !planRow?.layout_json) return null;
+
+  const ticketTypes: FloorPlanTicketType[] = ticketRows.map((row) => ({
+    id: row.id as string,
+    name: (row.name as string) || "Ticket",
+    quantity: Number(row.quantity ?? 0),
+    seatLayoutMode: row.seat_layout_mode === "tables" ? "tables" : "rowed",
+    seatLayoutRows: row.seat_layout_rows == null ? null : Number(row.seat_layout_rows),
+    seatLayoutColumns: row.seat_layout_columns == null ? null : Number(row.seat_layout_columns),
+    seatLayoutTableCount:
+      row.seat_layout_table_count == null ? null : Number(row.seat_layout_table_count),
+    seatLayoutSeatsPerTable:
+      row.seat_layout_seats_per_table == null ? null : Number(row.seat_layout_seats_per_table),
+  }));
+
+  const canvasWidth = Number(planRow.canvas_width ?? FLOOR_PLAN_CANVAS_WIDTH);
+  const canvasHeight = Number(planRow.canvas_height ?? FLOOR_PLAN_CANVAS_HEIGHT);
+  const validated = validateFloorPlanLayout(planRow.layout_json, ticketTypes, {
+    strictAllocation: true,
+    canvasWidth,
+    canvasHeight,
+  });
+  if (!validated.ok) return null;
+
+  const currentElements = validated.layout.elements.filter(
+    (element) => isFloorPlanSeatElement(element.type) && element.ticketTypeId === ticketTypeId
+  );
+  const allocated = currentElements.reduce((sum, element) => sum + floorPlanSeatCount(element), 0);
+  if (allocated !== seats.length || allocated !== seatInventoryTotal) return null;
+
+  if (seatLayoutMode === "tables") {
+    for (const element of currentElements) {
+      if (!element.ticketTableNumber) return null;
+      const tableLabel = `T${element.ticketTableNumber}`;
+      const tableSeats = seats.filter((seat) => seat.table_label === tableLabel);
+      if (tableSeats.length !== floorPlanSeatCount(element)) return null;
+    }
+  }
+
+  return {
+    layout: {
+      ...validated.layout,
+      backgroundColor: validated.layout.backgroundColor ?? FLOOR_PLAN_BACKGROUND_COLOR,
+    },
+    canvasWidth,
+    canvasHeight,
+    gridSize: Number(planRow.grid_size ?? FLOOR_PLAN_GRID_SIZE),
+    currentTicketTypeId: ticketTypeId,
   };
 }
