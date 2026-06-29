@@ -1,4 +1,5 @@
 import type { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -52,12 +53,13 @@ function rowReservesCapacity(row: {
  * active holds, payment-pending, paid unassigned, partially assigned, completed.
  */
 export async function sumReservedQuantityForTicketType(
-  supabase: Supabase,
+  _supabase: Supabase,
   ticketTypeId: string,
   options?: { excludeOrderId?: string }
 ): Promise<number> {
   const nowIso = new Date().toISOString();
-  const { data, error } = await supabase
+  const inventoryClient = createServiceRoleClient();
+  const { data, error } = await inventoryClient
     .from("orders")
     .select("id, quantity, status, capacity_hold_expires_at, payment_expires_at")
     .eq("ticket_type_id", ticketTypeId);
