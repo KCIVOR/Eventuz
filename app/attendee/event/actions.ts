@@ -2,9 +2,6 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { runStaleOrderCleanup } from "@/lib/orders/cleanup";
-import {
-  availableTicketQuantityForType,
-} from "@/lib/orders/inventory";
 import { computeEarlyBirdPriceLockExpiresAt, resolveUnitPrice } from "@/lib/orders/pricing";
 import { writeAuditLogSafe } from "@/lib/audit/writeAuditLog";
 import { createHitPayCheckout } from "@/lib/payments/hitpayClient";
@@ -25,6 +22,12 @@ export type PayActionState = {
 };
 
 export type HitPaySimulateState = { error?: string; ok?: boolean };
+
+type ReserveTicketCapacityResult = {
+  order_id: string;
+  created: boolean;
+  slots_left: number;
+};
 
 function paymentWaitingUrl(orderId: string, fromHitPay = false): string {
   const base = `/attendee/event/payment/wait?order=${encodeURIComponent(orderId)}`;
@@ -263,38 +266,7 @@ export async function placeHoldAction(
     return { error: "Invalid ticket capacity." };
   }
 
-  const { data: existingHold } = await supabase
-    .from("orders")
-    .select("id, quantity, ticket_type_id, status")
-    .eq("buyer_user_id", user.id)
-    .eq("event_id", eventId)
-    .in("status", ["capacity_held", "payment_pending"])
-    .maybeSingle();
-
-  if (existingHold?.status === "payment_pending") {
-    return {
-      error:
-        "You have a payment in progress. Open HitPay checkout or release this reservation to change tickets.",
-    };
-  }
-
   const now = new Date();
-
-  const maxSlots = await availableTicketQuantityForType(
-    supabase,
-    ticketTypeId,
-    typeQuantity,
-    existingHold?.id ? { excludeOrderId: existingHold.id as string } : undefined
-  );
-
-  if (qtyRaw > maxSlots) {
-    return {
-      error:
-        maxSlots <= 0
-          ? "This ticket type is sold out for now."
-          : `Only ${maxSlots} ticket slot(s) left for this type.`,
-    };
-  }
 
   const { unitPrice, pricingType } = resolveUnitPrice({
     regularPrice: Number(tt.regular_price),
@@ -318,62 +290,36 @@ export async function placeHoldAction(
     at: now,
   });
 
-  if (existingHold?.id) {
-    const { error: upErr } = await supabase
-      .from("orders")
-      .update({
-        ticket_type_id: ticketTypeId,
-        quantity: qtyRaw,
-        unit_price_locked: unitPrice,
-        total_amount: total,
-        pricing_type: pricingType,
-        status: "capacity_held",
-        capacity_hold_expires_at: capacityHoldExpiresAt,
-        payment_expires_at: paymentExpiresAt,
-        early_bird_price_expires_at: earlyBirdPriceExpiresAt,
-      })
-      .eq("id", existingHold.id)
-      .eq("buyer_user_id", user.id);
+  const { data: reservationRaw, error: reserveErr } = await supabase
+    .rpc("reserve_ticket_capacity", {
+      p_event_id: eventId,
+      p_ticket_type_id: ticketTypeId,
+      p_quantity: qtyRaw,
+      p_unit_price_locked: unitPrice,
+      p_total_amount: total,
+      p_pricing_type: pricingType,
+      p_capacity_hold_expires_at: capacityHoldExpiresAt,
+      p_payment_expires_at: paymentExpiresAt,
+      p_early_bird_price_expires_at: earlyBirdPriceExpiresAt,
+    })
+    .single();
+  const reservation = reservationRaw as ReserveTicketCapacityResult | null;
 
-    if (upErr) {
-      return { error: upErr.message };
-    }
-  } else {
-    const { data: insertedOrder, error: insErr } = await supabase
-      .from("orders")
-      .insert({
-        buyer_user_id: user.id,
-        event_id: eventId,
-        ticket_type_id: ticketTypeId,
-        quantity: qtyRaw,
-        unit_price_locked: unitPrice,
-        total_amount: total,
-        pricing_type: pricingType,
-        status: "capacity_held",
-        capacity_hold_expires_at: capacityHoldExpiresAt,
-        payment_expires_at: paymentExpiresAt,
-        early_bird_price_expires_at: earlyBirdPriceExpiresAt,
-      })
-      .select("id")
-      .single();
-
-    if (insErr) {
-      return { error: insErr.message };
-    }
-    if (insertedOrder?.id) {
-      await writeAuditLogSafe(supabase, {
-        action: "order.created",
-        entityType: "order",
-        entityId: insertedOrder.id as string,
-        metadata: {
-          event_id: eventId,
-          ticket_type_id: ticketTypeId,
-          quantity: qtyRaw,
-          status: "capacity_held",
-        },
-      });
-    }
+  if (reserveErr || !reservation?.order_id) {
+    return { error: reserveErr?.message ?? "Could not reserve ticket capacity." };
   }
+
+  await writeAuditLogSafe(supabase, {
+    action: reservation.created ? "order.created" : "order.updated",
+    entityType: "order",
+    entityId: reservation.order_id as string,
+    metadata: {
+      event_id: eventId,
+      ticket_type_id: ticketTypeId,
+      quantity: qtyRaw,
+      status: "capacity_held",
+    },
+  });
 
   revalidatePath("/attendee/event");
   return { ok: true };
