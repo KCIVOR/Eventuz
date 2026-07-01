@@ -3,7 +3,7 @@
  * No checkout pricing; no seats.
  */
 
-export const TICKET_TYPE_STATUSES = ["active", "inactive", "sold_out"] as const;
+export const TICKET_TYPE_STATUSES = ["active", "hidden", "inactive", "sold_out"] as const;
 export type TicketTypeStatus = (typeof TICKET_TYPE_STATUSES)[number];
 
 export function parseTicketTypeStatus(value: FormDataEntryValue | null): TicketTypeStatus {

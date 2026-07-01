@@ -17,7 +17,7 @@ function Shell(props: {
     <RoleAreaShell
       role="attendee"
       layout="flush"
-      mainWidth="wide"
+      mainWidth="full"
       title={props.title}
       description={props.description}
       breadcrumbs={[

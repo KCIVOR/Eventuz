@@ -67,6 +67,7 @@ export function SeatAssignmentForm({
   const [detailsBySeat, setDetailsBySeat] = useState<Record<string, SeatDetail>>(() =>
     normalizeDetailsMap(initialIds, {}, initialAssignments)
   );
+  const [floorPlanOpen, setFloorPlanOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -205,6 +206,13 @@ export function SeatAssignmentForm({
       }));
   }, [seats]);
 
+  const visibleSeatGroups = useMemo(() => {
+    if (seatLayoutMode !== "tables") return seatsByGroup;
+    return seatsByGroup.filter((group) =>
+      group.seats.some((seat) => seat.status === "available" || seat.is_owned_assignment)
+    );
+  }, [seatLayoutMode, seatsByGroup]);
+
   function seatButton(s: SeatPickerRow) {
     const selected = selectedSeatIds.includes(s.id);
     const occupied = s.status !== "available" && !s.is_owned_assignment;
@@ -218,7 +226,7 @@ export function SeatAssignmentForm({
         aria-pressed={selected}
         aria-label={`${s.display_label}${occupied ? " occupied" : selected ? " selected" : ""}`}
         className={[
-          "flex aspect-square min-h-10 min-w-10 cursor-pointer items-center justify-center rounded-md border px-2 text-xs font-semibold transition-colors duration-200 motion-reduce:transition-none",
+          "flex aspect-square min-h-9 min-w-9 cursor-pointer items-center justify-center rounded-md border px-1.5 text-[11px] font-semibold transition-colors duration-200 motion-reduce:transition-none sm:min-h-10 sm:min-w-10 sm:px-2 sm:text-xs",
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
           occupied
             ? "cursor-not-allowed border-[#D9A6A1]/60 bg-[#F7E2DF] text-[#8F4C45] opacity-80"
@@ -253,28 +261,31 @@ export function SeatAssignmentForm({
         </p>
       </header>
 
-      {floorPlanPreview ? (
-        <AttendeeFloorPlanPreview
-          preview={floorPlanPreview}
-          seats={seats}
-          selectedSeatIds={selectedSeatIds}
-        />
-      ) : null}
-
-      <div className="lg:grid lg:grid-cols-12 lg:gap-10 lg:items-start">
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(23rem,30rem)] lg:gap-10 lg:items-start xl:gap-12">
         {/* MAIN: Seating Map & Forms */}
-        <div className="lg:col-span-7 space-y-8">
+        <div className="min-w-0 space-y-8">
           <section
             className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8"
             aria-labelledby="available-seats-heading"
           >
-            <div className="flex items-center justify-between mb-6">
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <h2 id="available-seats-heading" className="font-serif text-xl font-light text-foreground">
                 Available Seats
               </h2>
-              <div className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rotate-45 bg-accent-gold" />
-                <span className="text-[10px] uppercase tracking-widest text-accent-gold font-semibold">Tier: {ticketTypeName}</span>
+              <div className="flex flex-wrap items-center gap-3">
+                {floorPlanPreview ? (
+                  <button
+                    type="button"
+                    onClick={() => setFloorPlanOpen(true)}
+                    className="btn-eventuz-gold min-h-10 px-5 py-3 text-[10px] shadow-sm shadow-accent-gold/10"
+                  >
+                    View full seat plan
+                  </button>
+                ) : null}
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rotate-45 bg-accent-gold" />
+                  <span className="text-[10px] uppercase tracking-widest text-accent-gold font-semibold">Tier: {ticketTypeName}</span>
+                </div>
               </div>
             </div>
             <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-border/60 bg-muted/10 px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
@@ -299,27 +310,33 @@ export function SeatAssignmentForm({
                     No seating layout defined for this ticket type.
                   </p>
                 </div>
+              ) : visibleSeatGroups.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border bg-muted/5 py-14 text-center">
+                  <p className="text-sm italic text-muted-foreground">
+                    All tables for this ticket type are already acquired.
+                  </p>
+                </div>
               ) : (
                 <div
                   className={
                     seatLayoutMode === "tables"
-                      ? "grid gap-4 sm:grid-cols-2"
+                      ? "grid grid-cols-2 gap-3"
                       : "space-y-4"
                   }
                 >
-                  {seatsByGroup.map((group) =>
+                  {visibleSeatGroups.map((group) =>
                     seatLayoutMode === "tables" ? (
                       <section
                         key={group.label}
-                        className="rounded-xl border border-border/60 bg-background p-5"
+                        className="rounded-xl border border-border/60 bg-background p-3 sm:p-4"
                         aria-label={group.label}
                       >
-                        <div className="mb-6 flex items-center justify-center">
-                          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-accent-gold/20 bg-card text-center text-xs font-semibold text-foreground">
+                        <div className="mb-4 flex items-center justify-center">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-accent-gold/20 bg-card text-center text-[11px] font-semibold text-foreground sm:h-14 sm:w-14 sm:text-xs">
                             {group.label}
                           </div>
                         </div>
-                        <div className="grid grid-cols-4 gap-2.5">
+                        <div className="grid grid-cols-4 gap-2">
                           {group.seats.map((s) => seatButton(s))}
                         </div>
                       </section>
@@ -353,7 +370,7 @@ export function SeatAssignmentForm({
         </div>
 
         {/* SIDEBAR: Summary & Actions */}
-        <aside className="lg:col-span-5 space-y-6 lg:sticky lg:top-32">
+        <aside className="space-y-6 lg:sticky lg:top-32">
           {selectedSeatIds.length > 0 && (
             <section
               className="panel-card animate-fade-in-up overflow-hidden p-0 shadow-lg shadow-accent-gold/[0.03]"
@@ -500,6 +517,42 @@ export function SeatAssignmentForm({
         </aside>
 
       </div>
+
+      {floorPlanOpen && floorPlanPreview ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#1A1512]/55 p-3 backdrop-blur-sm sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Full seat plan"
+        >
+          <div className="flex h-[96vh] w-full max-w-[96rem] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
+            <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent-gold">
+                  Seat Plan
+                </p>
+                <h2 className="font-serif text-xl font-light text-foreground">Full floor plan</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFloorPlanOpen(false)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-background text-xl leading-none text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                aria-label="Close full seat plan"
+              >
+                x
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 bg-muted/10">
+              <AttendeeFloorPlanPreview
+                preview={floorPlanPreview}
+                seats={seats}
+                selectedSeatIds={selectedSeatIds}
+                mode="modal"
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

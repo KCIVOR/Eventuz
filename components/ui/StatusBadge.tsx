@@ -37,6 +37,10 @@ export function StatusBadge({ status, type = "generic", className = "" }: Props)
     if (["issued", "assigned"].includes(normalized)) {
       return { ...base, background: "#F0E4CC", color: "#8B6914" };
     }
+    // Hidden / internal-only
+    if (["hidden"].includes(normalized)) {
+      return { ...base, background: "#E8EDF5", color: "#344766" };
+    }
     // Cancelled / error
     if (["payment_failed", "failed", "invalid", "voided", "cancelled", "disabled"].includes(normalized)) {
       return { ...base, background: "#F5DFDF", color: "#7A2020" };

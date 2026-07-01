@@ -1,10 +1,12 @@
 "use client";
 
 import {
+  claimTicketCouponAction,
   placeHoldAction,
   releaseHoldAction,
   simulateHitPaySuccessAction,
   startHitPayCheckoutAction,
+  type CouponClaimState,
   type HitPaySimulateState,
   type HoldActionState,
   type PayActionState,
@@ -40,8 +42,10 @@ export function CapacityHoldForm({
   const [releaseState, releaseAction, releasePending] = useActionState(releaseHoldAction, {} as HoldActionState);
   const [payState, payAction, payPending] = useActionState(startHitPayCheckoutAction, {} as PayActionState);
   const [simState, simAction, simPending] = useActionState(simulateHitPaySuccessAction, {} as HitPaySimulateState);
+  const [couponState, couponAction, couponPending] = useActionState(claimTicketCouponAction, {} as CouponClaimState);
   const paymentTabRef = useRef<Window | null>(null);
   const [blockedCheckoutUrl, setBlockedCheckoutUrl] = useState<string | null>(null);
+  const [couponOpen, setCouponOpen] = useState(false);
 
   // Local state for selection if no active hold exists
   const [selectedTypeId, setSelectedTypeId] = useState<string>(
@@ -138,9 +142,9 @@ export function CapacityHoldForm({
 
   return (
     <div className="space-y-10">
-      {(placeState.error || releaseState.error || payState.error || simState.error) && (
+      {(placeState.error || releaseState.error || payState.error || simState.error || couponState.error) && (
         <p role="alert" className="rounded-xl border border-destructive/25 bg-destructive-muted px-4 py-3 text-sm text-destructive">
-          {String(placeState.error || releaseState.error || payState.error || simState.error)}
+          {String(placeState.error || releaseState.error || payState.error || simState.error || couponState.error)}
         </p>
       )}
 
@@ -325,6 +329,47 @@ export function CapacityHoldForm({
               </div>
             </form>
           </div>
+        </section>
+      )}
+
+      {!capacityHeld && !paymentPending && (
+        <section className="space-y-4 border-t border-border/40 pt-6">
+          <button
+            type="button"
+            onClick={() => setCouponOpen((value) => !value)}
+            className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent-gold underline-offset-4 transition-colors hover:text-foreground hover:underline"
+          >
+            Use a coupon code
+          </button>
+
+          {couponOpen ? (
+            <form action={couponAction} className="rounded-lg border border-accent-gold/20 bg-accent-gold/[0.03] p-4">
+              <input type="hidden" name="event_id" value={eventId} />
+              <label htmlFor="coupon-code" className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-accent-gold">
+                Coupon Code
+              </label>
+              <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+                <input
+                  id="coupon-code"
+                  name="coupon_code"
+                  required
+                  autoComplete="off"
+                  className="input-eventuz flex-1 uppercase"
+                  placeholder="ENTER CODE"
+                />
+                <button
+                  type="submit"
+                  disabled={couponPending}
+                  className="btn-eventuz-secondary px-5 py-3 text-[11px]"
+                >
+                  {couponPending ? "Claiming..." : "Claim"}
+                </button>
+              </div>
+              <p className="mt-3 text-[11px] font-light italic text-muted-foreground">
+                Coupon claims require an attendee account and create one free ticket for seat selection.
+              </p>
+            </form>
+          ) : null}
         </section>
       )}
 

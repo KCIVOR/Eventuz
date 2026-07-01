@@ -76,6 +76,18 @@ export async function sumReservedQuantityForTicketType(
   return sum;
 }
 
+export async function sumActiveCouponReservationsForTicketType(ticketTypeId: string): Promise<number> {
+  const inventoryClient = createServiceRoleClient();
+  const { count, error } = await inventoryClient
+    .from("ticket_coupons")
+    .select("*", { count: "exact", head: true })
+    .eq("ticket_type_id", ticketTypeId)
+    .eq("status", "active");
+
+  if (error) return 0;
+  return count ?? 0;
+}
+
 /** Available ticket inventory for a type = declared quantity − reserved (orders). */
 export async function availableTicketQuantityForType(
   supabase: Supabase,
@@ -83,8 +95,11 @@ export async function availableTicketQuantityForType(
   ticketTypeQuantity: number,
   options?: { excludeOrderId?: string }
 ): Promise<number> {
-  const reserved = await sumReservedQuantityForTicketType(supabase, ticketTypeId, options);
-  return Math.max(0, ticketTypeQuantity - reserved);
+  const [reserved, couponReserved] = await Promise.all([
+    sumReservedQuantityForTicketType(supabase, ticketTypeId, options),
+    sumActiveCouponReservationsForTicketType(ticketTypeId),
+  ]);
+  return Math.max(0, ticketTypeQuantity - reserved - couponReserved);
 }
 
 /** @deprecated prefer availableTicketQuantityForType (Phase 7 uses ticket_types.quantity) */

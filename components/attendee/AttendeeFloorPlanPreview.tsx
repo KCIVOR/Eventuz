@@ -15,6 +15,7 @@ type Props = {
   preview: AttendeeFloorPlanPreviewData;
   seats: SeatPickerRow[];
   selectedSeatIds: string[];
+  mode?: "inline" | "modal";
 };
 
 const TABLE_TYPES = new Set<FloorPlanElementType>([
@@ -369,9 +370,11 @@ function RowedElement({
   );
 }
 
-export function AttendeeFloorPlanPreview({ preview, seats, selectedSeatIds }: Props) {
+export function AttendeeFloorPlanPreview({ preview, seats, selectedSeatIds, mode = "inline" }: Props) {
   const [open, setOpen] = useState(true);
   const [zoom, setZoom] = useState(1);
+  const isModal = mode === "modal";
+  const expanded = isModal || open;
   const selectedIds = useMemo(() => new Set(selectedSeatIds), [selectedSeatIds]);
   const seatsByTable = useMemo(() => {
     const map = new Map<string, SeatPickerRow[]>();
@@ -385,13 +388,14 @@ export function AttendeeFloorPlanPreview({ preview, seats, selectedSeatIds }: Pr
   }, [seats]);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-center justify-between gap-4 border-b border-border/60 bg-accent-gold/[0.03] px-6 py-4 text-left transition-colors hover:bg-accent-gold/[0.06]"
-        aria-expanded={open}
-      >
+    <section className={isModal ? "flex h-full min-h-0 flex-col bg-card" : "overflow-hidden rounded-2xl border border-border bg-card shadow-sm"}>
+      {isModal ? null : (
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          className="flex w-full items-center justify-between gap-4 border-b border-border/60 bg-accent-gold/[0.03] px-6 py-4 text-left transition-colors hover:bg-accent-gold/[0.06]"
+          aria-expanded={open}
+        >
         <span>
           <span className="block font-serif text-xl font-light text-foreground">Floor Plan Preview</span>
           <span className="mt-1 block text-[10px] font-semibold uppercase tracking-[0.16em] text-accent-gold">
@@ -399,10 +403,11 @@ export function AttendeeFloorPlanPreview({ preview, seats, selectedSeatIds }: Pr
           </span>
         </span>
         <span className="text-sm font-semibold text-muted-foreground">{open ? "Hide" : "Show"}</span>
-      </button>
+        </button>
+      )}
 
-      {open ? (
-        <div className="space-y-4 p-4 sm:p-6">
+      {expanded ? (
+        <div className={isModal ? "flex min-h-0 flex-1 flex-col gap-4 p-4 sm:p-6" : "space-y-4 p-4 sm:p-6"}>
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/10 px-4 py-3">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               <span className="inline-flex items-center gap-2">
@@ -450,12 +455,19 @@ export function AttendeeFloorPlanPreview({ preview, seats, selectedSeatIds }: Pr
               </button>
             </div>
           </div>
-          <div className="overflow-auto rounded-xl border border-border/60 bg-background p-3">
+          <div
+            className={
+              isModal
+                ? "min-h-0 flex-1 overflow-auto rounded-xl border border-border/60 bg-background p-4 shadow-inner"
+                : "overflow-auto rounded-xl border border-border/60 bg-background p-3"
+            }
+          >
+            <div className={isModal ? "flex min-w-full justify-center" : undefined}>
             <svg
               viewBox={`0 0 ${preview.canvasWidth} ${preview.canvasHeight}`}
-              className="block"
+              className="mx-auto block"
               style={{
-                height: `${Math.max(24, 34 * zoom)}rem`,
+                height: `${Math.max(isModal ? 34 : 24, (isModal ? 52 : 34) * zoom)}rem`,
                 width: "auto",
                 maxWidth: "none",
                 background: preview.layout.backgroundColor ?? "#FDFAF4",
@@ -491,6 +503,7 @@ export function AttendeeFloorPlanPreview({ preview, seats, selectedSeatIds }: Pr
                 return <StaticElement key={element.id} element={element} />;
               })}
             </svg>
+            </div>
           </div>
           <p className="text-xs leading-relaxed text-muted-foreground">
             Use the seat buttons below to select seats. This preview updates to show your selected locations.

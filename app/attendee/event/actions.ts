@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { runStaleOrderCleanup } from "@/lib/orders/cleanup";
+import { couponCodeHash, normalizeCouponCode } from "@/lib/coupons/codes";
 import { computeEarlyBirdPriceLockExpiresAt, resolveUnitPrice } from "@/lib/orders/pricing";
 import { writeAuditLogSafe } from "@/lib/audit/writeAuditLog";
 import { createHitPayCheckout } from "@/lib/payments/hitpayClient";
@@ -22,6 +23,7 @@ export type PayActionState = {
 };
 
 export type HitPaySimulateState = { error?: string; ok?: boolean };
+export type CouponClaimState = { error?: string };
 
 type ReserveTicketCapacityResult = {
   order_id: string;
@@ -352,6 +354,53 @@ export async function releaseHoldAction(
 
   revalidatePath("/attendee/event");
   return { ok: true };
+}
+
+export async function claimTicketCouponAction(
+  _prev: CouponClaimState | undefined,
+  formData: FormData
+): Promise<CouponClaimState> {
+  const eventId = String(formData.get("event_id") ?? "").trim();
+  const code = normalizeCouponCode(String(formData.get("coupon_code") ?? ""));
+
+  if (!eventId) {
+    return { error: "Missing event." };
+  }
+  if (!code) {
+    return { error: "Enter a coupon code." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Sign in or create an account before claiming a coupon." };
+  }
+
+  const { data: claimRaw, error } = await supabase
+    .rpc("claim_ticket_coupon", {
+      p_event_id: eventId,
+      p_code_hash: couponCodeHash(code),
+    })
+    .single();
+
+  const claim = claimRaw as { order_id?: string; event_id?: string } | null;
+  if (error || !claim?.order_id) {
+    return { error: error?.message ?? "Could not claim this coupon." };
+  }
+
+  await writeAuditLogSafe(supabase, {
+    action: "ticket_coupon.claimed",
+    entityType: "order",
+    entityId: claim.order_id,
+    metadata: { event_id: eventId },
+  });
+
+  revalidatePath("/attendee/event");
+  revalidatePath("/attendee/event/seats");
+  redirect(`/attendee/event/seats?order=${encodeURIComponent(claim.order_id)}`);
 }
 
 export async function startHitPayCheckoutAction(

@@ -1,4 +1,5 @@
 import { createTicketType, updateTicketType } from "@/app/organizer/events/actions";
+import { createTicketCouponsAction, voidTicketCouponAction } from "@/app/organizer/events/couponActions";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/Button";
 import { SubmitButton } from "@/components/ui/SubmitButton";
@@ -11,6 +12,42 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Input } from "@/components/ui/Input";
+import { decryptSecret } from "@/lib/utils/crypto";
+
+type CouponRow = {
+  id: string;
+  ticket_type_id: string;
+  encrypted_code: string;
+  status: string;
+  created_at: string;
+  claimed_at: string | null;
+  claimed_email: string | null;
+  claimed_by: string | null;
+  ticket_types: { name?: string | null } | { name?: string | null }[] | null;
+};
+
+function one<T>(value: T | T[] | null | undefined): T | null {
+  return Array.isArray(value) ? value[0] ?? null : value ?? null;
+}
+
+function decryptCouponCode(value: string) {
+  try {
+    return decryptSecret(value);
+  } catch {
+    return "Unavailable";
+  }
+}
+
+function formatCouponDate(value: string | null) {
+  if (!value) return "—";
+  return new Date(value).toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 type Props = {
   params: Promise<{ eventId: string }>;
@@ -41,11 +78,30 @@ export default async function OrganizerTicketManagementPage({ params, searchPara
     .eq("event_id", eventId)
     .order("created_at", { ascending: true });
 
+  const { data: couponRows } = await supabase
+    .from("ticket_coupons")
+    .select(
+      `id, ticket_type_id, encrypted_code, status, created_at, claimed_at, claimed_email, claimed_by,
+       ticket_types ( name )`
+    )
+    .eq("event_id", eventId)
+    .order("created_at", { ascending: false });
+
+  const coupons = ((couponRows ?? []) as CouponRow[]).map((coupon) => ({
+    ...coupon,
+    code: decryptCouponCode(coupon.encrypted_code),
+    ticketTypeName: one(coupon.ticket_types)?.name ?? "Ticket",
+  }));
+
   const ticketStatusLabels: Record<string, string> = {
     active: "Active — available when the event is published",
+    hidden: "Hidden — valid internally, hidden from public checkout",
     inactive: "Inactive — hidden from registration lists",
     sold_out: "Sold out — shown as unavailable",
   };
+  const couponEligibleTicketTypes = (ticketTypes ?? []).filter((tt) =>
+    ["active", "hidden"].includes(String(tt.status))
+  );
 
   return (
     <RoleAreaShell
@@ -240,6 +296,130 @@ export default async function OrganizerTicketManagementPage({ params, searchPara
           </aside>
 
           </div>
+
+          <section className="space-y-8 animate-fade-in-up">
+            <div className="flex items-center gap-4">
+              <h2 className="font-serif text-2xl font-light text-foreground">Coupons</h2>
+              <span className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent" />
+            </div>
+
+            <div className="grid gap-8 lg:grid-cols-2">
+              <div className="panel-card p-8 border-accent-gold/20 bg-accent-gold/[0.02]">
+                <div className="space-y-2 mb-6">
+                  <p className="text-[10px] uppercase tracking-widest text-accent-gold font-bold">Manual Code</p>
+                  <h3 className="font-serif text-xl font-light text-foreground">Create One Coupon</h3>
+                  <p className="text-xs font-light text-muted-foreground">
+                    One coupon reserves one ticket immediately and can be claimed once.
+                  </p>
+                </div>
+                <form action={createTicketCouponsAction} className="space-y-5">
+                  <input type="hidden" name="event_id" value={eventId} />
+                  <input type="hidden" name="redirect_path" value={`/organizer/events/${eventId}/tickets`} />
+                  <input type="hidden" name="mode" value="manual" />
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Ticket Type</label>
+                    <select name="ticket_type_id" className="input-eventuz" required>
+                      {couponEligibleTicketTypes.map((tt) => (
+                        <option key={tt.id as string} value={tt.id as string}>
+                          {tt.name as string}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <Input label="Coupon Code" name="code" required minLength={4} maxLength={64} placeholder="e.g. PAWP-VIP-001" />
+                  <SubmitButton className="w-full btn-eventuz-gold py-4 text-xs">
+                    Create Coupon
+                  </SubmitButton>
+                </form>
+              </div>
+
+              <div className="panel-card p-8 border-border/40 bg-muted/5">
+                <div className="space-y-2 mb-6">
+                  <p className="text-[10px] uppercase tracking-widest text-accent-gold font-bold">Bulk Generator</p>
+                  <h3 className="font-serif text-xl font-light text-foreground">Generate Random Coupons</h3>
+                  <p className="text-xs font-light text-muted-foreground">
+                    Generate up to 200 secure one-ticket coupon codes at a time.
+                  </p>
+                </div>
+                <form action={createTicketCouponsAction} className="space-y-5">
+                  <input type="hidden" name="event_id" value={eventId} />
+                  <input type="hidden" name="redirect_path" value={`/organizer/events/${eventId}/tickets`} />
+                  <input type="hidden" name="mode" value="bulk" />
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Ticket Type</label>
+                    <select name="ticket_type_id" className="input-eventuz" required>
+                    {couponEligibleTicketTypes.map((tt) => (
+                      <option key={tt.id as string} value={tt.id as string}>
+                        {tt.name as string}
+                      </option>
+                      ))}
+                    </select>
+                  </div>
+                  <Input label="Number of Coupons" name="quantity" type="number" required min={1} max={200} defaultValue="10" />
+                  <SubmitButton className="w-full btn-eventuz-secondary py-4 text-xs">
+                    Generate Coupons
+                  </SubmitButton>
+                </form>
+              </div>
+            </div>
+
+            <div className="panel-card overflow-hidden border-border/50 bg-card">
+              <div className="border-b border-border/50 px-6 py-5">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Coupon Ledger</p>
+              </div>
+              {coupons.length === 0 ? (
+                <div className="px-6 py-12 text-center text-sm font-light text-muted-foreground">
+                  No coupons created yet.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[900px] text-left text-sm">
+                    <thead className="border-b border-border/50 bg-muted/20 text-[10px] uppercase tracking-widest text-muted-foreground">
+                      <tr>
+                        <th className="px-6 py-3 font-semibold">Code</th>
+                        <th className="px-6 py-3 font-semibold">Ticket Type</th>
+                        <th className="px-6 py-3 font-semibold">Status</th>
+                        <th className="px-6 py-3 font-semibold">Created</th>
+                        <th className="px-6 py-3 font-semibold">Claimed By</th>
+                        <th className="px-6 py-3 font-semibold">Claimed</th>
+                        <th className="px-6 py-3 font-semibold text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/40">
+                      {coupons.map((coupon) => (
+                        <tr key={coupon.id}>
+                          <td className="px-6 py-4 font-mono text-xs text-foreground">{coupon.code}</td>
+                          <td className="px-6 py-4 text-muted-foreground">{coupon.ticketTypeName}</td>
+                          <td className="px-6 py-4">
+                            <StatusBadge status={coupon.status} />
+                          </td>
+                          <td className="px-6 py-4 text-xs text-muted-foreground">{formatCouponDate(coupon.created_at)}</td>
+                          <td className="px-6 py-4 text-xs text-muted-foreground">
+                            {coupon.claimed_email || coupon.claimed_by || "—"}
+                          </td>
+                          <td className="px-6 py-4 text-xs text-muted-foreground">{formatCouponDate(coupon.claimed_at)}</td>
+                          <td className="px-6 py-4 text-right">
+                            {coupon.status === "active" ? (
+                              <form action={voidTicketCouponAction}>
+                                <input type="hidden" name="event_id" value={eventId} />
+                                <input type="hidden" name="coupon_id" value={coupon.id} />
+                                <input type="hidden" name="redirect_path" value={`/organizer/events/${eventId}/tickets`} />
+                                <SubmitButton variant="destructive" size="sm">
+                                  Void
+                                </SubmitButton>
+                              </form>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </section>
         </div>
       </div>
     </RoleAreaShell>

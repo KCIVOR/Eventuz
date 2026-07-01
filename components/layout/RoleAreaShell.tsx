@@ -15,8 +15,8 @@ type Props = {
   compactTitle?: string;
   /** `flush` removes the inner content panel wrapper for full-width dashboards. */
   layout?: "panel" | "flush";
-  /** `wide` uses `max-w-7xl` in the main column. */
-  mainWidth?: "default" | "wide";
+  /** `wide` uses `max-w-7xl`; `full` uses a larger workspace for dense operational pages. */
+  mainWidth?: "default" | "wide" | "full";
   /** Supplies event-scoped organizer/staff links when applicable. */
   navContext?: NavContext;
   breadcrumbs?: BreadcrumbItem[];
@@ -59,7 +59,8 @@ export async function RoleAreaShell({
 
   const sections = navSectionsForRole(role, navContext);
   const homeHref = roleHomeHref(role);
-  const maxW = mainWidth === "wide" ? "max-w-7xl" : "max-w-5xl";
+  const maxW =
+    mainWidth === "full" ? "max-w-[100rem]" : mainWidth === "wide" ? "max-w-7xl" : "max-w-5xl";
 
   const topBarTitle = showPageHeader ? compactTitle : (compactTitle ?? title);
 
