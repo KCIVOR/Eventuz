@@ -33,12 +33,14 @@ export async function createTicketCouponsAction(formData: FormData) {
     eventId ? `/organizer/events/${eventId}/tickets` : "/organizer"
   );
   const mode = String(formData.get("mode") ?? "manual");
+  const redeemQuantityRaw = Number(formData.get("redeem_quantity") ?? 1);
 
   if (!eventId || !ticketTypeId) {
     redirectWithError(redirectPath, "Missing event or ticket type for coupon creation.");
   }
 
   let codes: string[] = [];
+  let redeemQuantity = 1;
   if (mode === "bulk") {
     const quantity = Number(formData.get("quantity"));
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > 200) {
@@ -52,6 +54,10 @@ export async function createTicketCouponsAction(formData: FormData) {
     if (code.length < 4 || code.length > 64) {
       redirectWithError(redirectPath, "Coupon code must be 4 to 64 characters.");
     }
+    if (!Number.isInteger(redeemQuantityRaw) || redeemQuantityRaw < 1 || redeemQuantityRaw > 20) {
+      redirectWithError(redirectPath, "Seats redeemed must be a whole number from 1 to 20.");
+    }
+    redeemQuantity = redeemQuantityRaw;
     codes = [code];
   }
 
@@ -72,6 +78,7 @@ export async function createTicketCouponsAction(formData: FormData) {
     p_ticket_type_id: ticketTypeId,
     p_code_hashes: hashes,
     p_encrypted_codes: encryptedCodes,
+    p_redeem_quantity: redeemQuantity,
   });
 
   if (error) {
@@ -85,6 +92,8 @@ export async function createTicketCouponsAction(formData: FormData) {
     metadata: {
       event_id: eventId,
       quantity: Array.isArray(data) ? data.length : codes.length,
+      reserved_seats: (Array.isArray(data) ? data.length : codes.length) * redeemQuantity,
+      redeem_quantity: redeemQuantity,
       mode,
     },
   });

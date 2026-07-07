@@ -18,6 +18,7 @@ type CouponRow = {
   id: string;
   ticket_type_id: string;
   encrypted_code: string;
+  redeem_quantity: number | null;
   status: string;
   created_at: string;
   claimed_at: string | null;
@@ -81,7 +82,7 @@ export default async function OrganizerTicketManagementPage({ params, searchPara
   const { data: couponRows } = await supabase
     .from("ticket_coupons")
     .select(
-      `id, ticket_type_id, encrypted_code, status, created_at, claimed_at, claimed_email, claimed_by,
+      `id, ticket_type_id, encrypted_code, redeem_quantity, status, created_at, claimed_at, claimed_email, claimed_by,
        ticket_types ( name )`
     )
     .eq("event_id", eventId)
@@ -309,7 +310,7 @@ export default async function OrganizerTicketManagementPage({ params, searchPara
                   <p className="text-[10px] uppercase tracking-widest text-accent-gold font-bold">Manual Code</p>
                   <h3 className="font-serif text-xl font-light text-foreground">Create One Coupon</h3>
                   <p className="text-xs font-light text-muted-foreground">
-                    One coupon reserves one ticket immediately and can be claimed once.
+                    One coupon reserves seats immediately and can be claimed once.
                   </p>
                 </div>
                 <form action={createTicketCouponsAction} className="space-y-5">
@@ -327,6 +328,20 @@ export default async function OrganizerTicketManagementPage({ params, searchPara
                     </select>
                   </div>
                   <Input label="Coupon Code" name="code" required minLength={4} maxLength={64} placeholder="e.g. PAWP-VIP-001" />
+                  <div className="space-y-2">
+                    <Input
+                      label="Seats Redeemed"
+                      name="redeem_quantity"
+                      type="number"
+                      required
+                      min={1}
+                      max={20}
+                      defaultValue="1"
+                    />
+                    <p className="text-xs font-light leading-relaxed text-muted-foreground">
+                      This coupon reserves and redeems this many seats when claimed.
+                    </p>
+                  </div>
                   <SubmitButton className="w-full btn-eventuz-gold py-4 text-xs">
                     Create Coupon
                   </SubmitButton>
@@ -378,6 +393,7 @@ export default async function OrganizerTicketManagementPage({ params, searchPara
                       <tr>
                         <th className="px-6 py-3 font-semibold">Code</th>
                         <th className="px-6 py-3 font-semibold">Ticket Type</th>
+                        <th className="px-6 py-3 font-semibold text-right">Seats</th>
                         <th className="px-6 py-3 font-semibold">Status</th>
                         <th className="px-6 py-3 font-semibold">Created</th>
                         <th className="px-6 py-3 font-semibold">Claimed By</th>
@@ -390,6 +406,9 @@ export default async function OrganizerTicketManagementPage({ params, searchPara
                         <tr key={coupon.id}>
                           <td className="px-6 py-4 font-mono text-xs text-foreground">{coupon.code}</td>
                           <td className="px-6 py-4 text-muted-foreground">{coupon.ticketTypeName}</td>
+                          <td className="px-6 py-4 text-right text-xs font-semibold tabular-nums text-foreground">
+                            {Math.max(1, Number(coupon.redeem_quantity ?? 1))}
+                          </td>
                           <td className="px-6 py-4">
                             <StatusBadge status={coupon.status} />
                           </td>

@@ -78,14 +78,14 @@ export async function sumReservedQuantityForTicketType(
 
 export async function sumActiveCouponReservationsForTicketType(ticketTypeId: string): Promise<number> {
   const inventoryClient = createServiceRoleClient();
-  const { count, error } = await inventoryClient
+  const { data, error } = await inventoryClient
     .from("ticket_coupons")
-    .select("*", { count: "exact", head: true })
+    .select("redeem_quantity")
     .eq("ticket_type_id", ticketTypeId)
     .eq("status", "active");
 
   if (error) return 0;
-  return count ?? 0;
+  return (data ?? []).reduce((sum, row) => sum + Math.max(1, Number(row.redeem_quantity ?? 1)), 0);
 }
 
 /** Available ticket inventory for a type = declared quantity − reserved (orders). */
