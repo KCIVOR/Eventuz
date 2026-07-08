@@ -16,6 +16,13 @@ type Props = {
   seats: SeatPickerRow[];
   selectedSeatIds: string[];
   mode?: "inline" | "modal";
+  onSeatGroupSelect?: (group: SeatGroupSelection) => void;
+};
+
+export type SeatGroupSelection = {
+  kind: "table" | "rowed";
+  label: string;
+  seats: SeatPickerRow[];
 };
 
 const TABLE_TYPES = new Set<FloorPlanElementType>([
@@ -207,11 +214,13 @@ function TableElement({
   seats,
   currentTicket,
   selectedIds,
+  onSelect,
 }: {
   element: FloorPlanElement;
   seats: SeatPickerRow[];
   currentTicket: boolean;
   selectedIds: Set<string>;
+  onSelect?: () => void;
 }) {
   const cx = element.x + element.width / 2;
   const cy = element.y + element.height / 2;
@@ -220,9 +229,31 @@ function TableElement({
   const markerSize = tableSeatMarkerSize(element);
   const half = markerSize / 2;
   const sortedSeats = [...seats].sort(compareSeat);
+  const canOpen = Boolean(
+    onSelect &&
+      currentTicket &&
+      sortedSeats.some((seat) => seat.status === "available" || seat.is_owned_assignment)
+  );
 
   return (
-    <g transform={rotate}>
+    <g
+      transform={rotate}
+      role={canOpen ? "button" : undefined}
+      tabIndex={canOpen ? 0 : undefined}
+      aria-label={canOpen ? `Choose seats from ${element.label || "this table"}` : undefined}
+      onClick={canOpen ? onSelect : undefined}
+      onKeyDown={
+        canOpen
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onSelect?.();
+              }
+            }
+          : undefined
+      }
+      className={canOpen ? "cursor-pointer outline-none" : undefined}
+    >
       {element.type === "circle_table" ? (
         <ellipse
           cx={cx}
@@ -232,7 +263,7 @@ function TableElement({
           fill={currentTicket ? element.color : "#D9D2CA"}
           opacity={currentTicket ? 0.55 : 0.32}
           stroke={element.outlineColor ?? "#1C1714"}
-          strokeWidth={element.outlineWidth ?? 1}
+          strokeWidth={canOpen ? Math.max(2, element.outlineWidth ?? 1) : element.outlineWidth ?? 1}
         />
       ) : (
         <rect
@@ -243,7 +274,7 @@ function TableElement({
           fill={currentTicket ? element.color : "#D9D2CA"}
           opacity={currentTicket ? 0.55 : 0.32}
           stroke={element.outlineColor ?? "#1C1714"}
-          strokeWidth={element.outlineWidth ?? 1}
+          strokeWidth={canOpen ? Math.max(2, element.outlineWidth ?? 1) : element.outlineWidth ?? 1}
         />
       )}
       <ElementLabel element={element} muted={!currentTicket} />
@@ -289,11 +320,13 @@ function RowedElement({
   seats,
   currentTicket,
   selectedIds,
+  onSelect,
 }: {
   element: FloorPlanElement;
   seats: SeatPickerRow[];
   currentTicket: boolean;
   selectedIds: Set<string>;
+  onSelect?: () => void;
 }) {
   const rows = Math.min(element.rows ?? 1, 40);
   const columns = Math.min(element.columns ?? 1, 40);
@@ -308,9 +341,29 @@ function RowedElement({
   const startX = -footprint.width / 2 + ROWED_SEAT_PADDING;
   const startY = -footprint.height / 2 + ROWED_SEAT_PADDING;
   const seatByLabel = new Map(seats.map((seat) => [seat.display_label, seat]));
+  const canOpen = Boolean(
+    onSelect && currentTicket && seats.some((seat) => seat.status === "available" || seat.is_owned_assignment)
+  );
 
   return (
-    <g transform={`translate(${cx} ${cy}) rotate(${element.rotation})`}>
+    <g
+      transform={`translate(${cx} ${cy}) rotate(${element.rotation})`}
+      role={canOpen ? "button" : undefined}
+      tabIndex={canOpen ? 0 : undefined}
+      aria-label={canOpen ? `Choose seats from ${element.label || "rowed seats"}` : undefined}
+      onClick={canOpen ? onSelect : undefined}
+      onKeyDown={
+        canOpen
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onSelect?.();
+              }
+            }
+          : undefined
+      }
+      className={canOpen ? "cursor-pointer outline-none" : undefined}
+    >
       <rect
         x={-element.width / 2}
         y={-element.height / 2}
@@ -319,7 +372,7 @@ function RowedElement({
         fill={currentTicket ? element.color : "#D9D2CA"}
         opacity={currentTicket ? 0.28 : 0.18}
         stroke={element.outlineColor ?? "#1C1714"}
-        strokeWidth={element.outlineWidth ?? 1}
+        strokeWidth={canOpen ? Math.max(2, element.outlineWidth ?? 1) : element.outlineWidth ?? 1}
       />
       <text
         x={-element.width / 2 + 4}
@@ -370,7 +423,13 @@ function RowedElement({
   );
 }
 
-export function AttendeeFloorPlanPreview({ preview, seats, selectedSeatIds, mode = "inline" }: Props) {
+export function AttendeeFloorPlanPreview({
+  preview,
+  seats,
+  selectedSeatIds,
+  mode = "inline",
+  onSeatGroupSelect,
+}: Props) {
   const [open, setOpen] = useState(true);
   const [zoom, setZoom] = useState(1);
   const isModal = mode === "modal";
@@ -386,6 +445,7 @@ export function AttendeeFloorPlanPreview({ preview, seats, selectedSeatIds, mode
     }
     return map;
   }, [seats]);
+  const sortedSeats = useMemo(() => [...seats].sort(compareSeat), [seats]);
 
   return (
     <section className={isModal ? "flex h-full min-h-0 flex-col bg-card" : "overflow-hidden rounded-2xl border border-border bg-card shadow-sm"}>
@@ -396,10 +456,10 @@ export function AttendeeFloorPlanPreview({ preview, seats, selectedSeatIds, mode
           className="flex w-full items-center justify-between gap-4 border-b border-border/60 bg-accent-gold/[0.03] px-6 py-4 text-left transition-colors hover:bg-accent-gold/[0.06]"
           aria-expanded={open}
         >
-        <span>
-          <span className="block font-serif text-xl font-light text-foreground">Floor Plan Preview</span>
+          <span>
+          <span className="block font-serif text-xl font-light text-foreground">Floor Plan</span>
           <span className="mt-1 block text-[10px] font-semibold uppercase tracking-[0.16em] text-accent-gold">
-            Visual guide only
+            Tap a section to choose seats
           </span>
         </span>
         <span className="text-sm font-semibold text-muted-foreground">{open ? "Hide" : "Show"}</span>
@@ -486,6 +546,16 @@ export function AttendeeFloorPlanPreview({ preview, seats, selectedSeatIds, mode
                       seats={currentTicket ? seatsByTable.get(tableLabel) ?? [] : []}
                       currentTicket={currentTicket}
                       selectedIds={selectedIds}
+                      onSelect={
+                        currentTicket
+                          ? () =>
+                              onSeatGroupSelect?.({
+                                kind: "table",
+                                label: tableLabel || element.label || "Table",
+                                seats: [...(seatsByTable.get(tableLabel) ?? [])].sort(compareSeat),
+                              })
+                          : undefined
+                      }
                     />
                   );
                 }
@@ -494,9 +564,19 @@ export function AttendeeFloorPlanPreview({ preview, seats, selectedSeatIds, mode
                     <RowedElement
                       key={element.id}
                       element={element}
-                      seats={currentTicket ? seats : []}
+                      seats={currentTicket ? sortedSeats : []}
                       currentTicket={currentTicket}
                       selectedIds={selectedIds}
+                      onSelect={
+                        currentTicket
+                          ? () =>
+                              onSeatGroupSelect?.({
+                                kind: "rowed",
+                                label: element.label || "Rowed seats",
+                                seats: sortedSeats,
+                              })
+                          : undefined
+                      }
                     />
                   );
                 }
@@ -506,7 +586,7 @@ export function AttendeeFloorPlanPreview({ preview, seats, selectedSeatIds, mode
             </div>
           </div>
           <p className="text-xs leading-relaxed text-muted-foreground">
-            Use the seat buttons below to select seats. This preview updates to show your selected locations.
+            Tap an available table or rowed seating section to choose seats. This preview updates to show your selected locations.
           </p>
         </div>
       ) : null}

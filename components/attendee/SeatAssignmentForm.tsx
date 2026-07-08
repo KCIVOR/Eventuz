@@ -1,7 +1,10 @@
 "use client";
 
 import { submitSeatAssignments, type SeatAssignmentRow } from "@/app/attendee/event/seats/actions";
-import { AttendeeFloorPlanPreview } from "@/components/attendee/AttendeeFloorPlanPreview";
+import {
+  AttendeeFloorPlanPreview,
+  type SeatGroupSelection,
+} from "@/components/attendee/AttendeeFloorPlanPreview";
 import type {
   AssignableOrder,
   AttendeeFloorPlanPreview as AttendeeFloorPlanPreviewData,
@@ -67,7 +70,7 @@ export function SeatAssignmentForm({
   const [detailsBySeat, setDetailsBySeat] = useState<Record<string, SeatDetail>>(() =>
     normalizeDetailsMap(initialIds, {}, initialAssignments)
   );
-  const [floorPlanOpen, setFloorPlanOpen] = useState(false);
+  const [activeSeatGroup, setActiveSeatGroup] = useState<SeatGroupSelection | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -212,6 +215,7 @@ export function SeatAssignmentForm({
       group.seats.some((seat) => seat.status === "available" || seat.is_owned_assignment)
     );
   }, [seatLayoutMode, seatsByGroup]);
+  const showFallbackSeatSelector = !floorPlanPreview || seatInventoryTotal === 0;
 
   function seatButton(s: SeatPickerRow) {
     const selected = selectedSeatIds.includes(s.id);
@@ -261,8 +265,49 @@ export function SeatAssignmentForm({
         </p>
       </header>
 
-      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(23rem,30rem)] lg:gap-10 lg:items-start xl:gap-12">
+      {floorPlanPreview && seatInventoryTotal > 0 ? (
+        <section
+          className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6"
+          aria-labelledby="floor-plan-seat-heading"
+        >
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 id="floor-plan-seat-heading" className="font-serif text-2xl font-light text-foreground">
+                Choose from the floor plan
+              </h2>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                Tap your table or rowed section to open the available seats.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rotate-45 bg-accent-gold" />
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-accent-gold">
+                Tier: {ticketTypeName}
+              </span>
+            </div>
+          </div>
+          <AttendeeFloorPlanPreview
+            preview={floorPlanPreview}
+            seats={seats}
+            selectedSeatIds={selectedSeatIds}
+            onSeatGroupSelect={(group) => {
+              if (group.seats.length > 0) {
+                setActiveSeatGroup(group);
+              }
+            }}
+          />
+        </section>
+      ) : null}
+
+      <div
+        className={
+          showFallbackSeatSelector
+            ? "lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(23rem,30rem)] lg:items-start lg:gap-10 xl:gap-12"
+            : "mx-auto max-w-4xl"
+        }
+      >
         {/* MAIN: Seating Map & Forms */}
+        {showFallbackSeatSelector ? (
         <div className="min-w-0 space-y-8">
           <section
             className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8"
@@ -273,15 +318,6 @@ export function SeatAssignmentForm({
                 Available Seats
               </h2>
               <div className="flex flex-wrap items-center gap-3">
-                {floorPlanPreview ? (
-                  <button
-                    type="button"
-                    onClick={() => setFloorPlanOpen(true)}
-                    className="btn-eventuz-gold min-h-10 px-5 py-3 text-[10px] shadow-sm shadow-accent-gold/10"
-                  >
-                    View full seat plan
-                  </button>
-                ) : null}
                 <div className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rotate-45 bg-accent-gold" />
                   <span className="text-[10px] uppercase tracking-widest text-accent-gold font-semibold">Tier: {ticketTypeName}</span>
@@ -365,12 +401,18 @@ export function SeatAssignmentForm({
                 </div>
               )}
             </div>
+            {showFallbackSeatSelector ? (
+              <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
+                A valid floor plan is not available yet, so seats are shown in the compact selector.
+              </p>
+            ) : null}
           </section>
 
         </div>
+        ) : null}
 
         {/* SIDEBAR: Summary & Actions */}
-        <aside className="space-y-6 lg:sticky lg:top-32">
+        <aside className={showFallbackSeatSelector ? "space-y-6 lg:sticky lg:top-32" : "space-y-6"}>
           {selectedSeatIds.length > 0 && (
             <section
               className="panel-card animate-fade-in-up overflow-hidden p-0 shadow-lg shadow-accent-gold/[0.03]"
@@ -518,37 +560,71 @@ export function SeatAssignmentForm({
 
       </div>
 
-      {floorPlanOpen && floorPlanPreview ? (
+      {activeSeatGroup ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#1A1512]/55 p-3 backdrop-blur-sm sm:p-6"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-[#1A1512]/55 p-0 backdrop-blur-sm sm:items-center sm:p-6"
           role="dialog"
           aria-modal="true"
-          aria-label="Full seat plan"
+          aria-label={`Choose seats from ${activeSeatGroup.label}`}
         >
-          <div className="flex h-[96vh] w-full max-w-[96rem] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
-            <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-4">
+          <div className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl border border-border bg-card shadow-2xl sm:max-w-3xl sm:rounded-2xl">
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-card px-5 py-4 sm:px-6">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent-gold">
-                  Seat Plan
+                  {activeSeatGroup.kind === "table" ? "Table Selection" : "Rowed Seat Selection"}
                 </p>
-                <h2 className="font-serif text-xl font-light text-foreground">Full floor plan</h2>
+                <h2 className="font-serif text-2xl font-light text-foreground">{activeSeatGroup.label}</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {selectedSeatIds.length} of {qty} seats selected. Occupied seats are shown but disabled.
+                </p>
               </div>
               <button
                 type="button"
-                onClick={() => setFloorPlanOpen(false)}
+                onClick={() => setActiveSeatGroup(null)}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-background text-xl leading-none text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                aria-label="Close full seat plan"
+                aria-label="Close seat selector"
               >
                 x
               </button>
             </div>
-            <div className="min-h-0 flex-1 bg-muted/10">
-              <AttendeeFloorPlanPreview
-                preview={floorPlanPreview}
-                seats={seats}
-                selectedSeatIds={selectedSeatIds}
-                mode="modal"
-              />
+            <div className="min-h-0 flex-1 overflow-y-auto bg-muted/10 px-5 py-5 sm:px-6">
+              <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-border/60 bg-card px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                <span className="inline-flex items-center gap-2">
+                  <span className="h-3 w-3 rounded border border-border bg-background" />
+                  Available
+                </span>
+                <span className="inline-flex items-center gap-2">
+                  <span className="h-3 w-3 rounded border border-primary bg-primary" />
+                  Selected
+                </span>
+                <span className="inline-flex items-center gap-2">
+                  <span className="h-3 w-3 rounded border border-[#D9A6A1]/60 bg-[#F7E2DF]" />
+                  Occupied
+                </span>
+              </div>
+              <div
+                className={
+                  activeSeatGroup.kind === "table"
+                    ? "grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5"
+                    : "grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8"
+                }
+              >
+                {activeSeatGroup.seats.map((s) => seatButton(s))}
+              </div>
+              {activeSeatGroup.seats.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border bg-card py-12 text-center">
+                  <p className="text-sm italic text-muted-foreground">No seats are mapped to this section.</p>
+                </div>
+              ) : null}
+            </div>
+            <div className="sticky bottom-0 border-t border-border bg-card px-5 py-4 sm:px-6">
+              <button
+                type="button"
+                onClick={() => setActiveSeatGroup(null)}
+                className="btn-eventuz-gold w-full py-3 text-xs sm:w-auto sm:px-8"
+              >
+                Done choosing seats
+              </button>
             </div>
           </div>
         </div>
