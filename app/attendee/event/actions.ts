@@ -9,7 +9,7 @@ import { createHitPayCheckout } from "@/lib/payments/hitpayClient";
 import { loadHitPaySettings } from "@/lib/hitpay/settings";
 import { deliverTicketEmailsForOrder } from "@/lib/tickets/deliverTicketEmails";
 import { sendPaymentSuccessEmail } from "@/lib/payments/sendPaymentSuccessEmail";
-import { getAppOrigin } from "@/lib/url/site";
+import { getAppOrigin, normalizePublicOrigin } from "@/lib/url/site";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -34,6 +34,24 @@ type ReserveTicketCapacityResult = {
 function paymentWaitingUrl(orderId: string, fromHitPay = false): string {
   const base = `/attendee/event/payment/wait?order=${encodeURIComponent(orderId)}`;
   return fromHitPay ? `${base}&hitpay_return=1` : base;
+}
+
+function hitPayWebhookUrl(origin: string): string {
+  const configured = process.env.HITPAY_WEBHOOK_URL?.trim();
+  if (configured) {
+    try {
+      const url = new URL(configured);
+      if (url.protocol === "http:" || url.protocol === "https:") {
+        if (url.protocol === "http:" && url.hostname !== "localhost" && url.hostname !== "127.0.0.1") {
+          url.protocol = "https:";
+        }
+        return url.toString();
+      }
+    } catch {
+      /* Fall back to the app origin below. */
+    }
+  }
+  return `${normalizePublicOrigin(origin)}/api/hitpay/webhook`;
 }
 
 /** Mark pending HitPay payment succeeded (Super Admin → HitPay → Allow dev simulation). */
@@ -533,7 +551,7 @@ export async function startHitPayCheckoutAction(
 
   const origin = await getAppOrigin();
   const redirectUrl = `${origin}${paymentWaitingUrl(orderId, true)}`;
-  const webhookUrl = `${origin}/api/hitpay/webhook`;
+  const webhookUrl = hitPayWebhookUrl(origin);
 
   let hitpay: { id: string; url: string };
   if (hp.allowSimulation) {

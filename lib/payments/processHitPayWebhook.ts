@@ -56,24 +56,13 @@ function orderEffectivelyExpired(row: {
 
 function resolveHitStatus(payload: PaymentRequestPayload | null): string {
   if (!payload) return "unknown";
-  let s = (payload.status ?? "").trim().toLowerCase();
+  const s = (payload.status ?? "").trim().toLowerCase();
   if (s) return s;
   const list = Array.isArray(payload.payments) ? payload.payments : [];
   const succeeded = list.find((p) => String(p?.status ?? "").toLowerCase() === "succeeded");
   const first = list[0];
   const pick = succeeded ?? first;
   return String(pick?.status ?? "").trim().toLowerCase();
-}
-
-/** Body shape for HitPay Online Payments `/v1/payment-requests` webhooks (what we create in checkout). */
-function bodyLooksLikeOnlinePaymentRequest(raw: unknown): boolean {
-  if (!raw || typeof raw !== "object") return false;
-  const p = raw as Record<string, unknown>;
-  const id = p.id;
-  const ref = p.reference_number;
-  if (typeof id !== "string" || !isUuid(id)) return false;
-  if (typeof ref !== "string" || !isUuid(ref.trim())) return false;
-  return true;
 }
 
 /**
