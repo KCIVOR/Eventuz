@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 
 type Props = {
   href: string;
   className?: string;
+  style?: CSSProperties;
   children: React.ReactNode;
 };
 
-export function ReserveCheckoutLink({ href, className, children }: Props) {
+export function ReserveCheckoutLink({ href, className, style, children }: Props) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -40,6 +41,7 @@ export function ReserveCheckoutLink({ href, className, children }: Props) {
         setLoading(true);
       }}
       className={className}
+      style={style}
     >
       <span className="inline-flex items-center justify-center gap-2">
         {loading ? (

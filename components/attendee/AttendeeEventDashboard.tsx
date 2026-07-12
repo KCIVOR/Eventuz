@@ -77,6 +77,7 @@ export function AttendeeEventDashboard({
   let actionBody = "Start from the public event page to select a ticket category and begin checkout.";
   let actionHref = "/?checkout=1";
   let actionLabel = "Reserve tickets";
+  let showBuyAnotherTicket = false;
 
   if (paymentPending) {
     actionTitle = "Complete your payment";
@@ -97,6 +98,7 @@ export function AttendeeEventDashboard({
       ? `/attendee/event/seats?order=${encodeURIComponent(firstSeatOrder.id)}`
       : "/attendee/event/seats";
     actionLabel = "Choose seats";
+    showBuyAnotherTicket = true;
   } else if (ordersNeedingQrIssue.length > 0) {
     actionTitle = "Generate your passes";
     actionBody = "Guest details are complete. Issue digital passes from your ticket wallet.";
@@ -152,9 +154,29 @@ export function AttendeeEventDashboard({
                 <p className="mt-3 text-sm font-light leading-relaxed text-muted-foreground">{actionBody}</p>
               </div>
 
-              <Link href={actionHref} className="btn-eventuz-gold px-8 py-4 text-sm">
-                {actionLabel}
-              </Link>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <DashboardNavigationLink
+                  href={actionHref}
+                  loadingLabel="Opening..."
+                  className="btn-eventuz-gold justify-center px-8 py-4 text-sm"
+                >
+                  {actionLabel}
+                </DashboardNavigationLink>
+                {showBuyAnotherTicket ? (
+                  <>
+                    <span className="text-center text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                      Or
+                    </span>
+                    <DashboardNavigationLink
+                      href="/?checkout=1"
+                      loadingLabel="Opening..."
+                      className="btn-eventuz-secondary justify-center px-8 py-4 text-sm"
+                    >
+                      Buy another ticket
+                    </DashboardNavigationLink>
+                  </>
+                ) : null}
+              </div>
             </div>
           </section>
 

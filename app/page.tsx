@@ -9,6 +9,8 @@ import { LandingCheckoutModal } from "@/components/attendee/LandingCheckoutModal
 import { isHitPayDevSimulationAllowed } from "@/lib/payments/hitpayDevSimulation";
 import { ReserveCheckoutLink } from "@/components/attendee/ReserveCheckoutLink";
 import { SmoothAnchorLink } from "@/components/ui/SmoothAnchorLink";
+import { homeForRole } from "@/lib/auth/redirects";
+import { isEventuzRole } from "@/lib/auth/roles";
 
 interface EventData {
   id: string;
@@ -49,8 +51,22 @@ function recommendedLocationLink(location: RecommendedLocation): string {
 export default async function HomePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const { data: profile } = user
+    ? await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle()
+    : { data: null };
 
-  const { event: rawEvent, ticketTypes, registrationOpen, activeOrder, resumeCheckoutUrl } = await loadAttendeeEventContext();
+  const {
+    event: rawEvent,
+    ticketTypes,
+    registrationOpen,
+    activeOrder,
+    resumeCheckoutUrl,
+    seatAssignmentOrders,
+  } = await loadAttendeeEventContext();
   const event = rawEvent as unknown as EventData | null;
   const showDevHitPaySimulate = event?.organizer_id ? await isHitPayDevSimulationAllowed(event.organizer_id) : false;
   const googleMapsApiKey = await loadActiveGoogleMapsApiKey();
@@ -145,6 +161,28 @@ export default async function HomePage() {
     return new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(date);
   };
   const eventTimeStr = formatTime(event.event_time);
+  const profileRole = typeof profile?.role === "string" && isEventuzRole(profile.role)
+    ? profile.role
+    : null;
+  const dashboardHref = profileRole ? homeForRole(profileRole) : "/attendee/event";
+  const isNonAttendeeDashboardRole =
+    profileRole === "organizer" || profileRole === "staff" || profileRole === "super_admin";
+  const firstSeatAssignmentOrder = seatAssignmentOrders[0];
+  const hasSeatsToAssign = profileRole === "attendee" && Boolean(firstSeatAssignmentOrder);
+  const reserveHref = user ? "?checkout=1" : "/login?next=/?checkout=1";
+  const seatAssignmentHref = firstSeatAssignmentOrder
+    ? `/attendee/event/seats?order=${encodeURIComponent(firstSeatAssignmentOrder.id)}`
+    : "/attendee/event/seats";
+  const primaryCtaHref = isNonAttendeeDashboardRole
+    ? dashboardHref
+    : hasSeatsToAssign
+      ? seatAssignmentHref
+      : reserveHref;
+  const primaryCtaLabel = isNonAttendeeDashboardRole
+    ? "Open dashboard"
+    : hasSeatsToAssign
+      ? "Choose seats"
+      : "Reserve Your Seat";
 
   const heroContent = (
     <div className="w-full">
@@ -191,9 +229,18 @@ export default async function HomePage() {
           )}
 
           <div className="hero-actions">
-            <ReserveCheckoutLink href={user ? `?checkout=1` : `/login?next=/?checkout=1`} className="btn-eventuz-gold">
-              Reserve Your Seat
+            <ReserveCheckoutLink href={primaryCtaHref} className="btn-eventuz-gold">
+              {primaryCtaLabel}
             </ReserveCheckoutLink>
+            {hasSeatsToAssign ? (
+              <ReserveCheckoutLink
+                href={reserveHref}
+                className="btn-eventuz-secondary"
+                style={{ color: '#fff', borderColor: 'rgba(253,250,244,0.3)' }}
+              >
+                Buy another ticket
+              </ReserveCheckoutLink>
+            ) : null}
             <SmoothAnchorLink href="#about" className="btn-eventuz-secondary" style={{ color: '#fff', borderColor: 'rgba(253,250,244,0.3)' }}>
               Explore Event
             </SmoothAnchorLink>
@@ -368,12 +415,26 @@ export default async function HomePage() {
                   </div>
                 ) : null}
               </div>
-              <ReserveCheckoutLink
-                href={user ? `?checkout=1` : `/login?next=/?checkout=1`}
-                className="btn-eventuz-primary reserve-panel-cta"
-              >
-                Reserve Tickets
-              </ReserveCheckoutLink>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <ReserveCheckoutLink
+                  href={primaryCtaHref}
+                  className="btn-eventuz-primary reserve-panel-cta"
+                >
+                  {isNonAttendeeDashboardRole
+                    ? "Open dashboard"
+                    : hasSeatsToAssign
+                      ? "Choose seats"
+                      : "Reserve Tickets"}
+                </ReserveCheckoutLink>
+                {hasSeatsToAssign ? (
+                  <ReserveCheckoutLink
+                    href={reserveHref}
+                    className="btn-eventuz-secondary reserve-panel-cta"
+                  >
+                    Buy another ticket
+                  </ReserveCheckoutLink>
+                ) : null}
+              </div>
             </div>
           </div>
         </section>
