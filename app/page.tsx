@@ -11,6 +11,7 @@ import { ReserveCheckoutLink } from "@/components/attendee/ReserveCheckoutLink";
 import { SmoothAnchorLink } from "@/components/ui/SmoothAnchorLink";
 import { homeForRole } from "@/lib/auth/redirects";
 import { isEventuzRole } from "@/lib/auth/roles";
+import { redirect } from "next/navigation";
 
 interface EventData {
   id: string;
@@ -48,7 +49,20 @@ function recommendedLocationLink(location: RecommendedLocation): string {
     : `https://www.google.com/maps/search/?api=1&query=${query}`;
 }
 
-export default async function HomePage() {
+type HomePageProps = {
+  searchParams?: Promise<{
+    code?: string;
+    type?: string;
+  }>;
+};
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const q = searchParams ? await searchParams : {};
+  const authCode = typeof q.code === "string" ? q.code.trim() : "";
+  if (authCode) {
+    redirect(`/reset-password?code=${encodeURIComponent(authCode)}`);
+  }
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = user
