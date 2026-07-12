@@ -5,6 +5,7 @@ import type {
   SeatAssignmentOrderLink,
 } from "@/lib/attendee/eventContext";
 import { TicketNavigationLink } from "@/components/attendee/TicketNavigationLink";
+import { formatTicketSeatLabel } from "@/lib/tickets/seatLabel";
 import Link from "next/link";
 
 export type AttendeeTicketOverviewProps = {
@@ -187,7 +188,7 @@ export function AttendeeTicketOverview({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {qrTickets.map((t) => {
                 const seat = t.seats;
-                const label = seat?.display_label ?? "Pass";
+                const label = formatTicketSeatLabel(seat);
                 const ticketTypeName = t.ticket_types?.name ?? "Admission";
                 const tablePart = seat?.table_label ? `Table ${seat.table_label}` : null;
                 const seatPart = seat?.seat_label ? `Seat ${seat.seat_label}` : null;

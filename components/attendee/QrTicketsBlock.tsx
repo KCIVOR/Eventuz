@@ -1,5 +1,6 @@
 import { issueAdmissionTicketsAction, retryTicketEmailsAction } from "@/app/attendee/event/actions";
 import type { PaidOrderSummary, QrTicketListRow } from "@/lib/attendee/eventContext";
+import { formatTicketSeatLabel } from "@/lib/tickets/seatLabel";
 import Link from "next/link";
 
 type Props = {
@@ -63,13 +64,13 @@ export function QrTicketsBlock({ eventTitle, ordersNeedingQrIssue, qrTickets }: 
         <ul className="space-y-4">
           {qrTickets.map((t) => {
             const seat = t.seats;
-            const label = seat?.display_label ?? "Seat";
+            const label = formatTicketSeatLabel(seat);
             const ticketTypeName = t.ticket_types?.name ?? "Ticket";
             const tablePart =
               seat?.table_label != null && seat.table_label !== ""
                 ? `Table ${seat.table_label}`
                 : null;
-            const seatPart = seat ? `Seat ${seat.seat_label}` : null;
+            const seatPart = seat?.seat_label ? `Seat ${seat.seat_label}` : null;
             const detail = [tablePart, seatPart].filter(Boolean).join(" · ");
 
             return (

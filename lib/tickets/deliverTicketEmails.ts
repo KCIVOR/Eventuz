@@ -4,8 +4,9 @@ import { decryptSmtpPassword } from "@/lib/utils/crypto";
 import { createSmtpTransport, formatSmtpFrom, type SmtpDecryptedConfig } from "@/lib/smtp/sendTestMessage";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { getAppOrigin } from "@/lib/url/site";
-import { eventTicketQrDataUrl, eventTicketQrPayload } from "@/lib/tickets/eventTicketQr";
-import { brandEmailShell, emailButtonHtml } from "@/lib/utils/email/brandTemplates";
+import { eventTicketQrDataUrl } from "@/lib/tickets/eventTicketQr";
+import { formatTicketSeatDescription } from "@/lib/tickets/seatLabel";
+import { brandEmailShell } from "@/lib/utils/email/brandTemplates";
 
 type UserSupabase = SupabaseClient;
 
@@ -30,16 +31,6 @@ type TicketRow = {
   seats: { display_label: string; seat_label: string; table_label: string | null } | null;
   ticket_types: { name: string } | null;
 };
-
-function seatDescription(seat: TicketRow["seats"]): string {
-  if (!seat) return "—";
-  const table =
-    seat.table_label != null && seat.table_label !== "" ? `Table ${seat.table_label}` : null;
-  const sl = seat.seat_label ? `Seat ${seat.seat_label}` : null;
-  const parts = [table, sl].filter(Boolean);
-  const extra = parts.length ? ` (${parts.join(" · ")})` : "";
-  return `${seat.display_label}${extra}`;
-}
 
 async function markTicketEmail(
   admin: ReturnType<typeof createServiceRoleClient>,
@@ -100,7 +91,7 @@ export async function deliverTicketEmailsForOrder(
     cfg = null;
   }
 
-  const { data: rawTickets, error: tErr } = await userSupabase
+  const { data: rawTickets, error: tErr } = await admin
     .from("tickets")
     .select(
       `id, attendee_name, attendee_email, ticket_code, emailed_at, status,
@@ -159,7 +150,6 @@ export async function deliverTicketEmailsForOrder(
       continue;
     }
 
-    const fullQrString = eventTicketQrPayload(signedPayload);
     const qrDataUrl = await eventTicketQrDataUrl(signedPayload);
     const b64 = qrDataUrl.split(",")[1];
     const qrBuffer = Buffer.from(b64 ?? "", "base64");
@@ -172,7 +162,7 @@ export async function deliverTicketEmailsForOrder(
         ? `${ev.event_date} · ${String(ev.event_time).slice(0, 5)}`
         : ev?.event_date ?? "—";
     const ticketType = t.ticket_types?.name ?? "Ticket";
-    const seatLabel = seatDescription(t.seats);
+    const seatLabel = formatTicketSeatDescription(t.seats);
 
     const ticketPageUrl = `${origin}/attendee/event/tickets/${t.id}`;
     const subject = `Your ticket — ${eventName} — ${t.ticket_code}`;

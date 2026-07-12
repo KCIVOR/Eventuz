@@ -3,6 +3,7 @@ import { TicketNavigationLink } from "@/components/attendee/TicketNavigationLink
 import { RoleAreaShell } from "@/components/layout/RoleAreaShell";
 import { createClient } from "@/lib/supabase/server";
 import { eventTicketQrDataUrl, eventTicketQrPayload } from "@/lib/tickets/eventTicketQr";
+import { formatTicketSeatLabel } from "@/lib/tickets/seatLabel";
 import { notFound } from "next/navigation";
 
 type Props = { params: Promise<{ ticketId: string }> };
@@ -44,7 +45,7 @@ export default async function AttendeeTicketPassPage({ params }: Props) {
     seat_label?: string;
     table_label?: string | null;
   } | null;
-  const seatLabel = seat?.display_label ?? "Seat";
+  const seatLabel = formatTicketSeatLabel(seat);
   const seatDetail =
     seat?.table_label != null && seat.table_label !== ""
       ? `Table ${seat.table_label} · Seat ${seat.seat_label ?? ""}`

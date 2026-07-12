@@ -181,41 +181,43 @@ export async function loadAttendeeEventContext() {
         .map((o) => ({ id: o.id as string, quantity: Number(o.quantity) }));
     }
 
-    const { data: qrRows } = await supabase
-      .from("tickets")
-      .select(
-        `id, ticket_code, attendee_name, attendee_email, order_id, emailed_at, email_last_error, status,
-         seats ( display_label, seat_label, table_label ),
-         ticket_types ( name )`
-      )
-      .eq("event_id", eventId)
-      .neq("status", "voided")
-      .order("issued_at", { ascending: true });
+    if (completedIds.length > 0) {
+      const { data: qrRows } = await supabase
+        .from("tickets")
+        .select(
+          `id, ticket_code, attendee_name, attendee_email, order_id, emailed_at, email_last_error, status,
+           seats ( display_label, seat_label, table_label ),
+           ticket_types ( name )`
+        )
+        .in("order_id", completedIds)
+        .neq("status", "voided")
+        .order("issued_at", { ascending: true });
 
-    qrTickets = (qrRows ?? []).map((r) => {
-      const seatsRaw = r.seats as unknown;
-      const typesRaw = r.ticket_types as unknown;
-      const seats =
-        Array.isArray(seatsRaw) && seatsRaw[0]
-          ? (seatsRaw[0] as QrTicketListRow["seats"])
-          : (seatsRaw as QrTicketListRow["seats"] | null);
-      const ticket_types =
-        Array.isArray(typesRaw) && typesRaw[0]
-          ? (typesRaw[0] as QrTicketListRow["ticket_types"])
-          : (typesRaw as QrTicketListRow["ticket_types"] | null);
-      return {
-        id: r.id as string,
-        ticket_code: r.ticket_code as string,
-        attendee_name: r.attendee_name as string,
-        attendee_email: r.attendee_email as string,
-        order_id: r.order_id as string,
-        emailed_at: r.emailed_at ? String(r.emailed_at) : null,
-        email_last_error: r.email_last_error ? String(r.email_last_error) : null,
-        status: (r.status as string) ?? "issued",
-        seats,
-        ticket_types,
-      };
-    });
+      qrTickets = (qrRows ?? []).map((r) => {
+        const seatsRaw = r.seats as unknown;
+        const typesRaw = r.ticket_types as unknown;
+        const seats =
+          Array.isArray(seatsRaw) && seatsRaw[0]
+            ? (seatsRaw[0] as QrTicketListRow["seats"])
+            : (seatsRaw as QrTicketListRow["seats"] | null);
+        const ticket_types =
+          Array.isArray(typesRaw) && typesRaw[0]
+            ? (typesRaw[0] as QrTicketListRow["ticket_types"])
+            : (typesRaw as QrTicketListRow["ticket_types"] | null);
+        return {
+          id: r.id as string,
+          ticket_code: r.ticket_code as string,
+          attendee_name: r.attendee_name as string,
+          attendee_email: r.attendee_email as string,
+          order_id: r.order_id as string,
+          emailed_at: r.emailed_at ? String(r.emailed_at) : null,
+          email_last_error: r.email_last_error ? String(r.email_last_error) : null,
+          status: (r.status as string) ?? "issued",
+          seats,
+          ticket_types,
+        };
+      });
+    }
   }
 
   const typesWithSlots: TicketTypeWithSlots[] = await Promise.all(
