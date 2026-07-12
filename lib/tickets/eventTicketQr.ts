@@ -18,3 +18,13 @@ export async function eventTicketQrDataUrl(signedPayloadFromRpc: string): Promis
     color: { dark: "#1c1917", light: "#faf8f5" },
   });
 }
+
+export async function eventTicketQrPngBuffer(signedPayloadFromRpc: string): Promise<Buffer> {
+  return QRCode.toBuffer(eventTicketQrPayload(signedPayloadFromRpc), {
+    errorCorrectionLevel: "M",
+    margin: 1,
+    width: 280,
+    color: { dark: "#1c1917", light: "#faf8f5" },
+    type: "png",
+  });
+}

@@ -4,7 +4,6 @@ import { decryptSmtpPassword } from "@/lib/utils/crypto";
 import { createSmtpTransport, formatSmtpFrom, type SmtpDecryptedConfig } from "@/lib/smtp/sendTestMessage";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { getAppOrigin } from "@/lib/url/site";
-import { eventTicketQrDataUrl } from "@/lib/tickets/eventTicketQr";
 import { formatTicketSeatDescription } from "@/lib/tickets/seatLabel";
 import { brandEmailShell } from "@/lib/utils/email/brandTemplates";
 
@@ -150,10 +149,6 @@ export async function deliverTicketEmailsForOrder(
       continue;
     }
 
-    const qrDataUrl = await eventTicketQrDataUrl(signedPayload);
-    const b64 = qrDataUrl.split(",")[1];
-    const qrBuffer = Buffer.from(b64 ?? "", "base64");
-
     const ev = t.events;
     const eventName = ev?.name ?? "Event";
     const venue = ev?.venue?.trim() || "—";
@@ -165,6 +160,7 @@ export async function deliverTicketEmailsForOrder(
     const seatLabel = formatTicketSeatDescription(t.seats);
 
     const appUrl = origin;
+    const qrImageUrl = `${origin}/api/tickets/${encodeURIComponent(t.id)}/qr?token=${encodeURIComponent(signedPayload)}`;
     const subject = `Your ticket — ${eventName} — ${t.ticket_code}`;
 
     const text = [
@@ -217,7 +213,7 @@ export async function deliverTicketEmailsForOrder(
       <div style="margin:34px 0;text-align:center;">
         <p style="font-size:11px;text-transform:uppercase;letter-spacing:0.2em;color:#C9A96E;margin-bottom:20px;">Your Entry Pass</p>
         <div style="display:inline-block;width:100%;max-width:264px;padding:12px;background-color:#ffffff;border:1px solid #EDE8E3;border-radius:2px;box-sizing:border-box;">
-          <img class="eventuz-email-qr" src="cid:ticketqr" width="240" height="240" alt="Ticket QR code" style="display:block;width:100%;max-width:240px;height:auto;margin:0 auto;" />
+          <img class="eventuz-email-qr" src="${qrImageUrl}" width="240" height="240" alt="Ticket QR code" style="display:block;width:100%;max-width:240px;height:auto;margin:0 auto;" />
         </div>
         <p style="margin-top:20px;font-size:13px;color:#7A6E68;font-style:italic;">Please present this code at check-in.</p>
         <p style="margin:12px auto 0;max-width:360px;font-size:12px;line-height:1.6;color:#7A6E68;">If the QR image is hidden by your email app, use ticket code <strong style="color:#1A1512;font-family:monospace;">${escapeHtml(t.ticket_code)}</strong> at the entrance.</p>
@@ -246,15 +242,6 @@ export async function deliverTicketEmailsForOrder(
         subject,
         text,
         html,
-        attachments: [
-          {
-            filename: "ticket-qr.png",
-            content: qrBuffer,
-            cid: "ticketqr",
-            contentType: "image/png",
-            contentDisposition: "inline",
-          },
-        ],
       });
       await markTicketEmail(admin, t.id, true, null);
       await writeAuditLogSafe(userSupabase, {
