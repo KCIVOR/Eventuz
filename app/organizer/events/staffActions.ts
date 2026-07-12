@@ -4,6 +4,7 @@ import { writeAuditLogSafe } from "@/lib/audit/writeAuditLog";
 import { generateStaffInviteRawToken, staffInviteTokenHash } from "@/lib/staff/inviteToken";
 import { sendStaffInviteEmail } from "@/lib/staff/sendStaffInviteEmail";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { getAppOrigin } from "@/lib/url/site";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -83,6 +84,28 @@ async function activeStaffEmailExists(
   return (profiles ?? []).some((profile) => normEmail(String(profile.email ?? "")) === email);
 }
 
+async function existingAccountForEmail(email: string): Promise<{ role: string | null } | null> {
+  const serviceClient = createServiceRoleClient();
+  const { data } = await serviceClient
+    .from("profiles")
+    .select("role")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (!data) return null;
+  return { role: typeof data.role === "string" ? data.role : null };
+}
+
+async function blockExistingAccountInvite(email: string, eventId: string) {
+  const existingAccount = await existingAccountForEmail(email);
+  if (existingAccount) {
+    redirectWithError(
+      eventId,
+      "This email already belongs to an existing Eventuz account. For now, invite a new email address that has not registered yet."
+    );
+  }
+}
+
 async function createPendingInvitation(
   supabase: SupabaseClient,
   eventId: string,
@@ -144,6 +167,7 @@ export async function inviteEventStaff(eventId: string, formData: FormData) {
   if (await activeStaffEmailExists(supabase, eventId, email)) {
     redirectWithError(eventId, "That email already has active scanner access for this event.");
   }
+  await blockExistingAccountInvite(email, eventId);
 
   await revokePendingInvitationsForEmail(supabase, eventId, email);
   const invitation = await createPendingInvitation(supabase, eventId, user.id, email);
@@ -204,6 +228,7 @@ export async function resendStaffInvitation(formData: FormData) {
   if (await activeStaffEmailExists(supabase, eventId, email)) {
     redirectWithError(eventId, "That email already has active scanner access for this event.");
   }
+  await blockExistingAccountInvite(email, eventId);
 
   const { error: revokeErr } = await supabase
     .from("staff_invitations")
