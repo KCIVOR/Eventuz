@@ -117,6 +117,24 @@ function seatClass(seat: SeatPickerRow | undefined, currentTicket: boolean, sele
   return { fill: "#FDFAF4", stroke: "#C9A96E", text: "#1A1512", opacity: 1 };
 }
 
+function seatGroupClass(seats: SeatPickerRow[], currentTicket: boolean) {
+  if (!currentTicket) {
+    return { fill: "#D9D2CA", stroke: "#AFA69D", opacity: 0.32 };
+  }
+  if (seats.length === 0) {
+    return { fill: "#F1ECE6", stroke: "#D9D2CA", opacity: 0.45 };
+  }
+
+  const availableCount = seats.filter((seat) => seat.status === "available").length;
+  if (availableCount === seats.length) {
+    return { fill: "#BDEFC6", stroke: "#3A8B4B", opacity: 0.74 };
+  }
+  if (availableCount === 0) {
+    return { fill: "#FF4F78", stroke: "#A8173D", opacity: 0.78 };
+  }
+  return { fill: "#FFF1A8", stroke: "#C49A1F", opacity: 0.78 };
+}
+
 function compareSeat(a: SeatPickerRow, b: SeatPickerRow) {
   return a.display_label.localeCompare(b.display_label, undefined, { numeric: true });
 }
@@ -229,6 +247,7 @@ function TableElement({
   const markerSize = tableSeatMarkerSize(element);
   const half = markerSize / 2;
   const sortedSeats = [...seats].sort(compareSeat);
+  const groupState = seatGroupClass(sortedSeats, currentTicket);
   const canOpen = Boolean(
     onSelect &&
       currentTicket &&
@@ -260,9 +279,9 @@ function TableElement({
           cy={cy}
           rx={element.width / 2}
           ry={element.height / 2}
-          fill={currentTicket ? element.color : "#D9D2CA"}
-          opacity={currentTicket ? 0.55 : 0.32}
-          stroke={element.outlineColor ?? "#1C1714"}
+          fill={groupState.fill}
+          opacity={groupState.opacity}
+          stroke={groupState.stroke}
           strokeWidth={canOpen ? Math.max(2, element.outlineWidth ?? 1) : element.outlineWidth ?? 1}
         />
       ) : (
@@ -271,9 +290,9 @@ function TableElement({
           y={element.y}
           width={element.width}
           height={element.height}
-          fill={currentTicket ? element.color : "#D9D2CA"}
-          opacity={currentTicket ? 0.55 : 0.32}
-          stroke={element.outlineColor ?? "#1C1714"}
+          fill={groupState.fill}
+          opacity={groupState.opacity}
+          stroke={groupState.stroke}
           strokeWidth={canOpen ? Math.max(2, element.outlineWidth ?? 1) : element.outlineWidth ?? 1}
         />
       )}
@@ -341,6 +360,7 @@ function RowedElement({
   const startX = -footprint.width / 2 + ROWED_SEAT_PADDING;
   const startY = -footprint.height / 2 + ROWED_SEAT_PADDING;
   const seatByLabel = new Map(seats.map((seat) => [seat.display_label, seat]));
+  const groupState = seatGroupClass(seats, currentTicket);
   const canOpen = Boolean(
     onSelect && currentTicket && seats.some((seat) => seat.status === "available" || seat.is_owned_assignment)
   );
@@ -369,9 +389,9 @@ function RowedElement({
         y={-element.height / 2}
         width={element.width}
         height={element.height}
-        fill={currentTicket ? element.color : "#D9D2CA"}
-        opacity={currentTicket ? 0.28 : 0.18}
-        stroke={element.outlineColor ?? "#1C1714"}
+        fill={groupState.fill}
+        opacity={groupState.opacity}
+        stroke={groupState.stroke}
         strokeWidth={canOpen ? Math.max(2, element.outlineWidth ?? 1) : element.outlineWidth ?? 1}
       />
       <text
@@ -485,6 +505,18 @@ export function AttendeeFloorPlanPreview({
               <span className="inline-flex items-center gap-2">
                 <span className="h-3 w-3 rounded border border-[#CFC6BC] bg-[#E7E1DA] opacity-60" />
                 Other ticket
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <span className="h-3 w-3 rounded border border-[#3A8B4B] bg-[#BDEFC6]" />
+                All available
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <span className="h-3 w-3 rounded border border-[#C49A1F] bg-[#FFF1A8]" />
+                Some taken
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <span className="h-3 w-3 rounded border border-[#A8173D] bg-[#FF4F78]" />
+                Fully occupied
               </span>
             </div>
             <div className="flex items-center gap-2 text-xs">
