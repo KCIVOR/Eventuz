@@ -2,7 +2,6 @@
 
 import { AuthShell } from "@/components/layout/AuthShell";
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/Input";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
@@ -19,30 +18,13 @@ export default function ForgotPasswordPage() {
     setMessage("");
     setIsError(false);
 
-    const supabase = createClient();
-    const origin = window.location.origin;
-
-    const { checkEmailExists } = await import("./actions");
-    const exists = await checkEmailExists(email);
-
-    if (!exists) {
-      // Security best practice: don't reveal if account exists, 
-      // but the user EXPLICITLY asked to check if it exists first.
-      setIsError(true);
-      setMessage("No account found with this email address.");
-      setLoading(false);
-      return;
-    }
-
-    // 2. Send reset email
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${origin}/auth/callback?next=/reset-password`,
-    });
+    const { sendPasswordResetLink } = await import("./actions");
+    const result = await sendPasswordResetLink(email);
 
     setLoading(false);
-    if (error) {
+    if (!result.ok) {
       setIsError(true);
-      setMessage(error.message);
+      setMessage(result.error ?? "Could not send the password reset email.");
     } else {
       setIsError(false);
       setMessage("If an account exists, a password reset link has been sent to your email.");
