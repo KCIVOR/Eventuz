@@ -30,12 +30,43 @@ export function brandEmailShell({
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
+  <style>
+    @media only screen and (max-width: 640px) {
+      body {
+        padding: 20px 12px !important;
+      }
+      .eventuz-email-container {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+      .eventuz-email-card {
+        padding: 32px 22px !important;
+      }
+      .eventuz-email-title {
+        font-size: 24px !important;
+      }
+      .eventuz-email-button {
+        box-sizing: border-box !important;
+        display: block !important;
+        width: 100% !important;
+        max-width: 320px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        text-align: center !important;
+      }
+      .eventuz-email-qr {
+        width: 100% !important;
+        max-width: 240px !important;
+        height: auto !important;
+      }
+    }
+  </style>
 </head>
 <body style="margin:0;padding:40px 20px;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;background-color:${ivory};color:${obsidian};-webkit-font-smoothing:antialiased;">
-  <div style="max-width:600px;margin:0 auto;">
+  <div class="eventuz-email-container" style="max-width:600px;margin:0 auto;">
     
     <!-- Main Content Card -->
-    <div style="background-color:#ffffff;border:1px solid ${border};border-radius:2px;padding:48px 40px;box-shadow:0 4px 12px rgba(26,21,18,0.03);">
+    <div class="eventuz-email-card" style="background-color:#ffffff;border:1px solid ${border};border-radius:2px;padding:48px 40px;box-shadow:0 4px 12px rgba(26,21,18,0.03);">
       
       <!-- Header Ornament -->
       <div style="text-align:center;margin-bottom:32px;">
@@ -48,7 +79,7 @@ export function brandEmailShell({
       </div>
 
       <!-- Title -->
-      <h1 style="margin:0 0 24px;font-family:Georgia, serif;font-size:28px;font-weight:300;text-align:center;color:${obsidian};line-height:1.2;">
+      <h1 class="eventuz-email-title" style="margin:0 0 24px;font-family:Georgia, serif;font-size:28px;font-weight:300;text-align:center;color:${obsidian};line-height:1.2;">
         ${title}
       </h1>
 
@@ -83,7 +114,7 @@ export function brandEmailShell({
 export function emailButtonHtml(label: string, url: string): string {
   return `
     <div style="margin:32px 0;text-align:center;">
-      <a href="${url}" style="display:inline-block;background-color:#1A1512;color:#FDFAF4;padding:14px 32px;font-size:12px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;text-decoration:none;border-radius:1px;transition:background-color 0.2s;">
+      <a href="${url}" class="eventuz-email-button" style="display:inline-block;background-color:#1A1512;color:#FDFAF4;padding:14px 32px;font-size:12px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;text-decoration:none;border-radius:1px;transition:background-color 0.2s;">
         ${label}
       </a>
     </div>
@@ -96,7 +127,7 @@ export function emailButtonHtml(label: string, url: string): string {
 export function emailSecondaryButtonHtml(label: string, url: string): string {
   return `
     <div style="margin:32px 0;text-align:center;">
-      <a href="${url}" style="display:inline-block;background-color:transparent;border:1px solid #1A1512;color:#1A1512;padding:14px 32px;font-size:12px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;text-decoration:none;border-radius:1px;">
+      <a href="${url}" class="eventuz-email-button" style="display:inline-block;background-color:transparent;border:1px solid #1A1512;color:#1A1512;padding:14px 32px;font-size:12px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;text-decoration:none;border-radius:1px;">
         ${label}
       </a>
     </div>

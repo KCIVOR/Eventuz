@@ -164,7 +164,7 @@ export async function deliverTicketEmailsForOrder(
     const ticketType = t.ticket_types?.name ?? "Ticket";
     const seatLabel = formatTicketSeatDescription(t.seats);
 
-    const ticketPageUrl = `${origin}/attendee/event/tickets/${t.id}`;
+    const appUrl = origin;
     const subject = `Your ticket — ${eventName} — ${t.ticket_code}`;
 
     const text = [
@@ -178,18 +178,19 @@ export async function deliverTicketEmailsForOrder(
       `Seat: ${seatLabel}`,
       `Ticket code: ${t.ticket_code}`,
       ``,
-      `Open your pass in Eventuz:`,
-      ticketPageUrl,
+      `You can also sign in to Eventuz here:`,
+      appUrl,
       ``,
-      `Your QR code is attached as an image. Present it at check-in.`,
+      `Present the QR code at check-in. If the QR image does not appear on your device, present your ticket code instead: ${t.ticket_code}.`,
     ].join("\n");
 
     const contentHtml = `
       <p>Dear ${escapeHtml(t.attendee_name)},</p>
       <p>We are pleased to provide your entry pass for <strong>${escapeHtml(eventName)}</strong>. Please find your event details and QR code below.</p>
+      <p>Your ticket code is also included as a backup. If your email app blocks images or the QR code does not load, present the ticket code at check-in and our team can verify it manually.</p>
       
-      <div style="margin:32px 0;padding:24px;background-color:#F7F4EF;border:1px solid #EDE8E3;border-radius:2px;">
-        <table width="100%" cellpadding="0" cellspacing="0">
+      <div style="margin:28px 0;padding:20px;background-color:#F7F4EF;border:1px solid #EDE8E3;border-radius:2px;">
+        <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
           <tr><td style="padding-bottom:16px;">
             <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.15em;color:#7A6E68;">Ticket Type</p>
             <p style="margin:4px 0 0;font-size:16px;color:#1A1512;font-weight:300;">${escapeHtml(ticketType)}</p>
@@ -208,27 +209,28 @@ export async function deliverTicketEmailsForOrder(
           </td></tr>
           <tr><td>
             <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.15em;color:#7A6E68;">Ticket Code</p>
-            <p style="margin:4px 0 0;font-size:13px;color:#1A1512;font-family:monospace;">${escapeHtml(t.ticket_code)}</p>
+            <p style="margin:4px 0 0;font-size:18px;color:#1A1512;font-family:monospace;font-weight:600;letter-spacing:0.08em;">${escapeHtml(t.ticket_code)}</p>
           </td></tr>
         </table>
       </div>
 
-      <div style="margin:40px 0;text-align:center;">
+      <div style="margin:34px 0;text-align:center;">
         <p style="font-size:11px;text-transform:uppercase;letter-spacing:0.2em;color:#C9A96E;margin-bottom:20px;">Your Entry Pass</p>
-        <div style="display:inline-block;padding:12px;background-color:#ffffff;border:1px solid #EDE8E3;border-radius:2px;">
-          <img src="cid:ticketqr" width="280" height="280" alt="Ticket QR code" style="display:block;" />
+        <div style="display:inline-block;width:100%;max-width:264px;padding:12px;background-color:#ffffff;border:1px solid #EDE8E3;border-radius:2px;box-sizing:border-box;">
+          <img class="eventuz-email-qr" src="cid:ticketqr" width="240" height="240" alt="Ticket QR code" style="display:block;width:100%;max-width:240px;height:auto;margin:0 auto;" />
         </div>
         <p style="margin-top:20px;font-size:13px;color:#7A6E68;font-style:italic;">Please present this code at check-in.</p>
+        <p style="margin:12px auto 0;max-width:360px;font-size:12px;line-height:1.6;color:#7A6E68;">If the QR image is hidden by your email app, use ticket code <strong style="color:#1A1512;font-family:monospace;">${escapeHtml(t.ticket_code)}</strong> at the entrance.</p>
       </div>
 
-      <div style="text-align:center;margin-top:40px;">
-        <a href="${ticketPageUrl}" style="display:inline-block;background-color:#1A1512;color:#FDFAF4;padding:14px 32px;font-size:11px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;text-decoration:none;border-radius:1px;">
-          Digital Ticket Hub
+      <div style="text-align:center;margin-top:36px;">
+        <a href="${appUrl}" class="eventuz-email-button" style="display:inline-block;background-color:#1A1512;color:#FDFAF4;padding:14px 32px;font-size:11px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;text-decoration:none;border-radius:1px;">
+          Open Eventuz
         </a>
       </div>
 
       <p style="font-size:12px;color:#7A6E68;margin-top:48px;border-top:1px solid #EDE8E3;padding-top:24px;line-height:1.6;">
-        For the best experience, you can access your ticket digitally by signing into your account.
+        For the best experience, sign in through the Eventuz website. Your QR code above remains valid for check-in.
       </p>
     `;
 
@@ -250,6 +252,7 @@ export async function deliverTicketEmailsForOrder(
             content: qrBuffer,
             cid: "ticketqr",
             contentType: "image/png",
+            contentDisposition: "inline",
           },
         ],
       });
