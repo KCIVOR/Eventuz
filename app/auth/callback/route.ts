@@ -9,6 +9,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const nextRaw = url.searchParams.get("next");
+  const type = url.searchParams.get("type");
 
   if (!code) {
     return NextResponse.redirect(new URL("/login?error=missing_code", url.origin));
@@ -90,6 +91,10 @@ export async function GET(request: Request) {
   }
 
   const role = profile.role as EventuzRole;
+  if (type === "recovery" || nextRaw === "/reset-password") {
+    return NextResponse.redirect(new URL("/reset-password", url.origin));
+  }
+
   const nextForRole = safeNextPathForRole(
     nextRaw && nextRaw !== "/" ? nextRaw : null,
     role

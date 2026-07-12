@@ -1,14 +1,29 @@
 "use client";
 
 import { AuthShell } from "@/components/layout/AuthShell";
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/Input";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 
 export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <AuthShell title="Reset password">
+          <p className="text-center text-sm text-muted-foreground">Verifying link...</p>
+        </AuthShell>
+      }
+    >
+      <ResetPasswordForm />
+    </Suspense>
+  );
+}
+
+function ResetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,6 +36,19 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     // Ensure the user actually has a recovery session
     async function checkSession() {
+      const code = searchParams.get("code");
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) {
+          router.replace(`/login?error=${encodeURIComponent(error.message)}`);
+          return;
+        }
+
+        router.replace("/reset-password");
+        setVerifying(false);
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         // Not authorized to be here
@@ -30,7 +58,7 @@ export default function ResetPasswordPage() {
       }
     }
     checkSession();
-  }, [router, supabase.auth]);
+  }, [router, searchParams, supabase.auth]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();

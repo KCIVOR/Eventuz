@@ -104,11 +104,13 @@ export function AttendeeEventDashboard({
     actionBody = "Guest details are complete. Issue digital passes from your ticket wallet.";
     actionHref = "/attendee/event/tickets";
     actionLabel = "Open tickets";
+    showBuyAnotherTicket = true;
   } else if (qrTickets.length > 0) {
     actionTitle = "Your passes are ready";
-    actionBody = "Keep your QR passes available for check-in and share each guest pass as needed.";
+    actionBody = "Keep your QR passes available for check-in. You can open your passes or reserve additional tickets for another guest.";
     actionHref = "/attendee/event/tickets";
     actionLabel = "View digital passes";
+    showBuyAnotherTicket = true;
   }
 
   return (
@@ -143,10 +145,25 @@ export function AttendeeEventDashboard({
       <div className="grid gap-8 lg:grid-cols-12 lg:items-start">
         <main className="space-y-8 lg:col-span-7">
           <section className="panel-card overflow-hidden p-0">
-            <div className="border-b border-border/50 bg-accent-gold/[0.03] px-8 py-5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-accent-gold">
-                Next step
-              </p>
+            <div className="flex flex-col gap-3 border-b border-border/50 bg-accent-gold/[0.03] px-8 py-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-accent-gold">
+                  Next step
+                </p>
+                {showBuyAnotherTicket ? (
+                  <p className="mt-1 text-xs font-light text-muted-foreground">
+                    Manage your current passes or start another reservation.
+                  </p>
+                ) : null}
+              </div>
+              {qrTickets.length > 0 ? (
+                <div className="inline-flex w-fit items-center gap-2 border border-accent-gold/30 bg-card px-3 py-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-success" />
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    {qrTickets.length} pass{qrTickets.length === 1 ? "" : "es"} issued
+                  </span>
+                </div>
+              ) : null}
             </div>
             <div className="space-y-6 p-8">
               <div>
@@ -154,7 +171,7 @@ export function AttendeeEventDashboard({
                 <p className="mt-3 text-sm font-light leading-relaxed text-muted-foreground">{actionBody}</p>
               </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center">
                 <DashboardNavigationLink
                   href={actionHref}
                   loadingLabel="Opening..."
